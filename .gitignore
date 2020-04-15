@@ -1,0 +1,7 @@
+*.o
+*.elf
+*.nro
+*.nacp
+*.nsp
+.vscode
+/romfs/c64roms

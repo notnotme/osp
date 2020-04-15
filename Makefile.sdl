@@ -1,0 +1,63 @@
+# SDL2 target
+# We provide our own glad loader for GL 3.0 Core in source/port/glad
+# StSoundLibrary temporarly included in source/port/StSoundLibrary but will be removed later when alpha is working
+
+include git.mk
+
+#---------------------------------------------------------------------------------
+# TARGET
+#---------------------------------------------------------------------------------
+TARGET		= osp
+OBJS		= source/platform/sdl/platform.o \
+			source/decoder/decoder.o \
+			source/decoder/dumbdecoder.o \
+			source/decoder/gmedecoder.o \
+			source/decoder/sc68decoder.o \
+			source/decoder/sidplaydecoder.o \
+			source/imgui/imgui.o \
+			source/imgui/imgui_draw.o \
+			source/imgui/imgui_widgets.o \
+			source/imgui/imgui_demo.o \
+			source/imgui/imgui_impl_opengl3.o \
+			source/imgui/imgui_impl_sdl.o \
+			source/ui/window.o \
+			source/ui/aboutwindow.o \
+			source/ui/metricswindow.o \
+			source/ui/metadataframe.o \
+			source/ui/explorerframe.o \
+			source/ui/playerframe.o \
+			source/filesystem/file.o \
+			source/filesystem/filesystem.o \
+			source/filesystem/localfile.o \
+			source/filesystem/localfilesystem.o \
+			source/filemanager.o \
+			source/soundengine.o \
+			source/osp.o \
+			source/main.o
+
+PREFIX  = 
+CC	    = $(PREFIX)gcc-8
+CXX	    = $(PREFIX)g++-8
+AR	    = $(PREFIX)ar
+STRIP   = $(PREFIX)strip
+
+CFLAGS	    += -g -Wl,-q -Wall -O2 `sdl2-config --cflags` `pkg-config sc68 --cflags` `pkg-config libgme --cflags` `pkg-config dumb --cflags` \
+				-DIMGUI_DISABLE_DEMO_WINDOWS \
+				-DIMGUI_IMPL_OPENGL_LOADER_GLAD \
+				-Isource/port/sdl \
+				-DGIT_VERSION=\"$(GIT_VERSION)\" \
+ 				-DGIT_COMMIT=\"$(GIT_COMMIT)\" \
+ 				-DBUILD_DATE=\"$(BUILD_DATE)\"
+
+CXXFLAGS    += $(CFLAGS) -fno-exceptions -std=gnu++17
+
+ASFLAGS	    = $(CXXFLAGS)
+LIBS		= -lstdc++fs `sdl2-config --libs` -lSDL2_image `pkg-config sc68 --libs` `pkg-config libgme --libs` `pkg-config dumb --libs` -lsidplayfp -lglad -ldl
+
+all:    $(TARGET).elf
+
+$(TARGET).elf:  $(OBJS)
+	$(CXX) $(CXXFLAGS) $^ $(LIBS) -o $@
+
+clean:
+	@rm -rf $(TARGET) $(OBJS)
