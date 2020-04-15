@@ -48,7 +48,6 @@ std::string DumbDecoder::getName() {
     return "dumb";
 }
 
-
 bool DumbDecoder::canRead(const std::string extention) {
     if(extention == ".it") { return true; }
     if(extention == ".xm") { return true; }
@@ -67,8 +66,8 @@ bool DumbDecoder::canRead(const std::string extention) {
 }
 
 bool DumbDecoder::play(const std::vector<char> buffer) {
-	mDumbFile = dumbfile_open_memory(buffer.data(), buffer.size());
-	if (mDumbFile == nullptr) {
+    mDumbFile = dumbfile_open_memory(buffer.data(), buffer.size());
+    if (mDumbFile == nullptr) {
         mError = "Dumb cannot open file.";
         return false;
     }
@@ -81,7 +80,7 @@ bool DumbDecoder::play(const std::vector<char> buffer) {
 
     mMetaData = MetaData();
     parseMetaData();
-	mSigRenderer = duh_start_sigrenderer(mDuh, 0, 2, 0);
+    mSigRenderer = duh_start_sigrenderer(mDuh, 0, 2, 0);
 
     return true;
 }

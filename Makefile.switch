@@ -65,8 +65,8 @@ CFLAGS		:=	-g -Wall -ffunction-sections -D__SWITCH__ $(ARCH) $(DEFINES) $(INCLUD
 				 `pkg-config dumb --cflags` \
 				-DIMGUI_DISABLE_DEMO_WINDOWS \
 				-DGIT_VERSION=\"$(GIT_VERSION)\" \
- 				-DGIT_COMMIT=\"$(GIT_COMMIT)\" \
- 				-DBUILD_DATE=\"$(BUILD_DATE)\"
+				-DGIT_COMMIT=\"$(GIT_COMMIT)\" \
+				-DBUILD_DATE=\"$(BUILD_DATE)\"
 
 CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++17
 ASFLAGS		:=	-g $(ARCH)
@@ -236,7 +236,7 @@ $(OFILES_SRC)	: $(HFILES_BIN)
 #---------------------------------------------------------------------------------
 	@echo $(notdir $<)
 	@$(bin2o)
-	
+
 -include $(DEPENDS)
 
 #---------------------------------------------------------------------------------------

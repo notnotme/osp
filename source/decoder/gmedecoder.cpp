@@ -73,8 +73,8 @@ bool GmeDecoder::play(const std::vector<char> buffer) {
     auto error = gme_open_data(buffer.data(), buffer.size(), &mMusicEmu, 48000);
     if(error != nullptr) {
         mError = std::string("GME cannot load song: ").append(error);
-		return false;
-	}
+        return false;
+    }
 
     // Enable fine replay and default track
     gme_enable_accuracy(mMusicEmu, 1);
@@ -82,7 +82,7 @@ bool GmeDecoder::play(const std::vector<char> buffer) {
 
     // Fill much meta data as we can
     mCurrentTrack = 0;
-	gme_start_track(mMusicEmu, mCurrentTrack);
+    gme_start_track(mMusicEmu, mCurrentTrack);
 
     mMetaData = MetaData();
     parseDiskMetaData();

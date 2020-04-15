@@ -119,114 +119,109 @@ void Osp::render() {
     ImGui::Begin("Workspace", nullptr, windowFlags);
     ImGui::PopStyleVar(1);
 
-        // Menu
-        if (ImGui::BeginMenuBar()) {
-            if (ImGui::BeginMenu("Application")) {
-                if (ImGui::MenuItem(ICON_MDI_DESKTOP_MAC_DASHBOARD " Show Workspace", nullptr, mShowWorkspace, true)) {
-                    mShowWorkspace = !mShowWorkspace;
-                }
-                if (ImGui::BeginMenu(ICON_MDI_PALETTE " Theme")) {
-                    if (ImGui::Combo("Style", &mSettings.mStyle, "Dark\0Light\0Classic\0")) {
-                        switch (mSettings.mStyle) {
-                            case 0: ImGui::StyleColorsDark(); break;
-                            case 1: ImGui::StyleColorsLight(); break;
-                            case 2: ImGui::StyleColorsClassic(); break;
-                        }
+    // Menu
+    if (ImGui::BeginMenuBar()) {
+        if (ImGui::BeginMenu("Application")) {
+            if (ImGui::MenuItem(ICON_MDI_DESKTOP_MAC_DASHBOARD " Show Workspace", nullptr, mShowWorkspace, true)) {
+                mShowWorkspace = !mShowWorkspace;
+            }
+            if (ImGui::BeginMenu(ICON_MDI_PALETTE " Theme")) {
+                if (ImGui::Combo("Style", &mSettings.mStyle, "Dark\0Light\0Classic\0")) {
+                    switch (mSettings.mStyle) {
+                        case 0: ImGui::StyleColorsDark(); break;
+                        case 1: ImGui::StyleColorsLight(); break;
+                        case 2: ImGui::StyleColorsClassic(); break;
                     }
+                }
 
-                    const auto defaultFont = io.Fonts->Fonts[mSettings.mFont];
-                    if (ImGui::BeginCombo("Font", defaultFont->GetDebugName())) {
-                        for (auto n=0; n<io.Fonts->Fonts.Size; n++) {
-                            ImFont* font = io.Fonts->Fonts[n];
-                            ImGui::PushID((void*) font);
-                            if (ImGui::Selectable(font->GetDebugName(), font == defaultFont)) {
-                                io.FontDefault = font;
-                                mSettings.mFont = n;
-                            }
-                            ImGui::PopID();
+                const auto defaultFont = io.Fonts->Fonts[mSettings.mFont];
+                if (ImGui::BeginCombo("Font", defaultFont->GetDebugName())) {
+                    for (auto n=0; n<io.Fonts->Fonts.Size; n++) {
+                        ImFont* font = io.Fonts->Fonts[n];
+                        ImGui::PushID((void*) font);
+                        if (ImGui::Selectable(font->GetDebugName(), font == defaultFont)) {
+                            io.FontDefault = font;
+                            mSettings.mFont = n;
                         }
-                        ImGui::EndCombo();
+                        ImGui::PopID();
                     }
-                    ImGui::EndMenu();
-                }
-                if (ImGui::BeginMenu(ICON_MDI_SETTINGS " Configuration", true)) {
-                    ImGui::MenuItem("TODO", nullptr, false, true);
-                    ImGui::EndMenu();
-                }
-                ImGui::Separator();
-                if (ImGui::MenuItem(ICON_MDI_LOGOUT " Quit", nullptr, false, fmState == FileManager::State::READY)) {
-                    SDL_Event event;
-                    event.type = SDL_QUIT;
-                    SDL_PushEvent(&event);
+                    ImGui::EndCombo();
                 }
                 ImGui::EndMenu();
             }
-            
-            if (ImGui::BeginMenu("Help")) {
-                if (ImGui::MenuItem(mMetricsWindow.getTitle().c_str(), nullptr, false, true)) {
-                    mMetricsWindow.setVisible(true);
-                }
-                if (ImGui::MenuItem(mAboutWindow.getTitle().c_str())) {
-                    mAboutWindow.setVisible(true);
-                }
+            if (ImGui::BeginMenu(ICON_MDI_SETTINGS " Configuration", true)) {
+                ImGui::MenuItem("TODO", nullptr, false, true);
                 ImGui::EndMenu();
             }
-
             ImGui::Separator();
-            ImGui::SameLine(); 
-            ImGui::Text("Status: %s", mStatusMessage.c_str());      
-
-            sprintf(temp, "%.1f FPS", io.Framerate);
-            ImGui::SameLine((ImGui::GetWindowContentRegionWidth() - ImGui::CalcTextSize(temp).x) - style.WindowPadding.x);
-            ImGui::Separator();
-            ImGui::SameLine();
-            ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogramHovered], "%s", temp);  
-
-            ImGui::EndMenuBar();
+            if (ImGui::MenuItem(ICON_MDI_LOGOUT " Quit", nullptr, false, fmState == FileManager::State::READY)) {
+                SDL_Event event;
+                event.type = SDL_QUIT;
+                SDL_PushEvent(&event);
+            }
+            ImGui::EndMenu();
+        }
+        
+        if (ImGui::BeginMenu("Help")) {
+            if (ImGui::MenuItem(mMetricsWindow.getTitle().c_str(), nullptr, false, true)) {
+                mMetricsWindow.setVisible(true);
+            }
+            if (ImGui::MenuItem(mAboutWindow.getTitle().c_str())) {
+                mAboutWindow.setVisible(true);
+            }
+            ImGui::EndMenu();
         }
 
-        // Workspace
-        if (mShowWorkspace) {
-            ImGui::Columns(2, "workspaceSeparator", false);
+        ImGui::Separator();
+        ImGui::Text("Status: %s", mStatusMessage.c_str());      
 
-            //Explorer
-            auto explorerData = (ExplorerFrame::FrameData) {
+        sprintf(temp, "%.1f FPS", io.Framerate);
+        ImGui::SameLine((ImGui::GetWindowContentRegionWidth() - ImGui::CalcTextSize(temp).x) - style.WindowPadding.x);
+        ImGui::Separator();
+        ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogramHovered], "%s", temp);  
+
+        ImGui::EndMenuBar();
+    }
+
+    // Workspace
+    if (mShowWorkspace) {
+        ImGui::Columns(2, "workspaceSeparator", false);
+
+        //Explorer
+        mExplorerFrame.render(
+            (ExplorerFrame::FrameData) {
                 .currentPath = mFileManager.getCurrentPath(),
                 .listing = mFileManager.getCurrentPathEntries(),
                 .isWorking = fmState == FileManager::State::LOADING
-            };
-            
-            mExplorerFrame.render(explorerData, [&](FileSystem::Entry item) {
+            },
+            [&](FileSystem::Entry item) {
                 handleExplorerItemClick(item, mFileManager.getCurrentPath());
             });
 
-            ImGui::NextColumn();
+        ImGui::NextColumn();
 
-            // Player
-            const auto playerData = (PlayerFrame::FrameData) {
+        // Player
+        mPlayerFrame.render(
+            (PlayerFrame::FrameData) {
                 .state = sndState,
                 .metaData = songMetaData
-            };
+            },
+            [&](PlayerFrame::ButtonId button) { 
+                handlePlayerButtonClick(button);
+            },
+            [&](int seek) { 
+                SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Seek: %d", seek);
+            });
 
-            mPlayerFrame.render(playerData,
-                [&](PlayerFrame::ButtonId button) { 
-                    handlePlayerButtonClick(button);
-                },
-                [&](int seek) { 
-                    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Seek: %d", seek);
-                });
-
-            // Song meta data
-            const auto metaData = (MetaDataFrame::FrameData) {
+        // Song meta data
+        mMetaDataFrame.render(
+            (MetaDataFrame::FrameData) {
                 .state = sndState,
                 .metaData = songMetaData
-            };
+            });
 
-            mMetaDataFrame.render(metaData);
-
-            ImGui::Columns(1);
-        }
-        
+        ImGui::Columns(1);
+    }        
     ImGui::End();
 
     // Popups

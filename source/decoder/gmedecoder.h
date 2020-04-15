@@ -30,7 +30,7 @@ class GmeDecoder : public Decoder {
         virtual bool prevTrack() override;
 
     private:
-		Music_Emu* mMusicEmu;
+        Music_Emu* mMusicEmu;
         int mCurrentTrack;
         
         GmeDecoder(const GmeDecoder& copy);

@@ -78,7 +78,7 @@ bool SoundEngine::setup(const std::filesystem::path dataPath) {
         SDL_UnlockMutex(mErrorMutex);
         
         return false;
-	}
+    }
 
     mAudioChannels = obtainedAudioSpec.channels;
     mAudioFrequency = obtainedAudioSpec.freq;
@@ -98,7 +98,7 @@ bool SoundEngine::setup(const std::filesystem::path dataPath) {
 
 void SoundEngine::cleanup() {
     stop();
-	SDL_CloseAudioDevice(mAudioDevice);
+    SDL_CloseAudioDevice(mAudioDevice);
 
     mCurrentDecoder = nullptr;
     for (const auto decoder : mDecoderList) {

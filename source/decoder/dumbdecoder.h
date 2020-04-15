@@ -27,9 +27,9 @@ class DumbDecoder : public Decoder {
         virtual int process(Uint8* stream, const int len) override;
 
     private:
-		DUH *mDuh;
-		DUMBFILE *mDumbFile;
-		DUH_SIGRENDERER *mSigRenderer;
+        DUH *mDuh;
+        DUMBFILE *mDumbFile;
+        DUH_SIGRENDERER *mSigRenderer;
 
         DumbDecoder(const DumbDecoder& copy);
 

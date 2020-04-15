@@ -35,23 +35,23 @@ OBJS		= source/platform/sdl/platform.o \
 			source/osp.o \
 			source/main.o
 
-PREFIX  = 
-CC	    = $(PREFIX)gcc-8
-CXX	    = $(PREFIX)g++-8
-AR	    = $(PREFIX)ar
-STRIP   = $(PREFIX)strip
+PREFIX	= 
+CC		= $(PREFIX)gcc-8
+CXX		= $(PREFIX)g++-8
+AR		= $(PREFIX)ar
+STRIP	= $(PREFIX)strip
 
 CFLAGS	    += -g -Wl,-q -Wall -O2 `sdl2-config --cflags` `pkg-config sc68 --cflags` `pkg-config libgme --cflags` `pkg-config dumb --cflags` \
 				-DIMGUI_DISABLE_DEMO_WINDOWS \
 				-DIMGUI_IMPL_OPENGL_LOADER_GLAD \
 				-Isource/port/sdl \
 				-DGIT_VERSION=\"$(GIT_VERSION)\" \
- 				-DGIT_COMMIT=\"$(GIT_COMMIT)\" \
- 				-DBUILD_DATE=\"$(BUILD_DATE)\"
+				-DGIT_COMMIT=\"$(GIT_COMMIT)\" \
+				-DBUILD_DATE=\"$(BUILD_DATE)\"
 
 CXXFLAGS    += $(CFLAGS) -fno-exceptions -std=gnu++17
 
-ASFLAGS	    = $(CXXFLAGS)
+ASFLAGS		= $(CXXFLAGS)
 LIBS		= -lstdc++fs `sdl2-config --libs` -lSDL2_image `pkg-config sc68 --libs` `pkg-config libgme --libs` `pkg-config dumb --libs` -lsidplayfp -lglad -ldl
 
 all:    $(TARGET).elf

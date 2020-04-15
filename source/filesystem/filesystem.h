@@ -20,8 +20,8 @@ class FileSystem {
         virtual void cleanup() = 0;
         
         virtual std::string getMountPoint() const = 0;
-        virtual bool navigate(std::string path, std::vector<Entry>& list) = 0;
-        virtual File* getFile(std::string path) const = 0;
+        virtual bool navigate(const std::string path, std::vector<Entry>& list) = 0;
+        virtual File* getFile(const std::string path) const = 0;
 
         std::string getError() const;
         
