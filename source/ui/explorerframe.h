@@ -12,6 +12,7 @@ class ExplorerFrame {
         struct FrameData {
             std::filesystem::path currentPath;
             std::vector<FileSystem::Entry> listing;
+            std::string selectedItemName;
             bool isWorking;
         };
 

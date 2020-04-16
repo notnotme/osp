@@ -193,6 +193,7 @@ void Osp::render() {
         mExplorerFrame.render({
                 .currentPath = mFileManager.getCurrentPath(),
                 .listing = mFileManager.getCurrentPathEntries(),
+                .selectedItemName = mFileManager.getCurrentSelectedItemName(),
                 .isWorking = fmState == FileManager::State::LOADING
             },
             [&](FileSystem::Entry item) {

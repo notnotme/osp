@@ -46,6 +46,7 @@ void FileManager::cleanup() {
     mCurrentPathStack.clear();
     mCurrentPathEntries.clear();
     mFileSystemList.clear();
+    mCurrentPathSelectedEntryName.clear();
 
     mCurrentFileSystem = nullptr;
     for (const auto fileSystem : mFileSystemList) {
@@ -81,10 +82,17 @@ std::vector<FileSystem::Entry> FileManager::getCurrentPathEntries() const {
     return mCurrentPathEntries;
 }
 
+std::string FileManager::getCurrentSelectedItemName() const {
+    return mCurrentPathSelectedEntryName.empty()
+        ? ""
+        : mCurrentPathSelectedEntryName.back();
+}
+
 void FileManager::clearPath() {
     mCurrentFileSystem = nullptr;
     mCurrentPathStack.clear();
     mCurrentPathEntries.clear();
+    mCurrentPathSelectedEntryName.clear();
     for (const auto fileSystem : mFileSystemList) {
         mCurrentPathEntries.push_back((FileSystem::Entry) {
             .folder = true,
@@ -130,6 +138,7 @@ bool FileManager::navigate(const std::string path) {
             for (const auto fileSystem : mFileSystemList) {
                 if (fileSystem->getMountPoint() == path) {
                     mCurrentFileSystem = fileSystem;
+                    mCurrentPathSelectedEntryName.push_back(path);
                     mCurrentPathStack.push_back(path);
                     break;
                 }
@@ -137,8 +146,17 @@ bool FileManager::navigate(const std::string path) {
         }
         else {
             if (path == "..") {
+                if(mCurrentPathSelectedEntryName.size() > mCurrentPathStack.size()) {
+                    // We selected something inside the current folder
+                    mCurrentPathSelectedEntryName.pop_back();
+                }
                 mCurrentPathStack.pop_back();
             } else {
+                if(mCurrentPathSelectedEntryName.size() > mCurrentPathStack.size()) {
+                    // We selected something inside the current folder
+                    mCurrentPathSelectedEntryName.pop_back();
+                }
+                mCurrentPathSelectedEntryName.push_back(path);
                 mCurrentPathStack.push_back(path);
             }
             SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Navigate to: '%s/%s'.\n", mCurrentPath == "/" ? "" : mCurrentPath.c_str(), path.c_str());
@@ -151,6 +169,12 @@ bool FileManager::navigate(const std::string path) {
 }
 
 File* FileManager::getFile(const std::string path) {
+    if(mCurrentPathSelectedEntryName.size() > mCurrentPathStack.size()) {
+        // We selected something inside the current folder
+        mCurrentPathSelectedEntryName.pop_back();
+    }
+    mCurrentPathSelectedEntryName.push_back(std::filesystem::path(path).filename());
+
     if (mCurrentFileSystem != nullptr) {
         return mCurrentFileSystem->getFile(path);
     }

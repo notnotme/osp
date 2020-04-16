@@ -5,6 +5,7 @@
 
 #include <string>
 #include <filesystem>
+#include <list>
 #include <vector>
 #include <memory>
 #include <SDL2/SDL_mutex.h>
@@ -27,6 +28,7 @@ class FileManager {
    
         std::filesystem::path getCurrentPath() const;
         std::vector<FileSystem::Entry> getCurrentPathEntries() const;
+        std::string getCurrentSelectedItemName() const;
         bool navigate(const std::string path);
         File* getFile(const std::string path);
         State getState() const;
@@ -40,8 +42,9 @@ class FileManager {
         State mState;
         SDL_Thread* mFileSystemThread;
 
+        std::list<std::string> mCurrentPathStack;
+        std::list<std::string> mCurrentPathSelectedEntryName;
         std::filesystem::path mCurrentPath;
-        std::vector<std::string> mCurrentPathStack;
         std::vector<FileSystem::Entry> mCurrentPathEntries;
         
         std::vector<std::shared_ptr<FileSystem>> mFileSystemList;

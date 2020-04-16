@@ -37,7 +37,7 @@ void ExplorerFrame::renderExplorer(const FrameData& frameData, std::function<voi
 
                 ImGui::TableSetColumnIndex(0);
                 sprintf(temp, "%s %s", item.folder ? ICON_MDI_FOLDER_OPEN : ICON_MDI_FILE, item.name.c_str());
-                if (ImGui::Selectable(temp, false, ImGuiSelectableFlags_SpanAllColumns)) {
+                if (ImGui::Selectable(temp, item.name == frameData.selectedItemName, ImGuiSelectableFlags_SpanAllColumns)) {
                     onItemClick(item);
                 }
 
