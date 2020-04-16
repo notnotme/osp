@@ -17,7 +17,15 @@ void PlayerFrame::renderTitleAndSeekBar(const FrameData& frameData) {
             : frameData.metaData.diskInformation.title.c_str()
         : frameData.metaData.trackInformation.title.c_str();
 
-    ImGui::Text(ICON_MDI_MUSIC " Playing: %s", title);
+    switch (frameData.state) {
+        case SoundEngine::State::STARTED:
+        case SoundEngine::State::PAUSED:
+            ImGui::Text(ICON_MDI_MUSIC " Playing: %s", title);
+            break;
+        default:
+            ImGui::TextUnformatted(ICON_MDI_MUSIC " Playing: None.");
+            break;
+    }
 }
 
 void PlayerFrame::renderButtonBar(const FrameData& frameData, bool disabled, std::function<void (ButtonId)> onButtonClick) {

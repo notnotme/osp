@@ -18,7 +18,7 @@ class Decoder {
         };
 
         struct TrackInformation {
-            std::string title = "None.";
+            std::string title = "";
             std::string author = "";
             std::string comment = "";
             std::string copyright = "";

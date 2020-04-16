@@ -79,7 +79,7 @@ void Osp::render() {
         // SoundEngine states
         switch (sndState) {
             case SoundEngine::State::FINISHED_NATURAL:
-                selectNextTrack(true);
+                selectNextTrack(true, true);
                 break;
             case SoundEngine::State::LOADING:
                 // Add a little rotating bar to the text
@@ -95,6 +95,9 @@ void Osp::render() {
             case SoundEngine::State::FINISHED:        
             case SoundEngine::State::READY:
                 mStatusMessage = "Ready.";
+                break;
+            case SoundEngine::State::LOADED:
+                mStatusMessage = "Song loaded, ready to play.";
                 break;
             case SoundEngine::State::ERROR:
                 mStatusMessage = mSoundEngine.getError();
@@ -229,7 +232,7 @@ void Osp::render() {
     mAboutWindow.render();
 }
 
-void Osp::selectNextTrack(bool skipInvalid) {
+void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {
     if (!mSoundEngine.nextTrack()) {
         if (auto nextFileName = getNextFileName();
             nextFileName.empty() == false) {
@@ -237,8 +240,10 @@ void Osp::selectNextTrack(bool skipInvalid) {
             if (!engineLoad(mFileManager.getCurrentPath(), nextFileName)) {
                 // Go until we found something to play
                 if (skipInvalid) {
-                    selectNextTrack(skipInvalid);
+                    selectNextTrack(skipInvalid, autoPlay);
                 }
+            } else if (autoPlay) {
+                mSoundEngine.play();
             }
         }
         else {
@@ -247,7 +252,7 @@ void Osp::selectNextTrack(bool skipInvalid) {
     }
 }
 
-void Osp::selectPrevTrack(bool skipInvalid) {
+void Osp::selectPrevTrack(bool skipInvalid, bool autoPlay) {
     if (!mSoundEngine.prevTrack()) {
         if (auto prevFileName = getPrevFileName();
             prevFileName.empty() == false) {
@@ -255,8 +260,10 @@ void Osp::selectPrevTrack(bool skipInvalid) {
             if (!engineLoad(mFileManager.getCurrentPath(), prevFileName)) {
                 // Go until we found something to play
                 if (skipInvalid) {
-                    selectPrevTrack(skipInvalid);
+                    selectPrevTrack(skipInvalid, autoPlay);
                 }
+            } else if (autoPlay) {
+                mSoundEngine.play();
             }
         }
         else {
@@ -364,7 +371,9 @@ void Osp::handleExplorerItemClick(const FileSystem::Entry item, const std::files
         }
     } else {
         if (mLastFileSelected != item.name || sndState == SoundEngine::State::FINISHED) {
-            engineLoad(mFileManager.getCurrentPath(), item.name);
+            if (engineLoad(mFileManager.getCurrentPath(), item.name)) {
+                mSoundEngine.play();
+            }
         }
     }
 }
@@ -379,11 +388,14 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                     mSoundEngine.pause();
                     break;
                 case SoundEngine::State::PAUSED:
+                case SoundEngine::State::LOADED:
                     mSoundEngine.play();
                     break;
                 case SoundEngine::State::FINISHED:
                     if (! mLastFileSelected.empty()) {
-                        engineLoad(mFileManager.getCurrentPath(), mLastFileSelected);
+                        if (engineLoad(mFileManager.getCurrentPath(), mLastFileSelected)) {
+                            mSoundEngine.play();
+                        }
                     }
                     break;
                 default:
@@ -405,7 +417,8 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                 case SoundEngine::State::STARTED:
                 case SoundEngine::State::PAUSED:
                 case SoundEngine::State::FINISHED:
-                    selectNextTrack(true);
+                case SoundEngine::State::LOADED:
+                    selectNextTrack(true, sndState == SoundEngine::State::STARTED);
                     break;
                 default:
                     break;
@@ -416,7 +429,8 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                 case SoundEngine::State::STARTED:
                 case SoundEngine::State::PAUSED:
                 case SoundEngine::State::FINISHED:
-                    selectPrevTrack(true);
+                case SoundEngine::State::LOADED:
+                    selectPrevTrack(true, sndState == SoundEngine::State::STARTED);
                     break;
                 default:
                     break;

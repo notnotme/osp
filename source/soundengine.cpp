@@ -177,8 +177,6 @@ bool SoundEngine::load(const std::shared_ptr<File> file) {
     SDL_LockMutex(mStateMutex);
         mState = LOADED;
     SDL_UnlockMutex(mStateMutex);
-    
-    play();
     return true;
 }
 
@@ -217,6 +215,7 @@ bool SoundEngine::nextTrack() {
     switch (mState) {
         case SoundEngine::State::STARTED:
         case SoundEngine::State::PAUSED:
+        case SoundEngine::State::FINISHED_NATURAL:
             if (mCurrentDecoder != nullptr) {
                 SDL_PauseAudioDevice(mAudioDevice, true);
                 SDL_ClearQueuedAudio(mAudioDevice);
@@ -240,6 +239,7 @@ bool SoundEngine::prevTrack() {
     switch (mState) {
         case SoundEngine::State::STARTED:
         case SoundEngine::State::PAUSED:
+        case SoundEngine::State::FINISHED_NATURAL:
             if (mCurrentDecoder != nullptr) {
                 SDL_PauseAudioDevice(mAudioDevice, true);
                 SDL_ClearQueuedAudio(mAudioDevice);

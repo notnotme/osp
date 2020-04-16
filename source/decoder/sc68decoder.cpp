@@ -46,6 +46,11 @@ SDL_AudioFormat Sc68Decoder::getAudioSampleFormat() const {
 }
 
 const Decoder::MetaData Sc68Decoder::getMetaData() {
+    if (mSC68 == nullptr) {
+        return mMetaData;
+    }
+
+    mMetaData.trackInformation.position = sc68_cntl(mSC68, SC68_GET_POS) / 1000;
     return mMetaData;
 }
 
@@ -72,10 +77,7 @@ bool Sc68Decoder::play(const std::vector<char> buffer) {
         return false;
     }
 
-    mCurrentTrack = 1;
-    if (auto track = sc68_play(mSC68, mCurrentTrack, 1);
-        track < 0) {
-            
+    if (sc68_play(mSC68, SC68_DEF_TRACK, 0) < 0) {
         sc68_close(mSC68);
         mIsSongLoaded = false;
         mError = std::string("No track to play");
@@ -84,7 +86,9 @@ bool Sc68Decoder::play(const std::vector<char> buffer) {
 
     mMetaData = MetaData();
     parseDiskMetaData();
-    parseTrackMetaData();
+
+    mCurrentTrack = sc68_cntl(mSC68, SC68_GET_DEFTRK);
+    parseTrackMetaData(mCurrentTrack);
 
     mIsSongLoaded = true;
     return true;
@@ -100,11 +104,11 @@ void Sc68Decoder::stop() {
 bool Sc68Decoder::nextTrack() {
     if (mCurrentTrack < mMetaData.diskInformation.trackCount) {
         mCurrentTrack++;
-        if (sc68_play(mSC68, mCurrentTrack, 1) != 0) {
+        if (sc68_play(mSC68, mCurrentTrack, 0) != 0) {
             return false;
         }
 
-        parseTrackMetaData();
+        parseTrackMetaData(mCurrentTrack);
         return true;
     }
 
@@ -114,11 +118,11 @@ bool Sc68Decoder::nextTrack() {
 bool Sc68Decoder::prevTrack() {
     if (mCurrentTrack > 1) {
         mCurrentTrack--;
-        if (sc68_play(mSC68, mCurrentTrack, 1) != 0) {
+        if (sc68_play(mSC68, mCurrentTrack, 0) != 0) {
             return false;
         }
         
-        parseTrackMetaData();
+        parseTrackMetaData(mCurrentTrack);
         return true;
     }
 
@@ -137,6 +141,11 @@ int Sc68Decoder::process(Uint8* stream, const int len) {
         }
     }
 
+    if ((retCode & SC68_CHANGE)) {
+        mCurrentTrack = sc68_cntl(mSC68, SC68_GET_TRACK);
+        parseTrackMetaData(mCurrentTrack);
+    }
+
     return 0;
 }
 
@@ -153,12 +162,12 @@ void Sc68Decoder::parseDiskMetaData() {
     }
 }
 
-void Sc68Decoder::parseTrackMetaData() {
+void Sc68Decoder::parseTrackMetaData(int track) {
     sc68_music_info_t musicInfo;
-    if (sc68_music_info(mSC68, &musicInfo, mCurrentTrack, 0) == 0) {
+    if (sc68_music_info(mSC68, &musicInfo, track, 0) == 0) {
         mMetaData.trackInformation.title = musicInfo.title;
         mMetaData.trackInformation.author = musicInfo.artist;
-        mMetaData.trackInformation.trackNumber = musicInfo.trk.track;
+        mMetaData.trackInformation.trackNumber = track;
         mMetaData.trackInformation.duration = (int) (musicInfo.trk.time_ms / 1000);
     } else {
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SC68: Cannot get track metadata.\n");

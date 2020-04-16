@@ -37,6 +37,6 @@ class Sc68Decoder : public Decoder {
 
         Sc68Decoder(const Sc68Decoder& copy);
         void parseDiskMetaData();
-        void parseTrackMetaData();
+        void parseTrackMetaData(int track);
 
 };

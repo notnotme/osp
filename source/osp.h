@@ -44,8 +44,8 @@ class Osp {
         
         Osp(const Osp& copy);
 
-        void selectNextTrack(bool skipInvalid);
-        void selectPrevTrack(bool skipInvalid);
+        void selectNextTrack(bool skipInvalid, bool autoPlay);
+        void selectPrevTrack(bool skipInvalid, bool autoPlay);
         std::string getPrevFileName() const;
         std::string getNextFileName() const;
         bool engineLoad(std::string path, std::string filename);
