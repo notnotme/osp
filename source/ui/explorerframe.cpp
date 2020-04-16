@@ -27,10 +27,10 @@ void ExplorerFrame::renderExplorer(const FrameData& frameData, std::function<voi
         ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_None, 0.20f);
         ImGui::TableAutoHeaders();
 
+        char temp[256];
         ImGuiListClipper clipper;
         clipper.Begin(frameData.listing.size());
         while (clipper.Step()) {
-            char temp[256];
             for (auto row=clipper.DisplayStart; row<clipper.DisplayEnd; row++) {
                 const auto item = frameData.listing[row];
                 ImGui::TableNextRow();
@@ -42,8 +42,10 @@ void ExplorerFrame::renderExplorer(const FrameData& frameData, std::function<voi
                 }
 
                 ImGui::TableSetColumnIndex(1);
-                sprintf(temp, "%10u Kb", (unsigned int) item.size / 1024);
-                ImGui::TextUnformatted(temp);
+                if (!item.folder) {
+                    sprintf(temp, "%10u Kb", (unsigned int) item.size / 1024);
+                    ImGui::TextUnformatted(temp);
+                }
             }
         }
         ImGui::EndTable();
