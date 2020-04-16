@@ -1,7 +1,6 @@
 #pragma once
 
 #include <string>
-#include <SDL2/SDL.h>
 
 class Window {
 
@@ -9,9 +8,9 @@ class Window {
         Window(const std::string title);
         virtual ~Window();
 
-        virtual std::string getTitle();
+        virtual std::string getTitle() const;
         void setVisible(bool visible);
-        bool isVisible();
+        bool isVisible() const;
         
     protected:
         std::string mTitle;

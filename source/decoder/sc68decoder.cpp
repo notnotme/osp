@@ -12,14 +12,17 @@ Sc68Decoder::~Sc68Decoder() {
 
 bool Sc68Decoder::setup() {
     if(sc68_init(0)) {
-        mError = std::string("init sc68 error.");
+        mError = "init sc68 error.";
         return false;
     }
 
     memset(&mSC68Config, 0, sizeof(mSC68Config));
     mSC68Config.sampling_rate = 48000;
-    if (mSC68 = sc68_create(&mSC68Config), !mSC68) {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "sc68 unable to create : %s", sc68_error(mSC68));
+    if (mSC68 = sc68_create(&mSC68Config),
+        mSC68 == nullptr) {
+
+        mError = sc68_error(mSC68);
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SC68: %s", sc68_error(mSC68));
         return false;
     }
 
@@ -54,7 +57,7 @@ std::string Sc68Decoder::getName() {
     return "sc68";
 }
 
-bool Sc68Decoder::canRead(const std::string extention) {
+bool Sc68Decoder::canRead(const std::string extention) const {
     if(extention == ".snd") { return true; }
     if(extention == ".sndh") { return true; }
     if(extention == ".sc68") { return true; }
@@ -64,13 +67,15 @@ bool Sc68Decoder::canRead(const std::string extention) {
 bool Sc68Decoder::play(const std::vector<char> buffer) {
     if (sc68_load_mem(mSC68, buffer.data(), buffer.size()) != 0) {
         mIsSongLoaded = false;
-        mError = std::string("Can't play sc68 file: ").append(sc68_error(mSC68));
+        mError = std::string("Can't play file.");
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SC68: %s", sc68_error(mSC68));
         return false;
     }
 
     mCurrentTrack = 1;
-    auto track = sc68_play(mSC68, mCurrentTrack, 1);
-    if (track < 0) {
+    if (auto track = sc68_play(mSC68, mCurrentTrack, 1);
+        track < 0) {
+            
         sc68_close(mSC68);
         mIsSongLoaded = false;
         mError = std::string("No track to play");

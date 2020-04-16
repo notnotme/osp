@@ -1,10 +1,10 @@
 #pragma once
 
 #include "../filesystem/filesystem.h"
+
 #include <filesystem>
 #include <vector>
 #include <functional>
-#include <SDL2/SDL.h>
 
 class ExplorerFrame {
 

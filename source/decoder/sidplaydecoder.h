@@ -23,7 +23,7 @@ class SidPlayDecoder : public Decoder {
         virtual uint8_t getAudioChannels() const override;
         virtual SDL_AudioFormat getAudioSampleFormat() const override;
       
-        virtual bool canRead(const std::string extention) override;
+        virtual bool canRead(const std::string extention) const override;
         virtual const MetaData getMetaData() override;
         virtual bool play(const std::vector<char> buffer) override;
         virtual void stop() override;

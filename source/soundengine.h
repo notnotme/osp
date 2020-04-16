@@ -2,6 +2,7 @@
 
 #include "filesystem/file.h"
 #include "decoder/decoder.h"
+
 #include <string>
 #include <vector>
 #include <filesystem>
@@ -42,6 +43,7 @@ class SoundEngine {
         void clearError();
 
     private:
+        const Decoder::MetaData mEmptyMetaData;
         SDL_mutex* mErrorMutex;
         SDL_mutex* mStateMutex;
         SDL_mutex* mDecoderMutex;

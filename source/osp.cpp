@@ -3,6 +3,8 @@
 #include "imgui/imgui.h"
 #include "imgui/imgui_internal.h"
 #include "IconsMaterialDesignIcons_c.h"
+
+#include <SDL2/SDL_events.h>
 #include <SDL2/SDL_log.h>
 
 Osp::Osp() :
@@ -188,8 +190,7 @@ void Osp::render() {
         ImGui::Columns(2, "workspaceSeparator", false);
 
         //Explorer
-        mExplorerFrame.render(
-            (ExplorerFrame::FrameData) {
+        mExplorerFrame.render({
                 .currentPath = mFileManager.getCurrentPath(),
                 .listing = mFileManager.getCurrentPathEntries(),
                 .isWorking = fmState == FileManager::State::LOADING
@@ -201,21 +202,16 @@ void Osp::render() {
         ImGui::NextColumn();
 
         // Player
-        mPlayerFrame.render(
-            (PlayerFrame::FrameData) {
+        mPlayerFrame.render({
                 .state = sndState,
                 .metaData = songMetaData
             },
             [&](PlayerFrame::ButtonId button) { 
                 handlePlayerButtonClick(button);
-            },
-            [&](int seek) { 
-                SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Seek: %d", seek);
             });
 
         // Song meta data
-        mMetaDataFrame.render(
-            (MetaDataFrame::FrameData) {
+        mMetaDataFrame.render({
                 .state = sndState,
                 .metaData = songMetaData
             });
@@ -229,7 +225,7 @@ void Osp::render() {
     mAboutWindow.render();
 }
 
-void Osp::handleExplorerItemClick(FileSystem::Entry item, std::filesystem::path currentExplorerPath) {
+void Osp::handleExplorerItemClick(const FileSystem::Entry item, const std::filesystem::path currentExplorerPath) {
     const auto sndState = mSoundEngine.getState();
 
     if (item.folder) {
@@ -245,7 +241,8 @@ void Osp::handleExplorerItemClick(FileSystem::Entry item, std::filesystem::path 
         }
     } else {
         // todo threading for load song ?
-        const auto file = std::shared_ptr<File>(mFileManager.getFile(currentExplorerPath.append(item.name)));
+        const auto filePath = std::string(currentExplorerPath).append("/").append(item.name);
+        const auto file = std::shared_ptr<File>(mFileManager.getFile(filePath));
         if (! mSoundEngine.load(file)) {
                 mStatusMessage = std::string("Error loading file: ").append(mSoundEngine.getError());
                 SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", mStatusMessage.c_str());
@@ -253,7 +250,7 @@ void Osp::handleExplorerItemClick(FileSystem::Entry item, std::filesystem::path 
     }
 }
 
-void Osp::handlePlayerButtonClick(PlayerFrame::ButtonId button) {
+void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
     const auto sndState = mSoundEngine.getState();
 
     switch (button) {

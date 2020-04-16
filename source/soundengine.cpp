@@ -47,7 +47,7 @@ Decoder::MetaData SoundEngine::getMetaData() const {
         return mCurrentDecoder->getMetaData();
     }
 
-    return Decoder::MetaData();
+    return mEmptyMetaData;
 }
 
 void SoundEngine::clearError() {
@@ -68,11 +68,13 @@ bool SoundEngine::setup(const std::filesystem::path dataPath) {
     wantedAudioSpec.userdata = this;
     wantedAudioSpec.samples = 4096; // 2048 for better latency ?
     wantedAudioSpec.channels = 2;
-    wantedAudioSpec.format = AUDIO_S16SYS; // AUDIO_S16SYS
+    wantedAudioSpec.format = AUDIO_S16SYS;
     wantedAudioSpec.freq = 48000;
 
-    mAudioDevice = SDL_OpenAudioDevice(nullptr, 0, &wantedAudioSpec, &obtainedAudioSpec, 0);
-    if (mAudioDevice < 0 ){
+    // todo check if sdl will resample the data and warn user
+    if (mAudioDevice = SDL_OpenAudioDevice(nullptr, 0, &wantedAudioSpec, &obtainedAudioSpec, 0);
+        mAudioDevice < 0 ) {
+
         SDL_LockMutex(mErrorMutex);
         mError = std::string("Couldn't open audio device: ").append(SDL_GetError());
         SDL_UnlockMutex(mErrorMutex);
@@ -114,20 +116,6 @@ bool SoundEngine::load(const std::shared_ptr<File> file) {
     //Stop any previous songs
     stop();
 
-    // Get file content from File instance
-    std::vector<char> buffer;
-    if (!file->getAsBuffer(buffer)) {
-        SDL_LockMutex(mStateMutex);
-            mState = ERROR;
-        SDL_UnlockMutex(mStateMutex);
-
-        SDL_LockMutex(mErrorMutex);
-        mError = std::string("Can't read file: ").append(path);
-        SDL_UnlockMutex(mErrorMutex);
-
-        return false;
-    }
-
     // Try to find if any decoder can handle the file
     auto extention = std::string(path.extension());
     std::transform(extention.begin(), extention.end(), extention.begin(), ::tolower);
@@ -136,17 +124,6 @@ bool SoundEngine::load(const std::shared_ptr<File> file) {
     for (const auto decoder : mDecoderList) {
         if (decoder->canRead(extention)) {
             SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Selected decoder: %s.\n", decoder->getName().c_str());
-
-            // Try to play song
-            if (! decoder->play(buffer)) {
-                decoder->stop();
-                SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Decoder %s can't play song: %s.\n",
-                    decoder->getName().c_str(), decoder->getError().c_str());
-
-                // Check if another decoder can handle it          
-                continue;
-            }
-
             mCurrentDecoder = decoder;
             break;
         }
@@ -160,10 +137,32 @@ bool SoundEngine::load(const std::shared_ptr<File> file) {
         SDL_UnlockMutex(mStateMutex);
 
         SDL_LockMutex(mErrorMutex);
-        mError = std::string("No decoder can handle this file: ").append(path);
+        mError = std::string("No decoder can handle \"").append(path).append("\"");
         SDL_UnlockMutex(mErrorMutex);
 
         return false;
+    }
+
+    // Get file content from File instance
+    std::vector<char> buffer;
+    if (!file->getAsBuffer(buffer)) {
+        SDL_LockMutex(mStateMutex);
+            mState = ERROR;
+        SDL_UnlockMutex(mStateMutex);
+
+        SDL_LockMutex(mErrorMutex);
+        mError = std::string("Can't read file \"").append(path).append("\"");
+        SDL_UnlockMutex(mErrorMutex);
+
+        return false;
+    }
+
+    // Try to play song
+    if (! mCurrentDecoder->play(buffer)) {
+        mCurrentDecoder->stop();
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Decoder %s can't play song \"%s\".\n",
+            mCurrentDecoder->getName().c_str(), mCurrentDecoder->getError().c_str());
+
     }
 
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Song is read to play %s ...\n", path.c_str());
@@ -256,37 +255,41 @@ bool SoundEngine::prevTrack() {
 
 
 void SoundEngine::loadAllDecoder(std::filesystem::path dataPath) {
-    const auto dumbDecoder = std::shared_ptr<Decoder>(new DumbDecoder());
-    if (!dumbDecoder->setup()) {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot load GmeDecoder.\n");
-        dumbDecoder->cleanup();
+    if (const auto decoder = std::shared_ptr<Decoder>(new DumbDecoder());
+        decoder->setup() == false) {
+        
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot load GME.\n");
+        decoder->cleanup();
     } else {
-        mDecoderList.push_back(dumbDecoder);
+        mDecoderList.push_back(decoder);
     }
 
-    const auto gmeDecoder = std::shared_ptr<Decoder>(new GmeDecoder());
-    if (!gmeDecoder->setup()) {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot load GmeDecoder.\n");
-        gmeDecoder->cleanup();
+    if (const auto decoder = std::shared_ptr<Decoder>(new GmeDecoder());
+        decoder->setup() == false) {
+        
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot load GME.\n");
+        decoder->cleanup();
     } else {
-        mDecoderList.push_back(gmeDecoder);
+        mDecoderList.push_back(decoder);
     }
 
-    const auto sc68Decoder = std::shared_ptr<Decoder>(new Sc68Decoder());
-    if (!sc68Decoder->setup()) {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot load Sc68Decoder.\n");
-        sc68Decoder->cleanup();
+    if (const auto decoder = std::shared_ptr<Decoder>(new Sc68Decoder());
+        decoder->setup() == false) {
+        
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot load SC68.\n");
+        decoder->cleanup();
     } else {
-        mDecoderList.push_back(sc68Decoder);
+        mDecoderList.push_back(decoder);
     }
 
     const auto sidplayDataPath = std::string(dataPath).append("/c64roms"); 
-    const auto sidplayDecoder = std::shared_ptr<Decoder>(new SidPlayDecoder(sidplayDataPath.c_str()));
-    if (!sidplayDecoder->setup()) {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot load SidPlayDecoder.\n");
-        sidplayDecoder->cleanup();
+    if (const auto decoder = std::shared_ptr<Decoder>(new SidPlayDecoder(sidplayDataPath));
+        decoder->setup() == false) {
+        
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot load SIDPLAYFP.\n");
+        decoder->cleanup();
     } else {
-        mDecoderList.push_back(sidplayDecoder);
+        mDecoderList.push_back(decoder);
     }
 }
 

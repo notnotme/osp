@@ -2,7 +2,9 @@
 
 #include "platform.h"
 #include "filesystem/localfilesystem.h"
+
 #include <algorithm>
+#include <SDL2/SDL_log.h>
 
 FileManager::FileManager() :
     mErrorMutex(SDL_CreateMutex()),
@@ -134,7 +136,6 @@ bool FileManager::navigate(const std::string path) {
             }
         }
         else {
-            // Navigate using the current file system
             if (path == "..") {
                 mCurrentPathStack.pop_back();
             } else {
@@ -143,6 +144,7 @@ bool FileManager::navigate(const std::string path) {
             SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Navigate to: '%s/%s'.\n", mCurrentPath == "/" ? "" : mCurrentPath.c_str(), path.c_str());
         }
 
+        // Navigate using the current file system
         buildPath();
         return startWorkingThread();
     }
@@ -161,12 +163,13 @@ File* FileManager::getFile(const std::string path) {
 }
 
 bool FileManager::initializeFileSystems() {
-    const auto localFileSystem = std::shared_ptr<FileSystem>(new LocalFileSystem(DEFAULT_LOCAL_FS_PATH));
-    if (!localFileSystem->setup()) {
+    if (const auto fileSystem = std::shared_ptr<FileSystem>(new LocalFileSystem(DEFAULT_LOCAL_FS_PATH));
+        fileSystem->setup() == false) {
+
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot load LocalFileSystem (%s).\n", DEFAULT_LOCAL_FS_PATH);
-        localFileSystem->cleanup();
+        fileSystem->cleanup();
     } else {
-        mFileSystemList.push_back(localFileSystem);
+        mFileSystemList.push_back(fileSystem);
     }
     
     return true;
@@ -179,8 +182,9 @@ bool FileManager::startWorkingThread() {
         mFileSystemThread = nullptr;
     }
 
-    mFileSystemThread = SDL_CreateThread(FileManager::fileSystemThreadFunc, "OSP-FM-Thread", this);
-    if (mFileSystemThread == nullptr) {
+    if (mFileSystemThread = SDL_CreateThread(FileManager::fileSystemThreadFunc, "OSP-FM-Thread", this);
+        mFileSystemThread == nullptr) {
+            
         SDL_LockMutex(mStateMutex);
         mState = ERROR;
         SDL_UnlockMutex(mStateMutex);
@@ -205,7 +209,7 @@ int FileManager::fileSystemThreadFunc(void* userData) {
 
     // SDL_Delay(1000); 
 
-    // Get listing from filesystem
+    // Insert back navigation
     fileManager->mCurrentPathEntries.clear();
     fileManager->mCurrentPathEntries.insert(fileManager->mCurrentPathEntries.begin(), (FileSystem::Entry) {
         .folder = true,
@@ -213,7 +217,7 @@ int FileManager::fileSystemThreadFunc(void* userData) {
         .size = 0
     });
 
-    // sort by folder and filename asc
+    // Get listing from filesystem
     std::vector<FileSystem::Entry> list;
     if (!fileManager->mCurrentFileSystem->navigate(fileManager->mCurrentPath, list)) {
         SDL_LockMutex(fileManager->mStateMutex);
@@ -226,7 +230,8 @@ int FileManager::fileSystemThreadFunc(void* userData) {
         return 0;
     }
 
-    std::sort(list.begin(), list.end(), [&](FileSystem::Entry a, FileSystem::Entry b) {
+    // sort by folder and filename asc
+    std::sort(list.begin(), list.end(), [](FileSystem::Entry a, FileSystem::Entry b) {
         if (a.folder != b.folder) return a.folder;
         std::transform(a.name.begin(), a.name.end(), a.name.begin(), ::tolower);
         std::transform(b.name.begin(), b.name.end(), b.name.begin(), ::tolower);

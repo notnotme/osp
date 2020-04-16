@@ -48,7 +48,7 @@ std::string DumbDecoder::getName() {
     return "dumb";
 }
 
-bool DumbDecoder::canRead(const std::string extention) {
+bool DumbDecoder::canRead(const std::string extention) const {
     if(extention == ".it") { return true; }
     if(extention == ".xm") { return true; }
     if(extention == ".mod") { return true; }
@@ -66,15 +66,17 @@ bool DumbDecoder::canRead(const std::string extention) {
 }
 
 bool DumbDecoder::play(const std::vector<char> buffer) {
-    mDumbFile = dumbfile_open_memory(buffer.data(), buffer.size());
-    if (mDumbFile == nullptr) {
-        mError = "Dumb cannot open file.";
+    if (mDumbFile = dumbfile_open_memory(buffer.data(), buffer.size());
+        mDumbFile == nullptr) {
+        
+        mError = "Can't open file";
         return false;
     }
     
-    mDuh = dumb_read_any(mDumbFile, 0, 0);
-    if (mDuh == nullptr) {
-        mError = "Dumb cannot read file.";
+    if (mDuh = dumb_read_any(mDumbFile, 0, 0);
+        mDuh == nullptr) {
+        
+        mError = "Can't read file.";
         return false;
     }
 
@@ -120,9 +122,10 @@ void DumbDecoder::parseMetaData() {
         mMetaData.trackInformation.title = duh_get_tag(mDuh, "TITLE");
     }
 
-    auto data = duh_get_it_sigdata(mDuh);
-    auto messagePtr = (char*) dumb_it_sd_get_song_message(data);
-    if (messagePtr != nullptr) {
+    const auto data = duh_get_it_sigdata(mDuh);
+    if (const auto messagePtr = (char*) dumb_it_sd_get_song_message(data);
+        messagePtr != nullptr) {
+
         auto message = std::string(messagePtr);
         if (!message.empty()) {
             std::replace(message.begin(), message.end(), '\r', '\n');

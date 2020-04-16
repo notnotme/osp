@@ -79,7 +79,7 @@ char* SidPlayDecoder::loadRom(const std::string path, const size_t romSize) {
         buffer = new char[romSize];
         is.read(buffer, romSize);
     } else {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAY: %s\n", path.c_str());
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAYFP: %s\n", path.c_str());
     }
     is.close();
     return buffer;
@@ -89,7 +89,7 @@ std::string SidPlayDecoder::getName() {
     return "sidplayfp";
 }
 
-bool SidPlayDecoder::canRead(const std::string extention) {
+bool SidPlayDecoder::canRead(const std::string extention) const {
     if(extention == ".sid") { return true; }
     if(extention == ".psid") { return true; }
     if(extention == ".rsid") { return true; }
@@ -98,16 +98,19 @@ bool SidPlayDecoder::canRead(const std::string extention) {
 }
 
 bool SidPlayDecoder::play(const std::vector<char> buffer) {
-    mTune = std::unique_ptr<SidTune>(new SidTune((const uint_least8_t*) buffer.data(), buffer.size()));
-    if (!mTune->getStatus()) {
-        mError = std::string("Can't play sid: ").append(mTune->statusString());
+    if (mTune = std::unique_ptr<SidTune>(new SidTune((const uint_least8_t*) buffer.data(), buffer.size()));
+        mTune->getStatus() == false) {
+        
+        mError = std::string("Can't play file.");
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAYFP: %s", mTune->statusString());
         return false;
     }
 
     // Load tune into engine
     mTune->selectSong(0);
     if (!mPlayer.load(mTune.get())) {
-        mError = std::string("Can't play sid: ").append(mPlayer.error());
+        mError = std::string("Can't play file.");
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAYFP: %s", mPlayer.error());
         return false;
     }
 
@@ -125,8 +128,9 @@ void SidPlayDecoder::stop() {
 }
 
 bool SidPlayDecoder::nextTrack() {
-    const auto musicInfo = mTune->getInfo();
-    if ((int) musicInfo->currentSong() < mMetaData.diskInformation.trackCount) {
+    if (const auto musicInfo = mTune->getInfo();
+        (int) musicInfo->currentSong() < mMetaData.diskInformation.trackCount) {
+        
         mPlayer.load(nullptr);
         if (mTune->selectSong(musicInfo->currentSong()+1) == 0) {
             return false;
@@ -141,8 +145,9 @@ bool SidPlayDecoder::nextTrack() {
 }
 
 bool SidPlayDecoder::prevTrack() {
-    const auto musicInfo = mTune->getInfo();
-    if (musicInfo->currentSong() > 1) {
+    if (const auto musicInfo = mTune->getInfo();
+        musicInfo->currentSong() > 1) {
+
         mPlayer.load(nullptr);
         if (mTune->selectSong(musicInfo->currentSong()-1) == 0) {
             return false;
@@ -159,12 +164,14 @@ bool SidPlayDecoder::prevTrack() {
 int SidPlayDecoder::process(Uint8* stream, const int len) {
     if (mTune == nullptr) return -1;
 
-    unsigned int sz = len / 2;
+    unsigned int sz = len >> 1;
     unsigned int played = mPlayer.play((short*) stream, sz);
+
     if(played < sz && mPlayer.isPlaying()) {
-        mError = std::string("Sidplayfp error: ").append(mPlayer.error());
+        mError = mPlayer.error();
         return -1;
-    } else if (played < sz) {
+    }
+    else if (played < sz) {
         return 1;
     }
 
@@ -177,7 +184,7 @@ int SidPlayDecoder::process(Uint8* stream, const int len) {
 
 void SidPlayDecoder::parseDiskMetaData() {
     if (mTune == nullptr) {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAY: Cannot get track metadata.\n");
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAYFP: Cannot get track metadata.\n");
         return;
     }
 
@@ -188,7 +195,7 @@ void SidPlayDecoder::parseDiskMetaData() {
 
 void SidPlayDecoder::parseTrackMetaData() {
     if (mTune == nullptr) {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAY: Cannot get track metadata.\n");
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAYFP: Cannot get track metadata.\n");
         return;
     }
 

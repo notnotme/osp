@@ -1,8 +1,8 @@
 #include "localfilesystem.h"
 
 #include "localfile.h"
+
 #include <filesystem>
-#include <SDL2/SDL_log.h>
 
 LocalFileSystem::LocalFileSystem(const std::string mountPoint) :
     FileSystem(),
@@ -41,16 +41,17 @@ bool LocalFileSystem::navigate(const std::string path, std::vector<Entry>& list)
     // ensure empty list
     list.clear();
     for(const auto& p: iterator) {
-        auto filename = std::string(p.path().filename());
         // Hide hidden file, maybe an user option
-        if (filename[0] == '.') continue;
+        if (const auto filename = std::string(p.path().filename());
+            filename[0] != '.') {
 
-        if (p.is_regular_file() || p.is_directory()) {
-            list.push_back((FileSystem::Entry) {
-                .folder = p.is_directory(),
-                .name = filename,
-                .size = p.is_directory() ? 0 : p.file_size()
-            });
+            if (p.is_regular_file() || p.is_directory()) {
+                list.push_back((FileSystem::Entry) {
+                    .folder = p.is_directory(),
+                    .name = filename,
+                    .size = p.is_directory() ? 0 : p.file_size()
+                });
+            }
         }
     }
 

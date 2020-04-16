@@ -10,7 +10,7 @@ PlayerFrame::PlayerFrame() {
 PlayerFrame::~PlayerFrame() {
 }
 
-void PlayerFrame::renderTitleAndSeekBar(const FrameData& frameData, std::function<void (int)> onSeekChange) {
+void PlayerFrame::renderTitleAndSeekBar(const FrameData& frameData) {
     auto title = frameData.metaData.trackInformation.title.empty()
         ? frameData.metaData.diskInformation.title.empty()
             ? "n/a (No title provided)"
@@ -55,12 +55,12 @@ void PlayerFrame::renderButtonBar(const FrameData& frameData, bool disabled, std
     }
 }
 
-void PlayerFrame::render(const FrameData& frameData, std::function<void (ButtonId)> onButtonClick, std::function<void (int)> onSeekChange) {
+void PlayerFrame::render(const FrameData& frameData, std::function<void (ButtonId)> onButtonClick) {
     const auto disabled = frameData.state != SoundEngine::State::PAUSED
         && frameData.state != SoundEngine::State::STARTED;
     
     ImGui::BeginChild(ImGui::GetID("player"), ImVec2(0,ImGui::GetContentRegionAvail().y * 0.2f), false);
-    renderTitleAndSeekBar(frameData, onSeekChange);
+    renderTitleAndSeekBar(frameData);
     renderButtonBar(frameData, disabled, onButtonClick);
     ImGui::EndChild();
 }

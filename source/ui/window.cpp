@@ -12,10 +12,10 @@ void Window::setVisible(bool visible) {
     mVisible = visible;
 }
 
-bool Window::isVisible() {
+bool Window::isVisible() const {
     return mVisible;
 }
 
-std::string Window::getTitle() {
+std::string Window::getTitle() const {
     return mTitle;
 }

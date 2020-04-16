@@ -1,8 +1,8 @@
 #pragma once
 
 #include "window.h"
+
 #include <string>
-#include <SDL2/SDL.h>
 
 class MetricsWindow : public Window {
 

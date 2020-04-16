@@ -20,7 +20,10 @@ ImWchar iconRanges[] = { ICON_MIN_MDI, ICON_MAX_MDI, 0 };
 bool setup() {
     // Setup port specific code
     // Needed on switch to handle romfs and setup nxlink in debug build for example
-    PLATFORM_setup();
+    if (!PLATFORM_setup()) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "PLATFORM_setup\n");
+        return false;
+    }
 
     // init SDL subsystems
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0) {
@@ -37,10 +40,19 @@ bool setup() {
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    sdlWindow = SDL_CreateWindow("OSP", 0, 0, sdlWindowWidth, sdlWindowHeight, SDL_WINDOW_OPENGL);
-    if (!sdlWindow) {
+    if (sdlWindow = SDL_CreateWindow("OSP", 0, 0, sdlWindowWidth, sdlWindowHeight, SDL_WINDOW_OPENGL);
+        sdlWindow == nullptr) {
+
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_CreateWindow: %s\n", SDL_GetError());
         return false;
+    }
+
+    // Setup window icon (optional)
+    if (auto icon = IMG_Load("icon.jpg"); icon != nullptr) {
+        SDL_SetWindowIcon(sdlWindow, icon);
+        SDL_FreeSurface(icon);
+    } else {
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot set window icon: %s\n", SDL_GetError());
     }
 
     // Init GL context, Enable vsync and set initial window size, icon
@@ -48,14 +60,6 @@ bool setup() {
     SDL_GL_MakeCurrent(sdlWindow, glContext);
     SDL_GL_SetSwapInterval(1);
     SDL_SetWindowSize(sdlWindow, sdlWindowWidth, sdlWindowHeight);
-
-    const auto icon = IMG_Load("icon.jpg");
-    if (icon == nullptr) {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot set window icon: %s\n", SDL_GetError());
-    } else {
-        SDL_SetWindowIcon(sdlWindow, icon);
-        SDL_FreeSurface(icon);
-    }
 
     // todo: maybe move gl loading to PORT_loadGL
     if (gladLoadGL() == 0) {
@@ -112,7 +116,7 @@ bool setup() {
         return false;
     }
 
-    auto settings = (Osp::Settings) {
+    Osp::Settings settings {
         .mStyle = 0,
         .mFont = 0,
         .mDataPath = DATA_PATH
@@ -189,6 +193,7 @@ int main(int argc, char *argv[]) {
                     break;
             }
         }
+
         // This is used in the switch port to handle docked/handheld mode
         // maybe useful as well for other patform supporting SDL2
         PLATFORM_beforeRender(sdlWindow);

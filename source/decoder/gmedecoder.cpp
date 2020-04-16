@@ -47,7 +47,7 @@ std::string GmeDecoder::getName() {
 }
 
 
-bool GmeDecoder::canRead(const std::string extention) {
+bool GmeDecoder::canRead(const std::string extention) const {
     if(extention == ".ay") { return true; }
     if(extention == ".gbs") { return true; }
     if(extention == ".gym") { return true; }
@@ -64,15 +64,18 @@ bool GmeDecoder::canRead(const std::string extention) {
 
 bool GmeDecoder::play(const std::vector<char> buffer) {
     // Open file
-    auto header = gme_identify_header(buffer.data());
-    if (header[0] == '\0') {
-        mError = std::string("GME unknow format : ").append(gme_wrong_file_type);
+    if (const auto header = gme_identify_header(buffer.data());
+        header[0] == '\0') {
+
+        mError = std::string("Unknow format: ").append(gme_wrong_file_type);
         return false;
     }
 
-    auto error = gme_open_data(buffer.data(), buffer.size(), &mMusicEmu, 48000);
-    if(error != nullptr) {
-        mError = std::string("GME cannot load song: ").append(error);
+    if (const auto error = gme_open_data(buffer.data(), buffer.size(), &mMusicEmu, 48000);
+        error != nullptr) {
+
+        mError = std::string("Can't play file.");
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "GME: %s", error);
         return false;
     }
 
@@ -102,10 +105,11 @@ bool GmeDecoder::nextTrack() {
     if (mCurrentTrack < mMetaData.diskInformation.trackCount-1) {
 
         mCurrentTrack++;
-        const auto error = gme_start_track(mMusicEmu, mCurrentTrack);
-        if (error != nullptr) {
-            mError = std::string("GME error: ").append(error);
+        if (const auto error = gme_start_track(mMusicEmu, mCurrentTrack);
+            error != nullptr) {
             
+            mError = std::string("Can't select previous track.");
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "GME: %s", error);
             return false;
         }
     
@@ -120,9 +124,11 @@ bool GmeDecoder::prevTrack() {
     if (mCurrentTrack > 0) {
         
         mCurrentTrack--;
-        const auto error = gme_start_track(mMusicEmu, mCurrentTrack);
-        if (error != nullptr) {
-            mError = std::string("GME error: ").append(error);
+        if (const auto error = gme_start_track(mMusicEmu, mCurrentTrack);
+            error != nullptr) {
+
+            mError = std::string("Can't select previous track.");
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "GME: %s", error);
             return false;
         }
 
@@ -136,11 +142,13 @@ bool GmeDecoder::prevTrack() {
 int GmeDecoder::process(Uint8* stream, const int len) {
     if (mMusicEmu == nullptr) return -1;
 
-    auto error = gme_play(mMusicEmu, len >> 1, (short*) stream);
-    if (error != nullptr) {
-        mError = std::string("GME error: ").append(error);
+    if (const auto error = gme_play(mMusicEmu, len >> 1, (short*) stream);
+        error != nullptr) {
+
+        mError = error;
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "GME: %s", error);
         return -1;
-    };
+    }
 
     if (gme_track_ended(mMusicEmu)) {
         if (!nextTrack()) {

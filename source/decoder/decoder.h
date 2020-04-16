@@ -2,7 +2,6 @@
 
 #include <string>
 #include <vector>
-#include <map>
 #include <SDL2/SDL_audio.h>
 
 class Decoder {
@@ -45,7 +44,7 @@ class Decoder {
         virtual uint8_t getAudioChannels() const = 0;
         virtual SDL_AudioFormat getAudioSampleFormat() const = 0;
 
-        virtual bool canRead(const std::string extention) = 0;
+        virtual bool canRead(const std::string extention) const = 0;
         virtual const MetaData getMetaData() = 0;
         virtual bool play(const std::vector<char> buffer) = 0;
         virtual void stop() = 0;

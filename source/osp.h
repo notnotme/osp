@@ -43,7 +43,7 @@ class Osp {
 
         Osp(const Osp& copy);
 
-        void handlePlayerButtonClick(PlayerFrame::ButtonId button);
-        void handleExplorerItemClick(FileSystem::Entry item, std::filesystem::path currentExplorerPath);
+        void handlePlayerButtonClick(const PlayerFrame::ButtonId button);
+        void handleExplorerItemClick(const FileSystem::Entry item, const std::filesystem::path currentExplorerPath);
         
 };
