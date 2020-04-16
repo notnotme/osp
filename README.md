@@ -23,3 +23,11 @@ This source code is bundled with a version of ImGui (1.76WIP tables branch).
 And some font:
 - [Atari ST 8x16](https://www.dafont.com/fr/atari-st-8x16-system-font.font)
 - [Material Design Icons](https://materialdesignicons.com/)
+
+
+Some ideas:
+- Implement the ability to browse modland ftp
+- Emulate mouse or find a way to make the layout usable with gamepad
+- Create some custom controls using the ImGui framework
+- When the worspace is not visible, add options to show something (minigames, song information, shiny shaders...)
+- Battery save mode (black screen, stop refreshing or do it at 15fps ?)
