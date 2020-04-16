@@ -109,6 +109,10 @@ void SoundEngine::cleanup() {
     mDecoderList.clear();
 }
 
+bool SoundEngine::canHandle(const std::shared_ptr<File> file) {
+    return getDecoder(file) != nullptr;
+}
+
 bool SoundEngine::load(const std::shared_ptr<File> file) {
     const auto path = file->getPath();
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loading %s ...\n", path.c_str());
@@ -117,17 +121,8 @@ bool SoundEngine::load(const std::shared_ptr<File> file) {
     stop();
 
     // Try to find if any decoder can handle the file
-    auto extention = std::string(path.extension());
-    std::transform(extention.begin(), extention.end(), extention.begin(), ::tolower);
-
     SDL_LockMutex(mDecoderMutex);
-    for (const auto decoder : mDecoderList) {
-        if (decoder->canRead(extention)) {
-            SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Selected decoder: %s.\n", decoder->getName().c_str());
-            mCurrentDecoder = decoder;
-            break;
-        }
-    }
+    mCurrentDecoder = getDecoder(file);
     SDL_UnlockMutex(mDecoderMutex);
 
     // Decoder not found ? :/
@@ -176,21 +171,20 @@ bool SoundEngine::load(const std::shared_ptr<File> file) {
 }
 
 void SoundEngine::stop() {
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Stop current song.\n");
-
     SDL_PauseAudioDevice(mAudioDevice, true);
     SDL_ClearQueuedAudio(mAudioDevice);
 
-    SDL_LockMutex(mStateMutex);
-        mState = READY;
-    SDL_UnlockMutex(mStateMutex);
-
     if (mCurrentDecoder != nullptr) {
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Stop current decoder.\n");
         SDL_LockMutex(mDecoderMutex);
         mCurrentDecoder->stop();
         mCurrentDecoder = nullptr;
         SDL_UnlockMutex(mDecoderMutex);
     }
+
+    SDL_LockMutex(mStateMutex);
+        mState = FINISHED;
+    SDL_UnlockMutex(mStateMutex);
 }
 
 void SoundEngine::pause() {
@@ -291,6 +285,24 @@ void SoundEngine::loadAllDecoder(std::filesystem::path dataPath) {
     } else {
         mDecoderList.push_back(decoder);
     }
+}
+
+std::shared_ptr<Decoder> SoundEngine::getDecoder(const std::shared_ptr<File> file) {
+    // Try to find if any decoder can handle the file
+    auto extention = std::string(file->getPath().extension());
+    std::transform(extention.begin(), extention.end(), extention.begin(), ::tolower);
+
+    //SDL_LockMutex(mDecoderMutex);
+    std::shared_ptr<Decoder> decoderFound;
+    for (const auto decoder : mDecoderList) {
+        if (decoder->canRead(extention)) {
+            decoderFound = decoder;
+            break;
+        }
+    }
+    //SDL_UnlockMutex(mDecoderMutex);
+
+    return decoderFound;
 }
 
 void SoundEngine::audioCallback(void *userdata, Uint8* stream, int len) {

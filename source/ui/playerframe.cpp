@@ -21,11 +21,6 @@ void PlayerFrame::renderTitleAndSeekBar(const FrameData& frameData) {
 }
 
 void PlayerFrame::renderButtonBar(const FrameData& frameData, bool disabled, std::function<void (ButtonId)> onButtonClick) {
-    if (disabled) {
-        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, disabled);
-        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, 0.6f);
-    }
-
     ImGui::Spacing();
     ImGui::Spacing();
     ImGui::Columns(3, "playerColumns", false);
@@ -47,12 +42,6 @@ void PlayerFrame::renderButtonBar(const FrameData& frameData, bool disabled, std
     }
     ImGui::NextColumn();
     ImGui::Columns(1);
-
-    if (disabled) {
-        ImGui::PopItemFlag();
-        ImGui::PopStyleVar();
-        return;
-    }
 }
 
 void PlayerFrame::render(const FrameData& frameData, std::function<void (ButtonId)> onButtonClick) {

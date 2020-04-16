@@ -26,9 +26,9 @@ class FileManager {
         bool setup();
         void cleanup();
    
+        std::string getLastFolder() const;
         std::filesystem::path getCurrentPath() const;
         std::vector<FileSystem::Entry> getCurrentPathEntries() const;
-        std::string getCurrentSelectedItemName() const;
         bool navigate(const std::string path);
         File* getFile(const std::string path);
         State getState() const;
@@ -43,7 +43,7 @@ class FileManager {
         SDL_Thread* mFileSystemThread;
 
         std::list<std::string> mCurrentPathStack;
-        std::list<std::string> mCurrentPathSelectedEntryName;
+        std::list<std::string> mLastFolder;
         std::filesystem::path mCurrentPath;
         std::vector<FileSystem::Entry> mCurrentPathEntries;
         

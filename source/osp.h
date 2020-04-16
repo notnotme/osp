@@ -40,9 +40,15 @@ class Osp {
         SoundEngine mSoundEngine;
         Settings mSettings;
         std::string mStatusMessage;
-
+        std::string mLastFileSelected;
+        
         Osp(const Osp& copy);
 
+        void selectNextTrack(bool skipInvalid);
+        void selectPrevTrack(bool skipInvalid);
+        std::string getPrevFileName() const;
+        std::string getNextFileName() const;
+        bool engineLoad(std::string path, std::string filename);
         void handlePlayerButtonClick(const PlayerFrame::ButtonId button);
         void handleExplorerItemClick(const FileSystem::Entry item, const std::filesystem::path currentExplorerPath);
         

@@ -79,9 +79,7 @@ void Osp::render() {
         // SoundEngine states
         switch (sndState) {
             case SoundEngine::State::FINISHED_NATURAL:
-                // todo: goto next track / file
-            case SoundEngine::State::FINISHED:        
-                mSoundEngine.stop();
+                selectNextTrack(true);
                 break;
             case SoundEngine::State::LOADING:
                 // Add a little rotating bar to the text
@@ -94,6 +92,7 @@ void Osp::render() {
             case SoundEngine::State::PAUSED:
                 mStatusMessage = "Paused.";
                 break;
+            case SoundEngine::State::FINISHED:        
             case SoundEngine::State::READY:
                 mStatusMessage = "Ready.";
                 break;
@@ -190,10 +189,14 @@ void Osp::render() {
         ImGui::Columns(2, "workspaceSeparator", false);
 
         //Explorer
+        const std::string selectedItem = !mLastFileSelected.empty()
+            ? mLastFileSelected
+            : mFileManager.getLastFolder();
+
         mExplorerFrame.render({
                 .currentPath = mFileManager.getCurrentPath(),
                 .listing = mFileManager.getCurrentPathEntries(),
-                .selectedItemName = mFileManager.getCurrentSelectedItemName(),
+                .selectedItemName = selectedItem,
                 .isWorking = fmState == FileManager::State::LOADING
             },
             [&](FileSystem::Entry item) {
@@ -226,10 +229,129 @@ void Osp::render() {
     mAboutWindow.render();
 }
 
+void Osp::selectNextTrack(bool skipInvalid) {
+    if (!mSoundEngine.nextTrack()) {
+        if (auto nextFileName = getNextFileName();
+            nextFileName.empty() == false) {
+
+            if (!engineLoad(mFileManager.getCurrentPath(), nextFileName)) {
+                // Go until we found something to play
+                if (skipInvalid) {
+                    selectNextTrack(skipInvalid);
+                }
+            }
+        }
+        else {
+            mSoundEngine.stop();
+        }
+    }
+}
+
+void Osp::selectPrevTrack(bool skipInvalid) {
+    if (!mSoundEngine.prevTrack()) {
+        if (auto prevFileName = getPrevFileName();
+            prevFileName.empty() == false) {
+        
+            if (!engineLoad(mFileManager.getCurrentPath(), prevFileName)) {
+                // Go until we found something to play
+                if (skipInvalid) {
+                    selectPrevTrack(skipInvalid);
+                }
+            }
+        }
+        else {
+            mSoundEngine.stop();
+        }
+    }
+}
+
+bool Osp::engineLoad(std::string path, std::string filename) {
+    const auto file = std::shared_ptr<File>(mFileManager.getFile(
+        std::string(path).append("/").append(filename)));
+    
+    mLastFileSelected = filename;
+    if (! mSoundEngine.load(file)) {
+        const auto error = mSoundEngine.getError();
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", error.c_str());
+        mStatusMessage = std::string("Error loading file: ").append(error);
+        return false;
+    }
+
+    return true;
+}
+
+std::string Osp::getPrevFileName() const {
+    const auto items = mFileManager.getCurrentPathEntries();
+    const auto itemCount = items.size();
+    
+    // No item selected, return first file from the end if exists
+    if (mLastFileSelected.empty()) {
+        for (size_t i=itemCount-1; i>0; i--) {
+            auto entry = items[i];
+            if (!entry.folder) {
+                return entry.name; 
+            }
+        }
+        return mLastFileSelected;
+    }
+
+    // Try to find the previous item
+    bool byPass = false;
+    for (size_t i=itemCount-1; i>1; i--) {
+        auto entry = items[i];
+        if (entry.name == mLastFileSelected || byPass) {
+            auto previous = items[i-1];
+            if (previous.folder) {
+                byPass = true;
+                continue;
+            }
+
+            return previous.name;
+        }
+    }
+
+    return "";
+}
+
+std::string Osp::getNextFileName() const {
+    const auto items = mFileManager.getCurrentPathEntries();
+    const auto itemCount = items.size();
+    
+    // No item selected, return first file item if exists
+    if (mLastFileSelected.empty()) {
+        for (size_t i=0; i<itemCount; i++) {
+            auto entry = items[i];
+            if (!entry.folder) {
+                return entry.name;
+            }
+        }
+        return mLastFileSelected;
+    }
+
+
+    // Try to find the next item
+    bool byPass = false;
+    for (size_t i=0; i<itemCount-1; i++) {
+        auto entry = items[i];
+        if (entry.name == mLastFileSelected || byPass) {
+            auto next = items[i+1];
+            if (next.folder) {
+                byPass = true;
+                continue;
+            }
+
+            return next.name;
+        }
+    }
+
+    return "";
+}
+
 void Osp::handleExplorerItemClick(const FileSystem::Entry item, const std::filesystem::path currentExplorerPath) {
     const auto sndState = mSoundEngine.getState();
 
     if (item.folder) {
+        mLastFileSelected.clear();
         if (! mFileManager.navigate(item.name.c_str())) {
             // If FileManager process don't started because of an error
             mStatusMessage = mFileManager.getError();
@@ -241,13 +363,7 @@ void Osp::handleExplorerItemClick(const FileSystem::Entry item, const std::files
             }
         }
     } else {
-        // todo threading for load song ?
-        const auto filePath = std::string(currentExplorerPath).append("/").append(item.name);
-        const auto file = std::shared_ptr<File>(mFileManager.getFile(filePath));
-        if (! mSoundEngine.load(file)) {
-                mStatusMessage = std::string("Error loading file: ").append(mSoundEngine.getError());
-                SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", mStatusMessage.c_str());
-        }
+        engineLoad(mFileManager.getCurrentPath(), item.name);
     }
 }
 
@@ -262,6 +378,11 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                     break;
                 case SoundEngine::State::PAUSED:
                     mSoundEngine.play();
+                    break;
+                case SoundEngine::State::FINISHED:
+                    if (! mLastFileSelected.empty()) {
+                        engineLoad(mFileManager.getCurrentPath(), mLastFileSelected);
+                    }
                     break;
                 default:
                     break;
@@ -281,10 +402,8 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
             switch (sndState) {
                 case SoundEngine::State::STARTED:
                 case SoundEngine::State::PAUSED:
-                    if (!mSoundEngine.nextTrack()) {
-                        // todo: next file
-                        mSoundEngine.stop();
-                    }
+                case SoundEngine::State::FINISHED:
+                    selectNextTrack(true);
                     break;
                 default:
                     break;
@@ -294,10 +413,8 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
             switch (sndState) {
                 case SoundEngine::State::STARTED:
                 case SoundEngine::State::PAUSED:
-                    if (!mSoundEngine.prevTrack()) {
-                        // todo: prev file
-                        mSoundEngine.stop();
-                    }
+                case SoundEngine::State::FINISHED:
+                    selectPrevTrack(true);
                     break;
                 default:
                     break;

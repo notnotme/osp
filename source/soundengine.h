@@ -29,6 +29,7 @@ class SoundEngine {
         bool setup(const std::filesystem::path dataPath);
         void cleanup();
 
+        bool canHandle(const std::shared_ptr<File> file);
         bool load(const std::shared_ptr<File> file);
         void stop();
         void pause();
@@ -60,7 +61,7 @@ class SoundEngine {
         
         SoundEngine(const SoundEngine& copy);
         void loadAllDecoder(std::filesystem::path dataPath);
-
+        std::shared_ptr<Decoder> getDecoder(const std::shared_ptr<File> file);
         static void audioCallback(void *userdata, Uint8* stream, int len);
 
 };
