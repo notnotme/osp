@@ -136,8 +136,8 @@ bool FileManager::navigate(const std::string path) {
             for (const auto fileSystem : mFileSystemList) {
                 if (fileSystem->getMountPoint() == path) {
                     mCurrentFileSystem = fileSystem;
-                    mLastFolder.push_back(path);
                     mCurrentPathStack.push_back(path);
+                    mLastFolder.push_back(path);
                     break;
                 }
             }
@@ -149,12 +149,12 @@ bool FileManager::navigate(const std::string path) {
                 }
                 mCurrentPathStack.pop_back();
             } else {
-                if (getLastFolder() != path) {
-                    mLastFolder.push_back(path);
+                if (mLastFolder.size() > mCurrentPathStack.size()) {
+                    mLastFolder.pop_back();
                 }
+                mLastFolder.push_back(path);
                 mCurrentPathStack.push_back(path);
             }
-            SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Navigate to: '%s/%s'.\n", mCurrentPath == "/" ? "" : mCurrentPath.c_str(), path.c_str());
         }
 
         // Navigate using the current file system
