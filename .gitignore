@@ -4,4 +4,5 @@
 *.nacp
 *.nsp
 .vscode
+/build
 /romfs/c64roms
