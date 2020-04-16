@@ -363,7 +363,9 @@ void Osp::handleExplorerItemClick(const FileSystem::Entry item, const std::files
             }
         }
     } else {
-        engineLoad(mFileManager.getCurrentPath(), item.name);
+        if (mLastFileSelected != item.name || sndState == SoundEngine::State::FINISHED) {
+            engineLoad(mFileManager.getCurrentPath(), item.name);
+        }
     }
 }
 

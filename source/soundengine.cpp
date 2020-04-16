@@ -109,7 +109,7 @@ void SoundEngine::cleanup() {
     mDecoderList.clear();
 }
 
-bool SoundEngine::canHandle(const std::shared_ptr<File> file) {
+bool SoundEngine::canHandle(const std::shared_ptr<File> file) const {
     return getDecoder(file) != nullptr;
 }
 
@@ -152,13 +152,25 @@ bool SoundEngine::load(const std::shared_ptr<File> file) {
         return false;
     }
 
-    // Try to play song
+    // Try to start song in internal decoder
+    SDL_LockMutex(mDecoderMutex);
     if (! mCurrentDecoder->play(buffer)) {
         mCurrentDecoder->stop();
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Decoder %s can't play song \"%s\".\n",
-            mCurrentDecoder->getName().c_str(), mCurrentDecoder->getError().c_str());
+        SDL_UnlockMutex(mDecoderMutex);
 
+        SDL_LockMutex(mStateMutex);
+        mState = ERROR;
+        SDL_UnlockMutex(mStateMutex);
+
+        SDL_LockMutex(mErrorMutex);
+        mError = std::string("Decoder ").append(mCurrentDecoder->getName().c_str())
+            .append(" can't play song: ").append(mCurrentDecoder->getError().c_str());
+        SDL_UnlockMutex(mErrorMutex);
+        
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s\n", mError.c_str());
+        return false;
     }
+    SDL_UnlockMutex(mDecoderMutex);
 
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Song is read to play %s ...\n", path.c_str());
 
@@ -287,7 +299,7 @@ void SoundEngine::loadAllDecoder(std::filesystem::path dataPath) {
     }
 }
 
-std::shared_ptr<Decoder> SoundEngine::getDecoder(const std::shared_ptr<File> file) {
+std::shared_ptr<Decoder> SoundEngine::getDecoder(const std::shared_ptr<File> file) const {
     // Try to find if any decoder can handle the file
     auto extention = std::string(file->getPath().extension());
     std::transform(extention.begin(), extention.end(), extention.begin(), ::tolower);

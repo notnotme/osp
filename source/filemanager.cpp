@@ -92,7 +92,7 @@ void FileManager::clearPath() {
     mCurrentPathEntries.clear();
     mLastFolder.clear();
     for (const auto fileSystem : mFileSystemList) {
-        mCurrentPathEntries.push_back((FileSystem::Entry) {
+        mCurrentPathEntries.push_back({
             .folder = true,
             .name = fileSystem->getMountPoint(),
             .size = 0 
@@ -147,7 +147,6 @@ bool FileManager::navigate(const std::string path) {
                 if (mLastFolder.size() > mCurrentPathStack.size()) {
                     mLastFolder.pop_back();
                 }
-
                 mCurrentPathStack.pop_back();
             } else {
                 if (getLastFolder() != path) {
@@ -225,7 +224,7 @@ int FileManager::fileSystemThreadFunc(void* userData) {
 
     // Insert back navigation
     fileManager->mCurrentPathEntries.clear();
-    fileManager->mCurrentPathEntries.insert(fileManager->mCurrentPathEntries.begin(), (FileSystem::Entry) {
+    fileManager->mCurrentPathEntries.insert(fileManager->mCurrentPathEntries.begin(), {
         .folder = true,
         .name = "..",
         .size = 0
