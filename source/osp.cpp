@@ -1,7 +1,7 @@
 #include "osp.h"
 
 #include "imgui/imgui.h"
-#include "imgui/imgui_internal.h"
+#include "imgui/imgui_impl_sdl.h"
 #include "IconsMaterialDesignIcons_c.h"
 
 #include <SDL2/SDL_events.h>
@@ -40,6 +40,8 @@ bool Osp::setup(Settings settings) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to initialize File systems.\n");
         return false;
     }
+
+    ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
 
     // OK
     mStatusMessage = "Ready";
@@ -126,9 +128,7 @@ void Osp::render() {
     // Menu
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("Application")) {
-            if (ImGui::MenuItem(ICON_MDI_DESKTOP_MAC_DASHBOARD " Show Workspace", nullptr, mShowWorkspace, true)) {
-                mShowWorkspace = !mShowWorkspace;
-            }
+            ImGui::MenuItem(ICON_MDI_DESKTOP_MAC_DASHBOARD " Show Workspace", nullptr, &mShowWorkspace, true);
             if (ImGui::BeginMenu(ICON_MDI_PALETTE " Theme")) {
                 if (ImGui::Combo("Style", &mSettings.mStyle, "Dark\0Light\0Classic\0")) {
                     switch (mSettings.mStyle) {
@@ -154,7 +154,9 @@ void Osp::render() {
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu(ICON_MDI_SETTINGS " Configuration", true)) {
-                ImGui::MenuItem("TODO", nullptr, false, true);
+                if (ImGui::MenuItem(ICON_MDI_CURSOR_DEFAULT_OUTLINE " Mouse emulation", nullptr, &mSettings.mouseEmulation, true)) {
+                    ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
+                }
                 ImGui::EndMenu();
             }
             ImGui::Separator();

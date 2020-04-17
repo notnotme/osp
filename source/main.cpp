@@ -81,18 +81,21 @@ bool setup() {
     auto& io = ImGui::GetIO();
     io.LogFilename = nullptr;
     io.IniFilename = nullptr;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.MouseDrawCursor = true;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
+    io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
     auto& style = ImGui::GetStyle();
     style.FramePadding = ImVec2(8, 8);
     style.WindowRounding = 0;
     style.FrameBorderSize = 1;
+    style.ScrollbarSize = 16;
 
     // Load Fonts
     ImFontConfig imFontConfig;
     imFontConfig.MergeMode = true;
-
     imFontConfig.PixelSnapH = true;
     imFontConfig.OversampleH = 1;
     imFontConfig.OversampleV = 1;
@@ -106,7 +109,7 @@ bool setup() {
     io.Fonts->AddFontFromFileTTF(DATA_PATH "/font/" FONT_ICON_FILE_NAME_MDI, 13.0f, &imFontConfig, iconRanges);
 
     // ImGui Platform/Renderer bindings
-    if (!ImGui_ImplSDL2_InitForOpenGL(sdlWindow, glContext)) {
+    if (!ImGui_ImplSDL2_InitForOpenGL(sdlWindow, glContext, true)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "ImGui_ImplSDL2_InitForOpenGL failed\n");
         return false;
     }
@@ -119,6 +122,7 @@ bool setup() {
     Osp::Settings settings {
         .mStyle = 0,
         .mFont = 0,
+        .mouseEmulation = true,
         .mDataPath = DATA_PATH
     };
 

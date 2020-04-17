@@ -18,6 +18,7 @@ class Osp {
         struct Settings {
             int mStyle;
             int mFont;
+            bool mouseEmulation;
             std::string mDataPath;
         };
 

@@ -66,7 +66,7 @@ bool SoundEngine::setup(const std::filesystem::path dataPath) {
     SDL_AudioSpec wantedAudioSpec;
     wantedAudioSpec.callback = SoundEngine::audioCallback;
     wantedAudioSpec.userdata = this;
-    wantedAudioSpec.samples = 4096; // 2048 for better latency ?
+    wantedAudioSpec.samples = 2048; // 2048 for better latency ?
     wantedAudioSpec.channels = 2;
     wantedAudioSpec.format = AUDIO_S16SYS;
     wantedAudioSpec.freq = 48000;
@@ -172,7 +172,7 @@ bool SoundEngine::load(const std::shared_ptr<File> file) {
     }
     SDL_UnlockMutex(mDecoderMutex);
 
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Song is read to play %s ...\n", path.c_str());
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Song loaded %s ...\n", path.c_str());
 
     SDL_LockMutex(mStateMutex);
         mState = LOADED;
@@ -198,6 +198,7 @@ void SoundEngine::stop() {
 }
 
 void SoundEngine::pause() {
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Song paused.\n");
     SDL_LockMutex(mStateMutex);
         mState = PAUSED;
     SDL_UnlockMutex(mStateMutex);
@@ -205,6 +206,7 @@ void SoundEngine::pause() {
 }
 
 void SoundEngine::play() {
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Playing...\n");
     SDL_LockMutex(mStateMutex);
         mState = STARTED;
     SDL_UnlockMutex(mStateMutex);
