@@ -37,6 +37,7 @@ const Decoder::MetaData DumbDecoder::getMetaData() {
         return mMetaData;
     }
 
+    mMetaData.trackInformation.position = (int) (duh_sigrenderer_get_position(mSigRenderer) / 65536);
      return mMetaData;
 }
 

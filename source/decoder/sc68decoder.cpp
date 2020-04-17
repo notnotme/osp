@@ -136,9 +136,7 @@ int Sc68Decoder::process(Uint8* stream, const int len) {
     auto retCode = sc68_process(mSC68, stream, &amount);
     
     if ((retCode & SC68_END)) {
-        if (!nextTrack()) {
-            return 1;
-        }
+        return 1;
     }
 
     if ((retCode & SC68_CHANGE)) {
