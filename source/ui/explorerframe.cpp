@@ -10,9 +10,7 @@ ExplorerFrame::~ExplorerFrame() {
 }
 
 void ExplorerFrame::renderPath(const FrameData& frameData) {
-    ImGui::TextUnformatted(ICON_MDI_FOLDER_OPEN_OUTLINE);
-    ImGui::SameLine();
-    ImGui::TextUnformatted(frameData.currentPath.c_str());
+    ImGui::Text("%s %s", ICON_MDI_FOLDER_OPEN_OUTLINE, frameData.currentPath.c_str());
     ImGui::Spacing();
 }
 
@@ -22,34 +20,37 @@ void ExplorerFrame::renderExplorer(const FrameData& frameData, std::function<voi
      | ImGuiTableFlags_BordersHOuter | ImGuiTableFlags_BordersVOuter | ImGuiTableFlags_BordersVInner
      | ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersVFullHeight;
     
-    if (ImGui::BeginTable("##fileTable", 2, tableFlags, tableSize)) {
-        ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_None, 0.80f);
-        ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_None, 0.20f);
-        ImGui::TableAutoHeaders();
+    if (!ImGui::BeginTable("##fileTable", 2, tableFlags, tableSize)) {
+        ImGui::EndTable();
+        return;
+    }
 
-        char temp[256];
-        ImGuiListClipper clipper;
-        clipper.Begin(frameData.listing.size());
-        while (clipper.Step()) {
-            for (auto row=clipper.DisplayStart; row<clipper.DisplayEnd; row++) {
-                const auto item = frameData.listing[row];
-                ImGui::TableNextRow();
+    ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_None, 0.80f);
+    ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_None, 0.20f);
+    ImGui::TableAutoHeaders();
 
-                ImGui::TableSetColumnIndex(0);
-                sprintf(temp, "%s %s", item.folder ? ICON_MDI_FOLDER_OPEN : ICON_MDI_FILE, item.name.c_str());
-                if (ImGui::Selectable(temp, item.name == frameData.selectedItemName, ImGuiSelectableFlags_SpanAllColumns)) {
-                    onItemClick(item);
-                }
+    char temp[256];
+    ImGuiListClipper clipper;
+    clipper.Begin(frameData.listing.size());
+    while (clipper.Step()) {
+        for (auto row=clipper.DisplayStart; row<clipper.DisplayEnd; row++) {
+            const auto item = frameData.listing[row];
+            ImGui::TableNextRow();
 
-                ImGui::TableSetColumnIndex(1);
-                if (!item.folder) {
-                    sprintf(temp, "%10u Kb", (unsigned int) item.size / 1024);
-                    ImGui::TextUnformatted(temp);
-                }
+            ImGui::TableSetColumnIndex(0);
+            sprintf(temp, "%s %s", item.folder ? ICON_MDI_FOLDER_OPEN : ICON_MDI_FILE, item.name.c_str());
+            if (ImGui::Selectable(temp, item.name == frameData.selectedItemName, ImGuiSelectableFlags_SpanAllColumns)) {
+                onItemClick(item);
+            }
+
+            ImGui::TableSetColumnIndex(1);
+            if (!item.folder) {
+                sprintf(temp, "%10u Kb", (unsigned int) item.size / 1024);
+                ImGui::TextUnformatted(temp);
             }
         }
-        ImGui::EndTable();
     }
+    ImGui::EndTable();
 }
 
 void ExplorerFrame::render(const FrameData& frameData, std::function<void (FileSystem::Entry)> onItemClick) {

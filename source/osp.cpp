@@ -121,6 +121,7 @@ void Osp::render() {
     // Main Window
     ImGui::SetNextWindowPos(ImVec2(0, 0));
     ImGui::SetNextWindowSize(io.DisplaySize);
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 8));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
     ImGui::Begin("Workspace", nullptr, windowFlags);
     ImGui::PopStyleVar(1);
@@ -154,7 +155,7 @@ void Osp::render() {
                 ImGui::EndMenu();
             }
             if (ImGui::BeginMenu(ICON_MDI_SETTINGS " Configuration", true)) {
-                if (ImGui::MenuItem(ICON_MDI_CURSOR_DEFAULT_OUTLINE " Mouse emulation", nullptr, &mSettings.mouseEmulation, true)) {
+                if (ImGui::MenuItem(ICON_MDI_CURSOR_DEFAULT " Mouse emulation", nullptr, &mSettings.mouseEmulation, true)) {
                     ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
                 }
                 ImGui::EndMenu();
@@ -188,6 +189,7 @@ void Osp::render() {
 
         ImGui::EndMenuBar();
     }
+    ImGui::PopStyleVar(1);
 
     // Workspace
     if (mShowWorkspace) {
