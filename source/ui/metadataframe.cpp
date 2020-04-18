@@ -14,10 +14,8 @@ void MetaDataFrame::renderDiskInformation(const FrameData& frameData) {
     ImGui::TextUnformatted("Disk information");
     ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal);
 
-    // We ca nstore 6 strings vertically so calulate their height
-    const auto& style = ImGui::GetStyle();
-
     char temp[32];
+    const auto& style = ImGui::GetStyle();
     const auto rightMargin = ((ImGui::GetWindowContentRegionWidth()/2) + style.FramePadding.x) * 0.33f;
 
     if (!frameData.metaData.diskInformation.title.empty()) {
@@ -129,8 +127,6 @@ void MetaDataFrame::render(const FrameData& frameData) {
         return;
     }
 
-    // Disable frame padding so labels are packed together vertically
-    // otherwise there is a gap due to our style settings
     if (frameData.metaData.hasDiskInformation) {
         renderDiskInformation(frameData);
     }
