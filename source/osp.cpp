@@ -87,12 +87,7 @@ void Osp::render() {
         // SoundEngine states
         switch (sndState) {
             case SoundEngine::State::FINISHED_NATURAL:
-                selectNextTrack(true, true);
-                break;
-            case SoundEngine::State::LOADING:
-                // Add a little rotating bar to the text
-                mStatusMessage = std::string(STR_LOADING " ");
-                mStatusMessage.push_back("|/-\\"[(int)(ImGui::GetTime() / 0.1f) & 3]);
+                selectNextTrack(mSettings.skipUnsupportedTunes, true);
                 break;
             case SoundEngine::State::STARTED:
                 mStatusMessage = STR_PLAYING;
@@ -101,10 +96,6 @@ void Osp::render() {
                 mStatusMessage = STR_PAUSED;
                 break;
             case SoundEngine::State::FINISHED:        
-            case SoundEngine::State::READY:
-                mStatusMessage = STR_READY;
-                break;
-            case SoundEngine::State::LOADED:
                 mStatusMessage = STR_READY;
                 break;
             case SoundEngine::State::ERROR:
@@ -222,7 +213,10 @@ void Osp::render() {
     // Other windows & popups
     mSettingsWindow.render( {
             .mouseEmulationEnabled = mSettings.mouseEmulation,
-            .touchEnabled = mSettings.touchEnabled
+            .touchEnabled = mSettings.touchEnabled,
+            .skipUnsupportedTunes = mSettings.skipUnsupportedTunes,
+            .alwaysStartFirstTune = mSettings.alwaysStartFirstTune,
+            .skipSubTunes = mSettings.skipSubTunes
         },
         [&](SettingsWindow::ToggleSetting setting) {
             switch (setting) {
@@ -230,17 +224,32 @@ void Osp::render() {
                     mSettings.mouseEmulation = !mSettings.mouseEmulation;
                     ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
                     if (mSettings.mouseEmulation && !PLATFORM_HAS_MOUSE_CURSOR) {
-                        io.MouseDrawCursor = true;
-                    } else {
-                        io.MouseDrawCursor = false;
+                        io.MouseDrawCursor = !io.MouseDrawCursor;
                     }
                     // todo save settings
                     break;
                 case SettingsWindow::ToggleSetting::TOUCH_ENABLED:
                     mSettings.touchEnabled = !mSettings.touchEnabled;
-                    io.ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
+                    if (!mSettings.touchEnabled) {
+                        io.ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
+                    } else {
+                        io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
+                    }
                     // todo save settings
                     break;
+                case SettingsWindow::ToggleSetting::AUTOSKIP_UNSUPPORTED_FILES:
+                    mSettings.skipUnsupportedTunes = !mSettings.skipUnsupportedTunes;
+                    // todo save settings
+                    break;
+                case SettingsWindow::ToggleSetting::SKIP_SUBTUNES:
+                    mSettings.skipSubTunes = !mSettings.skipSubTunes;
+                    // todo save settings
+                    break;
+                case SettingsWindow::ToggleSetting::ALWAYS_START_FIRST_TRACK:
+                    mSettings.alwaysStartFirstTune = !mSettings.alwaysStartFirstTune;
+                    // todo save settings
+                    break;
+                break;
             }
         });
 
@@ -249,7 +258,7 @@ void Osp::render() {
 }
 
 void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {
-    if (!mSoundEngine.nextTrack()) {
+    if (mSettings.skipSubTunes || !mSoundEngine.nextTrack()) {
         if (const auto nextFileName = getNextFileName();
             nextFileName.empty() == false) {
 
@@ -269,7 +278,7 @@ void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {
 }
 
 void Osp::selectPrevTrack(bool skipInvalid, bool autoPlay) {
-    if (!mSoundEngine.prevTrack()) {
+    if (mSettings.skipSubTunes || !mSoundEngine.prevTrack()) {
         if (const auto prevFileName = getPrevFileName();
             prevFileName.empty() == false) {
         
@@ -389,7 +398,6 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                     mSoundEngine.pause();
                     break;
                 case SoundEngine::State::PAUSED:
-                case SoundEngine::State::LOADED:
                     mSoundEngine.play();
                     break;
                 case SoundEngine::State::FINISHED:
@@ -418,8 +426,9 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                 case SoundEngine::State::STARTED:
                 case SoundEngine::State::PAUSED:
                 case SoundEngine::State::FINISHED:
-                case SoundEngine::State::LOADED:
-                    selectNextTrack(true, sndState == SoundEngine::State::STARTED);
+                case SoundEngine::State::ERROR:
+                    selectNextTrack(mSettings.skipUnsupportedTunes,
+                        sndState != SoundEngine::State::FINISHED && sndState != SoundEngine::State::ERROR);
                     break;
                 default:
                     break;
@@ -430,8 +439,9 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                 case SoundEngine::State::STARTED:
                 case SoundEngine::State::PAUSED:
                 case SoundEngine::State::FINISHED:
-                case SoundEngine::State::LOADED:
-                    selectPrevTrack(true, sndState == SoundEngine::State::STARTED);
+                case SoundEngine::State::ERROR:
+                    selectPrevTrack(mSettings.skipUnsupportedTunes,
+                        sndState != SoundEngine::State::FINISHED && sndState != SoundEngine::State::ERROR);
                     break;
                 default:
                     break;

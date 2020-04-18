@@ -21,7 +21,7 @@ void AboutWindow::render() {
     }
 
     const auto io = ImGui::GetIO();
-    const auto imguiStyle = ImGui::GetStyle();
+    const auto style = ImGui::GetStyle();
     const auto windowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
 
     if (!ImGui::IsPopupOpen(STR_ABOUT_WINDOW_TITLE)) {
@@ -49,10 +49,12 @@ void AboutWindow::render() {
         ImGui::NewLine();
         ImGui::TextUnformatted("Version: " GIT_VERSION " (" GIT_COMMIT ")");
         ImGui::TextUnformatted("Build date: " BUILD_DATE);
-        ImGui::NewLine();
-        ImGui::NewLine();
-        ImGui::SameLine(ImGui::GetContentRegionAvailWidth() - imguiStyle.FramePadding.x - ImGui::CalcTextSize("Close").x);
-        if (ImGui::Button("Close##closeAbout")) {
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::SetCursorPosX(ImGui::GetContentRegionAvailWidth() - style.WindowPadding.x - ImGui::CalcTextSize(STR_CLOSE).x);
+        if (ImGui::Button(STR_CLOSE "##closeAbout")) {
             mVisible = false;
             ImGui::CloseCurrentPopup();
         }

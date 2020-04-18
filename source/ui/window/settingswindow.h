@@ -9,12 +9,18 @@ class SettingsWindow : public Window {
     public:
         enum ToggleSetting {
             MOUSE_EMULATION,
-            TOUCH_ENABLED
+            TOUCH_ENABLED,
+            AUTOSKIP_UNSUPPORTED_FILES,
+            SKIP_SUBTUNES,
+            ALWAYS_START_FIRST_TRACK
         };
 
         struct WindowData {
             bool mouseEmulationEnabled;
             bool touchEnabled;
+            bool skipUnsupportedTunes;
+            bool alwaysStartFirstTune;
+            bool skipSubTunes;
         };
 
         SettingsWindow();
@@ -33,5 +39,5 @@ class SettingsWindow : public Window {
         void renderSidplayDecoderTab();
         void renderGmeDecoderTab();
         void renderDumbDecoderTab();
-        
+
 };

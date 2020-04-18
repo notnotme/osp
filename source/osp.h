@@ -22,6 +22,9 @@ class Osp {
             int font;
             bool mouseEmulation;
             bool touchEnabled;
+            bool skipUnsupportedTunes;
+            bool alwaysStartFirstTune;
+            bool skipSubTunes;
             std::string dataPath;
         };
 

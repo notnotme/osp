@@ -126,6 +126,9 @@ bool setup() {
         .font = 0,
         .mouseEmulation = true,
         .touchEnabled = true,
+        .skipUnsupportedTunes = true,
+        .alwaysStartFirstTune = false,
+        .skipSubTunes = false,
         .dataPath = DATA_PATH
     };
 

@@ -13,9 +13,6 @@ class SoundEngine {
 
     public:
         enum State {
-            READY,
-            LOADED,
-            LOADING,
             STARTED,
             PAUSED,
             FINISHED,

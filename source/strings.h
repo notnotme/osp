@@ -11,10 +11,16 @@
 #define STR_MENU_ITEM_HELP              "Help"
 #define STR_MENU_ITEM_QUIT              ICON_MDI_LOGOUT " Quit"
 
-#define STR_SETTINGS_MOUSE_EMULATION    "Enable Mouse emulation"
-#define STR_SETTINGS_TOUCH_ENABLED      "Enable touch support"
-#define STR_TOOLTIP_MOUSE_EMULATION     "Make the controller move the mouse.\nOtherwise if no mouse is connected the mouse cursor\nis hidden and normal gamepad control is used."
-#define STR_TOOLTIP_TOUCH_ENABLE        "Enable touch control for device that handle it."
+#define STR_SETTINGS_MOUSE_EMULATION        "Enable Mouse emulation"
+#define STR_SETTINGS_TOUCH_ENABLED          "Enable touch support"
+#define STR_SKIP_UNSUPPORTED_FILES          "Auto skip unsupported files"
+#define STR_ALWAYS_START_FIRST_TUNE         "Always start at the first track of a tune"
+#define STR_SKIP_SUBTUNES                   "Skip sub tunes"
+#define STR_TOOLTIP_MOUSE_EMULATION         "Make the controller move the mouse.\nOtherwise if no mouse is connected the mouse cursor\nis hidden and normal gamepad control is used."
+#define STR_TOOLTIP_TOUCH_ENABLE            "Enable touch control for devices that handle it."
+#define STR_TOOLTIP_SKIP_UNSUPPORTED_FILES  "Skip a file if it can't be played."
+#define STR_TOOLTIP_ALWAYS_START_FIRST_TUNE "Ignore default tune and always start the first if applicable."
+#define STR_TOOLTIP_SKIP_SUBTUNES           "Don't play sub tunes."
 
 #define STR_OSP                         "Osp"
 #define STR_APPLICATION                 "Application"
@@ -23,6 +29,7 @@
 #define STR_NAME                        "Name"
 #define STR_SIZE                        "Size"
 #define STR_LOADING                     "Loading"
+#define STR_CLOSE                       "Close"
 #define STR_DISK_INFORMATION            "Disk Information"
 #define STR_TITLE                       "Title"
 #define STR_RIPPER                      "Ripper"
@@ -45,6 +52,8 @@
 #define STR_BUTTON_BACK                 ICON_MDI_SKIP_PREVIOUS " BACK"
 #define STR_BUTTON_NEXT                 ICON_MDI_SKIP_NEXT " NEXT"
 #define STR_MOUNT_POINTS                "Mount points"
+#define STR_GENERAL                     "General"
+#define STR_AUDIO                       "Audio"
 #define STR_PLAYING_S                   ICON_MDI_MUSIC " Playing: %s"
 
 

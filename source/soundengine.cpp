@@ -47,7 +47,7 @@ Decoder::MetaData SoundEngine::getMetaData() const {
 
 void SoundEngine::clearError() {
     SDL_LockMutex(mStateMutex);
-    mState = READY;
+    mState = FINISHED;
     mError = "";
     SDL_UnlockMutex(mStateMutex);
 }
@@ -85,7 +85,7 @@ bool SoundEngine::setup(const std::filesystem::path dataPath) {
     mCurrentDecoder = nullptr;
 
     SDL_LockMutex(mStateMutex);
-    mState = READY;
+    mState = FINISHED;
     SDL_UnlockMutex(mStateMutex);
 
     return true;
@@ -159,7 +159,7 @@ bool SoundEngine::load(const std::shared_ptr<File> file) {
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Song loaded %s ...\n", path.c_str());
 
     SDL_LockMutex(mStateMutex);
-        mState = LOADED;
+        mState = FINISHED;
     SDL_UnlockMutex(mStateMutex);
     return true;
 }
