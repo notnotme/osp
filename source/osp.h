@@ -2,8 +2,8 @@
 
 #include "imgui/imgui.h"
 #include "filesystem/filesystem.h"
-#include "ui/aboutwindow.h"
-#include "ui/metricswindow.h"
+#include "ui/window/aboutwindow.h"
+#include "ui/window/metricswindow.h"
 #include "ui/explorerframe.h"
 #include "ui/playerframe.h"
 #include "ui/metadataframe.h"
@@ -32,13 +32,14 @@ class Osp {
         void cleanup();
 
     private:
+        bool mShowWorkspace;
         MenuBar mMenuBar;
-        AboutWindow mAboutWindow;
-        MetricsWindow mMetricsWindow;
         ExplorerFrame mExplorerFrame;
         PlayerFrame mPlayerFrame;
         MetaDataFrame mMetaDataFrame;
-        bool mShowWorkspace;
+
+        AboutWindow mAboutWindow;
+        MetricsWindow mMetricsWindow;
         
         FileManager mFileManager;
         SoundEngine mSoundEngine;

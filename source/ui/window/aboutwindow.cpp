@@ -1,8 +1,8 @@
 #include "aboutwindow.h"
 
-#include "../imgui/imgui.h"
-#include "../IconsMaterialDesignIcons_c.h"
-#include "../strings.h"
+#include "../../imgui/imgui.h"
+#include "../../IconsMaterialDesignIcons_c.h"
+#include "../../strings.h"
 
 #include <sc68/sc68.h>
 #include <dumb.h>

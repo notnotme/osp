@@ -20,9 +20,9 @@ OBJS		= source/platform/sdl/platform.o \
 			source/imgui/imgui_demo.o \
 			source/imgui/imgui_impl_opengl3.o \
 			source/imgui/imgui_impl_sdl.o \
-			source/ui/window.o \
-			source/ui/aboutwindow.o \
-			source/ui/metricswindow.o \
+			source/ui/window/window.o \
+			source/ui/window/aboutwindow.o \
+			source/ui/window/metricswindow.o \
 			source/ui/metadataframe.o \
 			source/ui/explorerframe.o \
 			source/ui/playerframe.o \
