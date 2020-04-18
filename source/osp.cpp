@@ -47,6 +47,10 @@ bool Osp::setup(Settings settings) {
         io.MouseDrawCursor = true;
     }
 
+    if (mSettings.touchEnabled) {
+        io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
+    }
+
     // OK
     mStatusMessage = STR_READY;
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "OSP initialized.\n");
@@ -134,11 +138,9 @@ void Osp::render() {
             .fmState = fmState,
             .itemShowWorkspaceCheked = mShowWorkspace,
             .mouseEmulationEnabled = mSettings.mouseEmulation,
+            .touchEnabled = mSettings.touchEnabled,
             .selectedStyle = mSettings.style,
             .selectedFont = mSettings.font
-        },
-        [&](bool worspaceVisibility) {
-            mShowWorkspace = worspaceVisibility;
         },
         [&](int style) {
             switch (style) {
@@ -154,18 +156,27 @@ void Osp::render() {
             mSettings.font = n;
             // todo save settings
         },
-        [&](bool mouseEmulation) {
-            ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mouseEmulation);
-            mSettings.mouseEmulation = mouseEmulation;
-            if (mSettings.mouseEmulation && !PLATFORM_HAS_MOUSE_CURSOR) {
-                io.MouseDrawCursor = true;
-            } else {
-                io.MouseDrawCursor = false;
-            }
-            // todo save settings
-        },
         [&](MenuBar::MenuAction action) {
             switch (action) {
+                case MenuBar::MenuAction::TOGGLE_WORKSPACE_VISIBILITY:
+                    mShowWorkspace = !mShowWorkspace;
+                    break;
+                case MenuBar::MenuAction::TOGGLE_MOUSE_EMULATION:
+                    mSettings.mouseEmulation = !mSettings.mouseEmulation;
+                    ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
+                    if (mSettings.mouseEmulation && !PLATFORM_HAS_MOUSE_CURSOR) {
+                        io.MouseDrawCursor = true;
+                    } else {
+                        io.MouseDrawCursor = false;
+                    }
+                    // todo save settings
+                    break;
+                case MenuBar::MenuAction::TOGGLE_TOUCH:
+                    mSettings.touchEnabled = !mSettings.touchEnabled;
+                    io.ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
+
+                    // todo save settings
+                    break;
                 case MenuBar::MenuAction::SHOW_ABOUT:
                     mAboutWindow.setVisible(true);
                     break;

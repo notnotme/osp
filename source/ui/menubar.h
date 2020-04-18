@@ -9,6 +9,9 @@ class MenuBar {
 
     public:
         enum MenuAction {
+            TOGGLE_WORKSPACE_VISIBILITY,
+            TOGGLE_MOUSE_EMULATION,
+            TOGGLE_TOUCH,
             SHOW_ABOUT,
             SHOW_METRICS,
             QUIT
@@ -19,6 +22,7 @@ class MenuBar {
             FileManager::State fmState;
             bool itemShowWorkspaceCheked;
             bool mouseEmulationEnabled;
+            bool touchEnabled;
             int selectedStyle;
             int selectedFont;
         };
@@ -27,10 +31,8 @@ class MenuBar {
         virtual ~MenuBar();
 
         void render(const MenuBarData& menuBarData,
-            std::function<void (bool)> onWorkspaceCheckChange,
             std::function<void (int)> onStyleChange,
             std::function<void (ImFont*, int)> onFontChange,
-            std::function<void (bool)> onMouseEmulationCheckChange,
             std::function<void (MenuAction)> onMenuAtion);
 
     private:

@@ -11,10 +11,8 @@ MenuBar::~MenuBar() {
 }
 
 void MenuBar::render(const MenuBarData& menuBarData,
-            std::function<void (bool)> onWorkspaceCheckChange,
             std::function<void (int)> onStyleChange,
             std::function<void (ImFont*, int)> onFontChange,
-            std::function<void (bool)> onMouseEmulationCheckChange,
             std::function<void (MenuAction)> onMenuAtion) {
 
     const auto& style = ImGui::GetStyle();
@@ -23,9 +21,8 @@ void MenuBar::render(const MenuBarData& menuBarData,
     ImGui::BeginMenuBar();
 
     if (ImGui::BeginMenu(STR_MENU_ITEM_APPLICATION)) {
-        auto showWorkspace = menuBarData.itemShowWorkspaceCheked;
-        if (ImGui::MenuItem(STR_MENU_ITEM_SHOW_WORKSPACE, nullptr, &showWorkspace, true)) {
-            onWorkspaceCheckChange(showWorkspace);
+        if (ImGui::MenuItem(STR_MENU_ITEM_SHOW_WORKSPACE, nullptr, menuBarData.itemShowWorkspaceCheked, true)) {
+            onMenuAtion(TOGGLE_WORKSPACE_VISIBILITY);
         }
         if (ImGui::BeginMenu(STR_MENU_ITEM_THEME)) {
 
@@ -51,20 +48,23 @@ void MenuBar::render(const MenuBarData& menuBarData,
 
         if (ImGui::BeginMenu(STR_MENU_ITEM_CONFIGURATION, true)) {
             if (ImGui::MenuItem(STR_MENU_ITEM_MOUSE_EMULATION, nullptr, menuBarData.mouseEmulationEnabled, true)) {
-                onMouseEmulationCheckChange(!menuBarData.mouseEmulationEnabled);
+                onMenuAtion(TOGGLE_MOUSE_EMULATION);
+            }
+            if (ImGui::MenuItem(STR_MENU_ITEM_TOUCH_ENABLED, nullptr, menuBarData.touchEnabled, true)) {
+                onMenuAtion(TOGGLE_TOUCH);
             }
             ImGui::EndMenu();
         }
 
         ImGui::Separator();
 
-        if (ImGui::MenuItem(ICON_MDI_LOGOUT " Quit", nullptr, false, menuBarData.fmState == FileManager::State::READY)) {
+        if (ImGui::MenuItem(STR_MENU_ITEM_QUIT, nullptr, false, menuBarData.fmState == FileManager::State::READY)) {
             onMenuAtion(QUIT);
         }
         ImGui::EndMenu();
     }
         
-    if (ImGui::BeginMenu("Help")) {
+    if (ImGui::BeginMenu(STR_MENU_ITEM_HELP)) {
         if (ImGui::MenuItem(STR_METRICS_WINDOW_TITLE, nullptr, false, true)) {
             onMenuAtion(SHOW_METRICS);
         }

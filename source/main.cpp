@@ -82,7 +82,6 @@ bool setup() {
     io.LogFilename = nullptr;
     io.IniFilename = nullptr;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
-    io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
@@ -122,6 +121,7 @@ bool setup() {
         .style = 0,
         .font = 0,
         .mouseEmulation = true,
+        .touchEnabled = true,
         .dataPath = DATA_PATH
     };
 

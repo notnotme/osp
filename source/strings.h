@@ -2,16 +2,16 @@
 
 #define STR_ABOUT_WINDOW_TITLE          ICON_MDI_INFORMATION " About"
 #define STR_METRICS_WINDOW_TITLE        ICON_MDI_CHART_BAR " Dear ImGui Metrics"
-
 #define STR_MENU_ITEM_APPLICATION       "Application"
 #define STR_MENU_ITEM_SHOW_WORKSPACE    ICON_MDI_DESKTOP_MAC_DASHBOARD " Show Workspace"
 #define STR_MENU_ITEM_THEME             ICON_MDI_PALETTE " Theme"
-
 #define STR_MENU_ITEM_STYLE             "Style"
 #define STR_MENU_ITEM_FONT              "Font"
-
 #define STR_MENU_ITEM_CONFIGURATION     ICON_MDI_SETTINGS " Configuration"
 #define STR_MENU_ITEM_MOUSE_EMULATION   ICON_MDI_CURSOR_DEFAULT " Mouse emulation"
+#define STR_MENU_ITEM_TOUCH_ENABLED     ICON_MDI_HAND_POINTING_DOWN " Enable touch"
+#define STR_MENU_ITEM_HELP              "Help"
+#define STR_MENU_ITEM_QUIT              ICON_MDI_LOGOUT " Quit"
 
 #define STR_DECODER                     "Decoder"
 #define STR_READY                       "Ready"
@@ -32,17 +32,15 @@
 #define STR_DURATION                    "Duration"
 #define STR_COMMENTS                    "Comments"
 #define STR_TRACK_NO_TITLE              "n/a (No title provided)"
-
 #define STR_PAUSED                      "Paused."
 #define STR_PLAYING                     "Playing..."
-#define STR_PLAYING_S                   ICON_MDI_MUSIC " Playing: %s"
 #define STR_BUTTON_PLAY                 ICON_MDI_PLAY " PLAY"
 #define STR_BUTTON_PAUSE                ICON_MDI_PAUSE " PAUSE"
 #define STR_BUTTON_STOP                 ICON_MDI_STOP " STOP"
 #define STR_BUTTON_BACK                 ICON_MDI_SKIP_PREVIOUS " BACK"
 #define STR_BUTTON_NEXT                 ICON_MDI_SKIP_PREVIOUS " NEXT"
-
 #define STR_MOUNT_POINTS                "Mount points"
+#define STR_PLAYING_S                   ICON_MDI_MUSIC " Playing: %s"
 
 
 // Errors

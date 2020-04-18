@@ -20,6 +20,7 @@ class Osp {
             int style;
             int font;
             bool mouseEmulation;
+            bool touchEnabled;
             std::string dataPath;
         };
 
