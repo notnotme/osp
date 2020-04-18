@@ -129,6 +129,9 @@ bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
         }
     case SDL_FINGERMOTION:
         {
+            if ((io.ConfigFlags & ImGuiConfigFlags_IsTouchScreen) == 0)
+                return false;
+
             io.WantSetMousePos = true;
             io.MousePos.x = event->tfinger.x * io.DisplaySize.x;
             io.MousePos.y = event->tfinger.y * io.DisplaySize.y;
@@ -156,14 +159,15 @@ bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
             io.MousePos.x = event->tfinger.x * io.DisplaySize.x;
             io.MousePos.y = event->tfinger.y * io.DisplaySize.y;
             g_MousePressed[0] = false;
-            g_ScreenTouched = true;
+            g_ScreenTouched = false;
+
+            if (!io.MouseDrawCursor)
+                io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
+                
             return true;
         }
     case SDL_JOYAXISMOTION:
         {
-            if ((io.ConfigFlags & ImGuiConfigFlags_IsTouchScreen) == 0)
-                return false;
-
             if (g_EmulateMouseWithGamepad)
                 io.WantSetMousePos = true;
 
