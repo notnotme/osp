@@ -30,9 +30,7 @@ void AboutWindow::render() {
     ImGui::SetNextWindowPos(ImVec2(imguiIO.DisplaySize.x/2, imguiIO.DisplaySize.y/2), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     
     if (ImGui::BeginPopupModal(STR_ABOUT_WINDOW_TITLE, &mVisible, windowFlags)) {
-        ImGui::TextUnformatted("OSP mean for Old School Player :)");
-        ImGui::NewLine();
-        ImGui::TextUnformatted("It is a chiptune player that can handle several\n"
+        ImGui::TextUnformatted("OSP is a chiptune player that can handle several\n"
                                 "old sound format produced in the early years of\n"
                                 "computer sound and hacking until now.");
         ImGui::NewLine();
