@@ -38,7 +38,7 @@
 #define STR_BUTTON_PAUSE                ICON_MDI_PAUSE " PAUSE"
 #define STR_BUTTON_STOP                 ICON_MDI_STOP " STOP"
 #define STR_BUTTON_BACK                 ICON_MDI_SKIP_PREVIOUS " BACK"
-#define STR_BUTTON_NEXT                 ICON_MDI_SKIP_PREVIOUS " NEXT"
+#define STR_BUTTON_NEXT                 ICON_MDI_SKIP_NEXT " NEXT"
 #define STR_MOUNT_POINTS                "Mount points"
 #define STR_PLAYING_S                   ICON_MDI_MUSIC " Playing: %s"
 
