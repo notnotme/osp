@@ -45,7 +45,6 @@ class SoundEngine {
 
     private:
         const Decoder::MetaData mEmptyMetaData;
-        SDL_mutex* mErrorMutex;
         SDL_mutex* mStateMutex;
         SDL_mutex* mDecoderMutex;
         std::string mError;
