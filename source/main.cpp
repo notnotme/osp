@@ -87,7 +87,9 @@ bool setup() {
 
     auto& style = ImGui::GetStyle();
     style.FramePadding = ImVec2(8, 8);
-    style.WindowRounding = 0;
+    style.WindowRounding = 4;
+    style.TabRounding = 4;
+    style.FrameRounding = 3;
     style.FrameBorderSize = 1;
     style.ScrollbarSize = 16;
 

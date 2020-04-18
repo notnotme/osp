@@ -2,6 +2,7 @@
 
 #include "../imgui/imgui.h"
 #include "../filemanager.h"
+
 #include <string>
 #include <functional>
 
@@ -10,8 +11,7 @@ class MenuBar {
     public:
         enum MenuAction {
             TOGGLE_WORKSPACE_VISIBILITY,
-            TOGGLE_MOUSE_EMULATION,
-            TOGGLE_TOUCH,
+            SHOW_SETTINGS,
             SHOW_ABOUT,
             SHOW_METRICS,
             QUIT
@@ -21,8 +21,6 @@ class MenuBar {
             std::string message;
             FileManager::State fmState;
             bool itemShowWorkspaceCheked;
-            bool mouseEmulationEnabled;
-            bool touchEnabled;
             int selectedStyle;
             int selectedFont;
         };

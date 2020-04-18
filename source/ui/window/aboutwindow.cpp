@@ -1,7 +1,6 @@
 #include "aboutwindow.h"
 
 #include "../../imgui/imgui.h"
-#include "../../IconsMaterialDesignIcons_c.h"
 #include "../../strings.h"
 
 #include <sc68/sc68.h>
@@ -17,9 +16,11 @@ AboutWindow::~AboutWindow() {
 }
 
 void AboutWindow::render() {
-    if (!mVisible) return;
+    if (!mVisible) {
+        return;
+    }
 
-    const auto imguiIO = ImGui::GetIO();
+    const auto io = ImGui::GetIO();
     const auto imguiStyle = ImGui::GetStyle();
     const auto windowFlags = ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize;
 
@@ -27,7 +28,7 @@ void AboutWindow::render() {
         ImGui::OpenPopup(STR_ABOUT_WINDOW_TITLE);
     }
     
-    ImGui::SetNextWindowPos(ImVec2(imguiIO.DisplaySize.x/2, imguiIO.DisplaySize.y/2), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+    ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x/2, io.DisplaySize.y/2), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     
     if (ImGui::BeginPopupModal(STR_ABOUT_WINDOW_TITLE, &mVisible, windowFlags)) {
         ImGui::TextUnformatted("OSP is a chiptune player that can handle several\n"
@@ -51,7 +52,7 @@ void AboutWindow::render() {
         ImGui::NewLine();
         ImGui::NewLine();
         ImGui::SameLine(ImGui::GetContentRegionAvailWidth() - imguiStyle.FramePadding.x - ImGui::CalcTextSize("Close").x);
-        if (ImGui::Button("Close")) {
+        if (ImGui::Button("Close##closeAbout")) {
             mVisible = false;
             ImGui::CloseCurrentPopup();
         }

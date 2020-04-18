@@ -129,16 +129,15 @@ void Osp::render() {
     ImGui::SetNextWindowSize(io.DisplaySize);
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 8));
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0);
     ImGui::Begin("Workspace", nullptr, windowFlags);
-    ImGui::PopStyleVar(1);
+    ImGui::PopStyleVar(2);
 
     // Menu
     mMenuBar.render({
             .message = mStatusMessage,
             .fmState = fmState,
             .itemShowWorkspaceCheked = mShowWorkspace,
-            .mouseEmulationEnabled = mSettings.mouseEmulation,
-            .touchEnabled = mSettings.touchEnabled,
             .selectedStyle = mSettings.style,
             .selectedFont = mSettings.font
         },
@@ -161,21 +160,8 @@ void Osp::render() {
                 case MenuBar::MenuAction::TOGGLE_WORKSPACE_VISIBILITY:
                     mShowWorkspace = !mShowWorkspace;
                     break;
-                case MenuBar::MenuAction::TOGGLE_MOUSE_EMULATION:
-                    mSettings.mouseEmulation = !mSettings.mouseEmulation;
-                    ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
-                    if (mSettings.mouseEmulation && !PLATFORM_HAS_MOUSE_CURSOR) {
-                        io.MouseDrawCursor = true;
-                    } else {
-                        io.MouseDrawCursor = false;
-                    }
-                    // todo save settings
-                    break;
-                case MenuBar::MenuAction::TOGGLE_TOUCH:
-                    mSettings.touchEnabled = !mSettings.touchEnabled;
-                    io.ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
-
-                    // todo save settings
+                case MenuBar::MenuAction::SHOW_SETTINGS:
+                    mSettingsWindow.setVisible(true);
                     break;
                 case MenuBar::MenuAction::SHOW_ABOUT:
                     mAboutWindow.setVisible(true);
@@ -233,7 +219,31 @@ void Osp::render() {
     }        
     ImGui::End();
 
-    // Popups
+    // Other windows & popups
+    mSettingsWindow.render( {
+            .mouseEmulationEnabled = mSettings.mouseEmulation,
+            .touchEnabled = mSettings.touchEnabled
+        },
+        [&](SettingsWindow::ToggleSetting setting) {
+            switch (setting) {
+                case SettingsWindow::ToggleSetting::MOUSE_EMULATION:
+                    mSettings.mouseEmulation = !mSettings.mouseEmulation;
+                    ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
+                    if (mSettings.mouseEmulation && !PLATFORM_HAS_MOUSE_CURSOR) {
+                        io.MouseDrawCursor = true;
+                    } else {
+                        io.MouseDrawCursor = false;
+                    }
+                    // todo save settings
+                    break;
+                case SettingsWindow::ToggleSetting::TOUCH_ENABLED:
+                    mSettings.touchEnabled = !mSettings.touchEnabled;
+                    io.ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
+                    // todo save settings
+                    break;
+            }
+        });
+
     mMetricsWindow.render();
     mAboutWindow.render();
 }

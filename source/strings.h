@@ -1,18 +1,23 @@
 #pragma once
+#include "IconsMaterialDesignIcons_c.h"
 
 #define STR_ABOUT_WINDOW_TITLE          ICON_MDI_INFORMATION " About"
 #define STR_METRICS_WINDOW_TITLE        ICON_MDI_CHART_BAR " Dear ImGui Metrics"
-#define STR_MENU_ITEM_APPLICATION       "Application"
+#define STR_SETTINGS_WINDOW_TITLE       ICON_MDI_SETTINGS " Settings"
 #define STR_MENU_ITEM_SHOW_WORKSPACE    ICON_MDI_DESKTOP_MAC_DASHBOARD " Show Workspace"
 #define STR_MENU_ITEM_THEME             ICON_MDI_PALETTE " Theme"
 #define STR_MENU_ITEM_STYLE             "Style"
 #define STR_MENU_ITEM_FONT              "Font"
-#define STR_MENU_ITEM_CONFIGURATION     ICON_MDI_SETTINGS " Configuration"
-#define STR_MENU_ITEM_MOUSE_EMULATION   ICON_MDI_CURSOR_DEFAULT " Mouse emulation"
-#define STR_MENU_ITEM_TOUCH_ENABLED     ICON_MDI_HAND_POINTING_DOWN " Enable touch"
 #define STR_MENU_ITEM_HELP              "Help"
 #define STR_MENU_ITEM_QUIT              ICON_MDI_LOGOUT " Quit"
 
+#define STR_SETTINGS_MOUSE_EMULATION    "Enable Mouse emulation"
+#define STR_SETTINGS_TOUCH_ENABLED      "Enable touch support"
+#define STR_TOOLTIP_MOUSE_EMULATION     "Make the controller move the mouse.\nOtherwise if no mouse is connected the mouse cursor\nis hidden and normal gamepad control is used."
+#define STR_TOOLTIP_TOUCH_ENABLE        "Enable touch control for device that handle it."
+
+#define STR_OSP                         "Osp"
+#define STR_APPLICATION                 "Application"
 #define STR_DECODER                     "Decoder"
 #define STR_READY                       "Ready"
 #define STR_NAME                        "Name"

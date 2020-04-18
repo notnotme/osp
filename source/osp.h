@@ -4,6 +4,7 @@
 #include "filesystem/filesystem.h"
 #include "ui/window/aboutwindow.h"
 #include "ui/window/metricswindow.h"
+#include "ui/window/settingswindow.h"
 #include "ui/explorerframe.h"
 #include "ui/playerframe.h"
 #include "ui/metadataframe.h"
@@ -40,6 +41,7 @@ class Osp {
 
         AboutWindow mAboutWindow;
         MetricsWindow mMetricsWindow;
+        SettingsWindow mSettingsWindow;
         
         FileManager mFileManager;
         SoundEngine mSoundEngine;

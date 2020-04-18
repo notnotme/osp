@@ -1,7 +1,6 @@
 #include "metricswindow.h"
 
 #include "../../imgui/imgui.h"
-#include "../../IconsMaterialDesignIcons_c.h"
 #include "../../strings.h"
 
 MetricsWindow::MetricsWindow() :

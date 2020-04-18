@@ -1,7 +1,6 @@
 #include "menubar.h"
 
 #include "../imgui/imgui_impl_sdl.h"
-#include "../IconsMaterialDesignIcons_c.h"
 #include "../strings.h"
 
 MenuBar::MenuBar() {
@@ -11,16 +10,16 @@ MenuBar::~MenuBar() {
 }
 
 void MenuBar::render(const MenuBarData& menuBarData,
-            std::function<void (int)> onStyleChange,
-            std::function<void (ImFont*, int)> onFontChange,
-            std::function<void (MenuAction)> onMenuAtion) {
+    std::function<void (int)> onStyleChange,
+    std::function<void (ImFont*, int)> onFontChange,
+    std::function<void (MenuAction)> onMenuAtion) {
 
     const auto& style = ImGui::GetStyle();
     auto& io = ImGui::GetIO();
 
     ImGui::BeginMenuBar();
 
-    if (ImGui::BeginMenu(STR_MENU_ITEM_APPLICATION)) {
+    if (ImGui::BeginMenu(STR_APPLICATION)) {
         if (ImGui::MenuItem(STR_MENU_ITEM_SHOW_WORKSPACE, nullptr, menuBarData.itemShowWorkspaceCheked, true)) {
             onMenuAtion(TOGGLE_WORKSPACE_VISIBILITY);
         }
@@ -46,14 +45,8 @@ void MenuBar::render(const MenuBarData& menuBarData,
             ImGui::EndMenu();
         }
 
-        if (ImGui::BeginMenu(STR_MENU_ITEM_CONFIGURATION, true)) {
-            if (ImGui::MenuItem(STR_MENU_ITEM_MOUSE_EMULATION, nullptr, menuBarData.mouseEmulationEnabled, true)) {
-                onMenuAtion(TOGGLE_MOUSE_EMULATION);
-            }
-            if (ImGui::MenuItem(STR_MENU_ITEM_TOUCH_ENABLED, nullptr, menuBarData.touchEnabled, true)) {
-                onMenuAtion(TOGGLE_TOUCH);
-            }
-            ImGui::EndMenu();
+        if (ImGui::MenuItem(STR_SETTINGS_WINDOW_TITLE, nullptr, false, true)) {
+            onMenuAtion(SHOW_SETTINGS);
         }
 
         ImGui::Separator();

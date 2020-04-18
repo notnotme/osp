@@ -23,6 +23,7 @@ OBJS		= source/platform/sdl/platform.o \
 			source/ui/window/window.o \
 			source/ui/window/aboutwindow.o \
 			source/ui/window/metricswindow.o \
+			source/ui/window/settingswindow.o \
 			source/ui/metadataframe.o \
 			source/ui/explorerframe.o \
 			source/ui/playerframe.o \
