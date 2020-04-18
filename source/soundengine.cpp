@@ -4,6 +4,7 @@
 #include "decoder/gmedecoder.h"
 #include "decoder/sc68decoder.h"
 #include "decoder/sidplaydecoder.h"
+#include "strings.h"
 
 #include <algorithm>
 #include <SDL2/SDL_log.h>
@@ -37,7 +38,7 @@ std::string SoundEngine::getError() const {
 Decoder::MetaData SoundEngine::getMetaData() const {
     // No need to check engine state, if current deocder is not null
     // it can send us the meta data
-    if (mCurrentDecoder != nullptr) {
+    if (mCurrentDecoder != nullptr && mState != ERROR) {
         return mCurrentDecoder->getMetaData();
     }
 
@@ -68,7 +69,7 @@ bool SoundEngine::setup(const std::filesystem::path dataPath) {
 
         SDL_LockMutex(mStateMutex);
         mState = ERROR;
-        mError = std::string("Couldn't open audio device: ").append(SDL_GetError());
+        mError = std::string(STR_ERROR_OPEN_AUDIO_DEVICE " : ").append(SDL_GetError());
         SDL_UnlockMutex(mStateMutex);
         
         return false;
@@ -121,7 +122,7 @@ bool SoundEngine::load(const std::shared_ptr<File> file) {
     if (mCurrentDecoder == nullptr) {
         SDL_LockMutex(mStateMutex);
         mState = ERROR;
-        mError = std::string("No decoder can handle \"").append(path).append("\"");
+        mError = std::string(STR_ERROR_NO_DECODER_CAN_HANDLE " \"").append(path).append("\"");
         SDL_UnlockMutex(mStateMutex);
 
         return false;
@@ -132,7 +133,7 @@ bool SoundEngine::load(const std::shared_ptr<File> file) {
     if (!file->getAsBuffer(buffer)) {
         SDL_LockMutex(mStateMutex);
         mState = ERROR;
-        mError = std::string("Can't read file \"").append(path).append("\"");
+        mError = std::string(STR_ERROR_CANT_OPEN_FILE " \"").append(path).append("\"");
         SDL_UnlockMutex(mStateMutex);
 
         return false;
@@ -146,8 +147,8 @@ bool SoundEngine::load(const std::shared_ptr<File> file) {
 
         SDL_LockMutex(mStateMutex);
         mState = ERROR;
-        mError = std::string("Decoder ").append(mCurrentDecoder->getName().c_str())
-            .append(" can't play song: ").append(mCurrentDecoder->getError().c_str());
+        mError = std::string(STR_DECODER " ").append(mCurrentDecoder->getName().c_str())
+            .append(" " STR_ERROR_CANT_PLAY_SONG " ").append(mCurrentDecoder->getError().c_str());
         SDL_UnlockMutex(mStateMutex);
         
         SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "%s\n", mError.c_str());
@@ -338,7 +339,7 @@ void SoundEngine::audioCallback(void *userdata, Uint8* stream, int len) {
             // DECODER ERROR
             SDL_LockMutex(soundEngine->mStateMutex);
             soundEngine->mState = ERROR;
-            soundEngine->mError = std::string("Decoder error: ").append(soundEngine->mCurrentDecoder->getError());
+            soundEngine->mError = std::string(STR_ERROR_DECODER_ERROR " : ").append(soundEngine->mCurrentDecoder->getError());
             SDL_UnlockMutex(soundEngine->mStateMutex);
             break;
 

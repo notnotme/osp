@@ -26,6 +26,7 @@ OBJS		= source/platform/sdl/platform.o \
 			source/ui/metadataframe.o \
 			source/ui/explorerframe.o \
 			source/ui/playerframe.o \
+			source/ui/menubar.o \
 			source/filesystem/file.o \
 			source/filesystem/filesystem.o \
 			source/filesystem/localfile.o \

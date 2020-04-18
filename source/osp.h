@@ -7,6 +7,7 @@
 #include "ui/explorerframe.h"
 #include "ui/playerframe.h"
 #include "ui/metadataframe.h"
+#include "ui/menubar.h"
 #include "filemanager.h"
 #include "soundengine.h"
 
@@ -16,10 +17,10 @@ class Osp {
 
     public:
         struct Settings {
-            int mStyle;
-            int mFont;
+            int style;
+            int font;
             bool mouseEmulation;
-            std::string mDataPath;
+            std::string dataPath;
         };
 
         Osp();
@@ -30,6 +31,7 @@ class Osp {
         void cleanup();
 
     private:
+        MenuBar mMenuBar;
         AboutWindow mAboutWindow;
         MetricsWindow mMetricsWindow;
         ExplorerFrame mExplorerFrame;

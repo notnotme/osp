@@ -2,6 +2,7 @@
 
 #include "../imgui/imgui.h"
 #include "../IconsMaterialDesignIcons_c.h"
+#include "../strings.h"
 
 ExplorerFrame::ExplorerFrame() {
 }
@@ -25,8 +26,8 @@ void ExplorerFrame::renderExplorer(const FrameData& frameData, std::function<voi
         return;
     }
 
-    ImGui::TableSetupColumn("Name", ImGuiTableColumnFlags_None, 0.80f);
-    ImGui::TableSetupColumn("Size", ImGuiTableColumnFlags_None, 0.20f);
+    ImGui::TableSetupColumn(STR_NAME, ImGuiTableColumnFlags_None, 0.80f);
+    ImGui::TableSetupColumn(STR_SIZE, ImGuiTableColumnFlags_None, 0.20f);
     ImGui::TableAutoHeaders();
 
     char temp[256];
@@ -63,7 +64,7 @@ void ExplorerFrame::render(const FrameData& frameData, std::function<void (FileS
         ImGui::PushFont(io.FontDefault);
 
         // Add a little rotating bar to loading text
-        auto strLoading = std::string(ICON_MDI_TIMER_SAND).append(" Loading ");
+        auto strLoading = std::string(ICON_MDI_TIMER_SAND " " STR_LOADING " ");
         strLoading.push_back("|/-\\"[(int)(ImGui::GetTime() / 0.05f) & 3]);
         
         // Center in space

@@ -2,7 +2,8 @@
 
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_sdl.h"
-#include "IconsMaterialDesignIcons_c.h"
+#include "platform.h" 
+#include "strings.h"
 
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_log.h>
@@ -18,21 +19,21 @@ Osp::~Osp() {
 bool Osp::setup(Settings settings) {
     // Setup sound engine
     mSettings = settings;
-    if (!mSoundEngine.setup(mSettings.mDataPath.c_str())) {
+    if (!mSoundEngine.setup(mSettings.dataPath.c_str())) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to initialize SoundEngine\n");
         return false;
     }
 
     // Apply user configuration
     auto& io = ImGui::GetIO();
-    switch (mSettings.mStyle) {
+    switch (mSettings.style) {
         case 0: ImGui::StyleColorsDark(); break;
         case 1: ImGui::StyleColorsLight(); break;
         case 2: ImGui::StyleColorsClassic(); break;
     }
 
-    if (mSettings.mFont >= 0 && mSettings.mFont < io.Fonts->Fonts.Size) {
-        io.FontDefault = io.Fonts->Fonts[mSettings.mFont];
+    if (mSettings.font >= 0 && mSettings.font < io.Fonts->Fonts.Size) {
+        io.FontDefault = io.Fonts->Fonts[mSettings.font];
     }
    
     // Setup file manager
@@ -42,9 +43,12 @@ bool Osp::setup(Settings settings) {
     }
 
     ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
+    if (mSettings.mouseEmulation && !PLATFORM_HAS_MOUSE_CURSOR) {
+        io.MouseDrawCursor = true;
+    }
 
     // OK
-    mStatusMessage = "Ready";
+    mStatusMessage = STR_READY;
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "OSP initialized.\n");
     return true;
 }
@@ -56,9 +60,7 @@ void Osp::cleanup() {
 }
 
 void Osp::render() {
-    char temp[256];
     auto& io = ImGui::GetIO();
-    auto& style = ImGui::GetStyle();
     const auto songMetaData = mSoundEngine.getMetaData();
     const auto fmState = mFileManager.getState();
     const auto sndState = mSoundEngine.getState();
@@ -85,21 +87,21 @@ void Osp::render() {
                 break;
             case SoundEngine::State::LOADING:
                 // Add a little rotating bar to the text
-                mStatusMessage = std::string("Loading ");
+                mStatusMessage = std::string(STR_LOADING " ");
                 mStatusMessage.push_back("|/-\\"[(int)(ImGui::GetTime() / 0.1f) & 3]);
                 break;
             case SoundEngine::State::STARTED:
-                mStatusMessage = "Playing...";
+                mStatusMessage = STR_PLAYING;
                 break;
             case SoundEngine::State::PAUSED:
-                mStatusMessage = "Paused.";
+                mStatusMessage = STR_PAUSED;
                 break;
             case SoundEngine::State::FINISHED:        
             case SoundEngine::State::READY:
-                mStatusMessage = "Ready.";
+                mStatusMessage = STR_READY;
                 break;
             case SoundEngine::State::LOADED:
-                mStatusMessage = "Song loaded, ready to play.";
+                mStatusMessage = STR_READY;
                 break;
             case SoundEngine::State::ERROR:
                 mStatusMessage = mSoundEngine.getError();
@@ -127,68 +129,57 @@ void Osp::render() {
     ImGui::PopStyleVar(1);
 
     // Menu
-    if (ImGui::BeginMenuBar()) {
-        if (ImGui::BeginMenu("Application")) {
-            ImGui::MenuItem(ICON_MDI_DESKTOP_MAC_DASHBOARD " Show Workspace", nullptr, &mShowWorkspace, true);
-            if (ImGui::BeginMenu(ICON_MDI_PALETTE " Theme")) {
-                if (ImGui::Combo("Style", &mSettings.mStyle, "Dark\0Light\0Classic\0")) {
-                    switch (mSettings.mStyle) {
-                        case 0: ImGui::StyleColorsDark(); break;
-                        case 1: ImGui::StyleColorsLight(); break;
-                        case 2: ImGui::StyleColorsClassic(); break;
-                    }
-                }
+    mMenuBar.render({
+            .message = mStatusMessage,
+            .fmState = fmState,
+            .itemShowWorkspaceCheked = mShowWorkspace,
+            .mouseEmulationEnabled = mSettings.mouseEmulation,
+            .selectedStyle = mSettings.style,
+            .selectedFont = mSettings.font
+        },
+        [&](bool worspaceVisibility) {
+            mShowWorkspace = worspaceVisibility;
+        },
+        [&](int style) {
+            switch (style) {
+                case 0: ImGui::StyleColorsDark(); break;
+                case 1: ImGui::StyleColorsLight(); break;
+                case 2: ImGui::StyleColorsClassic(); break;
+            }
+            mSettings.style = style;
+            // todo save setting
+        },
+        [&](ImFont* font, int n) {
+            io.FontDefault = font;
+            mSettings.font = n;
+            // todo save settings
+        },
+        [&](bool mouseEmulation) {
+            ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mouseEmulation);
+            mSettings.mouseEmulation = mouseEmulation;
+            if (mSettings.mouseEmulation && !PLATFORM_HAS_MOUSE_CURSOR) {
+                io.MouseDrawCursor = true;
+            } else {
+                io.MouseDrawCursor = false;
+            }
+            // todo save settings
+        },
+        [&](MenuBar::MenuAction action) {
+            switch (action) {
+                case MenuBar::MenuAction::SHOW_ABOUT:
+                    mAboutWindow.setVisible(true);
+                    break;
+                case MenuBar::MenuAction::SHOW_METRICS:
+                    mMetricsWindow.setVisible(true);
+                    break;
+                case MenuBar::MenuAction::QUIT:
+                    SDL_Event event;
+                    event.type = SDL_QUIT;
+                    SDL_PushEvent(&event);
+                    break;
+            }
+        });
 
-                const auto defaultFont = io.Fonts->Fonts[mSettings.mFont];
-                if (ImGui::BeginCombo("Font", defaultFont->GetDebugName())) {
-                    for (auto n=0; n<io.Fonts->Fonts.Size; n++) {
-                        ImFont* font = io.Fonts->Fonts[n];
-                        ImGui::PushID((void*) font);
-                        if (ImGui::Selectable(font->GetDebugName(), font == defaultFont)) {
-                            io.FontDefault = font;
-                            mSettings.mFont = n;
-                        }
-                        ImGui::PopID();
-                    }
-                    ImGui::EndCombo();
-                }
-                ImGui::EndMenu();
-            }
-            if (ImGui::BeginMenu(ICON_MDI_SETTINGS " Configuration", true)) {
-                if (ImGui::MenuItem(ICON_MDI_CURSOR_DEFAULT " Mouse emulation", nullptr, &mSettings.mouseEmulation, true)) {
-                    ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
-                }
-                ImGui::EndMenu();
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem(ICON_MDI_LOGOUT " Quit", nullptr, false, fmState == FileManager::State::READY)) {
-                SDL_Event event;
-                event.type = SDL_QUIT;
-                SDL_PushEvent(&event);
-            }
-            ImGui::EndMenu();
-        }
-        
-        if (ImGui::BeginMenu("Help")) {
-            if (ImGui::MenuItem(mMetricsWindow.getTitle().c_str(), nullptr, false, true)) {
-                mMetricsWindow.setVisible(true);
-            }
-            if (ImGui::MenuItem(mAboutWindow.getTitle().c_str())) {
-                mAboutWindow.setVisible(true);
-            }
-            ImGui::EndMenu();
-        }
-
-        ImGui::Separator();
-        ImGui::Text("Status: %s", mStatusMessage.c_str());      
-
-        sprintf(temp, "%.1f FPS", io.Framerate);
-        ImGui::SameLine((ImGui::GetWindowContentRegionWidth() - ImGui::CalcTextSize(temp).x) - style.WindowPadding.x);
-        ImGui::Separator();
-        ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogramHovered], "%s", temp);  
-
-        ImGui::EndMenuBar();
-    }
     ImGui::PopStyleVar(1);
 
     // Workspace
@@ -196,7 +187,7 @@ void Osp::render() {
         ImGui::Columns(2, "workspaceSeparator", false);
 
         //Explorer
-        const std::string selectedItem = !mLastFileSelected.empty()
+        const auto selectedItem = !mLastFileSelected.empty()
             ? mLastFileSelected
             : mFileManager.getLastFolder();
 
@@ -238,7 +229,7 @@ void Osp::render() {
 
 void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {
     if (!mSoundEngine.nextTrack()) {
-        if (auto nextFileName = getNextFileName();
+        if (const auto nextFileName = getNextFileName();
             nextFileName.empty() == false) {
 
             if (!engineLoad(mFileManager.getCurrentPath(), nextFileName)) {
@@ -258,7 +249,7 @@ void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {
 
 void Osp::selectPrevTrack(bool skipInvalid, bool autoPlay) {
     if (!mSoundEngine.prevTrack()) {
-        if (auto prevFileName = getPrevFileName();
+        if (const auto prevFileName = getPrevFileName();
             prevFileName.empty() == false) {
         
             if (!engineLoad(mFileManager.getCurrentPath(), prevFileName)) {
@@ -276,21 +267,6 @@ void Osp::selectPrevTrack(bool skipInvalid, bool autoPlay) {
     }
 }
 
-bool Osp::engineLoad(std::string path, std::string filename) {
-    const auto file = std::shared_ptr<File>(mFileManager.getFile(
-        std::string(path).append("/").append(filename)));
-    
-    mLastFileSelected = filename;
-    if (! mSoundEngine.load(file)) {
-        const auto error = mSoundEngine.getError();
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", error.c_str());
-        mStatusMessage = std::string("Error loading file: ").append(error);
-        return false;
-    }
-
-    return true;
-}
-
 std::string Osp::getPrevFileName() const {
     const auto items = mFileManager.getCurrentPathEntries();
     const auto itemCount = items.size();
@@ -298,7 +274,7 @@ std::string Osp::getPrevFileName() const {
     // No item selected, return first file from the end if exists
     if (mLastFileSelected.empty()) {
         for (size_t i=itemCount-1; i>0; i--) {
-            auto entry = items[i];
+            const auto entry = items[i];
             if (!entry.folder) {
                 return entry.name; 
             }
@@ -309,9 +285,9 @@ std::string Osp::getPrevFileName() const {
     // Try to find the previous item
     bool byPass = false;
     for (size_t i=itemCount-1; i>1; i--) {
-        auto entry = items[i];
+        const auto entry = items[i];
         if (entry.name == mLastFileSelected || byPass) {
-            auto previous = items[i-1];
+            const auto previous = items[i-1];
             if (previous.folder) {
                 byPass = true;
                 continue;
@@ -331,7 +307,7 @@ std::string Osp::getNextFileName() const {
     // No item selected, return first file item if exists
     if (mLastFileSelected.empty()) {
         for (size_t i=0; i<itemCount; i++) {
-            auto entry = items[i];
+            const auto entry = items[i];
             if (!entry.folder) {
                 return entry.name;
             }
@@ -343,9 +319,9 @@ std::string Osp::getNextFileName() const {
     // Try to find the next item
     bool byPass = false;
     for (size_t i=0; i<itemCount-1; i++) {
-        auto entry = items[i];
+        const auto entry = items[i];
         if (entry.name == mLastFileSelected || byPass) {
-            auto next = items[i+1];
+            const auto next = items[i+1];
             if (next.folder) {
                 byPass = true;
                 continue;
@@ -441,4 +417,18 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
             }
         break;
     }
+}
+
+bool Osp::engineLoad(std::string path, std::string filename) {
+    const auto file = std::shared_ptr<File>(mFileManager.getFile(
+        path.append("/").append(filename)));
+    
+    mLastFileSelected = filename;
+    if (! mSoundEngine.load(file)) {
+        const auto error = mSoundEngine.getError();
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", error.c_str());
+        return false;
+    }
+
+    return true;
 }

@@ -2,9 +2,10 @@
 
 #include "../imgui/imgui.h"
 #include "../IconsMaterialDesignIcons_c.h"
+#include "../strings.h"
 
 MetricsWindow::MetricsWindow() :
-    Window(ICON_MDI_CHART_BAR " Dear ImGui Metrics") {
+    Window(STR_METRICS_WINDOW_TITLE) {
 }
 
 MetricsWindow::~MetricsWindow() {

@@ -36,7 +36,6 @@ class FileManager {
         void clearError();
 
     private:
-        SDL_mutex* mErrorMutex;
         SDL_mutex* mStateMutex;
         std::string mError;
         State mState;

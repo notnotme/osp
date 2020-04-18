@@ -2,6 +2,7 @@
 
 #include "../imgui/imgui.h"
 #include "../IconsMaterialDesignIcons_c.h"
+#include "../strings.h"
 
 PlayerFrame::PlayerFrame() {
 }
@@ -12,14 +13,14 @@ PlayerFrame::~PlayerFrame() {
 void PlayerFrame::renderTitleAndSeekBar(const FrameData& frameData) {
     auto title = frameData.metaData.trackInformation.title.empty()
         ? frameData.metaData.diskInformation.title.empty()
-            ? "n/a (No title provided)"
+            ? STR_TRACK_NO_TITLE
             : frameData.metaData.diskInformation.title.c_str()
         : frameData.metaData.trackInformation.title.c_str();
 
     switch (frameData.state) {
         case SoundEngine::State::STARTED:
         case SoundEngine::State::PAUSED:
-            ImGui::Text(ICON_MDI_MUSIC " Playing: %s", title);
+            ImGui::Text(STR_PLAYING_S, title);
             break;
         default:
             ImGui::TextUnformatted(ICON_MDI_MUSIC " Playing: None.");
@@ -35,19 +36,19 @@ void PlayerFrame::renderButtonBar(const FrameData& frameData, bool disabled, std
     const auto totalSpacing = (numberOfButton-1) * style.ItemSpacing.x;
     const auto buttonWidth = (ImGui::GetContentRegionAvailWidth()-totalSpacing) / numberOfButton;
     
-    if (ImGui::Button(frameData.state == SoundEngine::State::STARTED ? ICON_MDI_PAUSE " PAUSE": ICON_MDI_PLAY " PLAY", ImVec2(buttonWidth, 64))) {
+    if (ImGui::Button(frameData.state == SoundEngine::State::STARTED ? STR_BUTTON_PAUSE : STR_BUTTON_PLAY, ImVec2(buttonWidth, 64))) {
         onButtonClick(PLAY);
     }
     ImGui::SameLine();
-    if (ImGui::Button(ICON_MDI_STOP " STOP", ImVec2(buttonWidth, 64))) {
+    if (ImGui::Button(STR_BUTTON_STOP, ImVec2(buttonWidth, 64))) {
         onButtonClick(STOP);
     }
     ImGui::SameLine();
-    if (ImGui::Button(ICON_MDI_SKIP_PREVIOUS " BACK", ImVec2(buttonWidth, 64))) {
+    if (ImGui::Button(STR_BUTTON_BACK, ImVec2(buttonWidth, 64))) {
         onButtonClick(PREV);
     }
     ImGui::SameLine();
-    if (ImGui::Button(ICON_MDI_SKIP_NEXT " NEXT", ImVec2(buttonWidth, 64))) {
+    if (ImGui::Button(STR_BUTTON_NEXT, ImVec2(buttonWidth, 64))) {
         onButtonClick(NEXT);
     }
 }

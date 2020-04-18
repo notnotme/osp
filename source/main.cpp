@@ -81,7 +81,6 @@ bool setup() {
     auto& io = ImGui::GetIO();
     io.LogFilename = nullptr;
     io.IniFilename = nullptr;
-    io.MouseDrawCursor = true;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
     io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
@@ -120,10 +119,10 @@ bool setup() {
     }
 
     Osp::Settings settings {
-        .mStyle = 0,
-        .mFont = 0,
+        .style = 0,
+        .font = 0,
         .mouseEmulation = true,
-        .mDataPath = DATA_PATH
+        .dataPath = DATA_PATH
     };
 
     if (!osp.setup(settings)) {

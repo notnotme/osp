@@ -2,23 +2,18 @@
 
 #include "platform.h"
 #include "filesystem/localfilesystem.h"
+#include "strings.h"
 
 #include <algorithm>
 #include <SDL2/SDL_log.h>
 
 FileManager::FileManager() :
-    mErrorMutex(SDL_CreateMutex()),
     mStateMutex(SDL_CreateMutex()),
     mFileSystemThread(nullptr), 
     mCurrentFileSystem(nullptr) {
 }
 
 FileManager::~FileManager() {
-    if (mErrorMutex != nullptr) {
-        SDL_DestroyMutex(mErrorMutex);
-        mErrorMutex = nullptr;
-    }
-
     if (mStateMutex != nullptr) {
         SDL_DestroyMutex(mStateMutex);
         mStateMutex = nullptr;
@@ -66,11 +61,8 @@ std::string FileManager::getError() const {
 void FileManager::clearError() {
     SDL_LockMutex(mStateMutex);
     mState = READY;
-    SDL_UnlockMutex(mStateMutex);
-
-    SDL_LockMutex(mErrorMutex);
     mError = "";
-    SDL_UnlockMutex(mErrorMutex);
+    SDL_UnlockMutex(mStateMutex);
 }
 
 
@@ -102,7 +94,7 @@ void FileManager::clearPath() {
 
 void FileManager::buildPath() {
     if (mCurrentFileSystem == nullptr) {
-        mCurrentPath = "Mount points";
+        mCurrentPath = STR_MOUNT_POINTS;
         return;
     }
 
@@ -115,9 +107,10 @@ void FileManager::buildPath() {
 bool FileManager::navigate(const std::string path) {
     // Cancel old navigation thread if any
     if (mState == LOADING) {
-        SDL_LockMutex(mErrorMutex);
-        mError = "Trying to navigate while file system thread is working.";
-        SDL_UnlockMutex(mErrorMutex);
+        SDL_LockMutex(mStateMutex);
+        mError = STR_ERROR_NAVIGATE_THREAD_WORKING;
+        mState = ERROR;
+        SDL_UnlockMutex(mStateMutex);
         
         return false;
     }
@@ -168,9 +161,10 @@ File* FileManager::getFile(const std::string path) {
         return mCurrentFileSystem->getFile(path);
     }
 
-    SDL_LockMutex(mErrorMutex);
-    mError = "No file system to work with";
-    SDL_UnlockMutex(mErrorMutex);
+    SDL_LockMutex(mStateMutex);
+    mError = STR_ERROR_NO_FILESYSTEM;
+    mState = ERROR;
+    SDL_UnlockMutex(mStateMutex);
     
     return nullptr;
 }
@@ -200,11 +194,8 @@ bool FileManager::startWorkingThread() {
             
         SDL_LockMutex(mStateMutex);
         mState = ERROR;
+        mError = std::string(STR_ERROR_FILESYSTEM_THREAD_START " : ").append(SDL_GetError());
         SDL_UnlockMutex(mStateMutex);
-
-        SDL_LockMutex(mErrorMutex);
-        mError = std::string("Unable to start file system thread : ").append(SDL_GetError());
-        SDL_UnlockMutex(mErrorMutex);
         
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", mError.c_str());
         return false;
@@ -218,9 +209,8 @@ int FileManager::fileSystemThreadFunc(void* userData) {
 
     SDL_LockMutex(fileManager->mStateMutex);
     fileManager->mState = LOADING;
+    fileManager->mError = "";
     SDL_UnlockMutex(fileManager->mStateMutex);
-
-    // SDL_Delay(1000); 
 
     // Insert back navigation
     fileManager->mCurrentPathEntries.clear();
@@ -235,11 +225,8 @@ int FileManager::fileSystemThreadFunc(void* userData) {
     if (!fileManager->mCurrentFileSystem->navigate(fileManager->mCurrentPath, list)) {
         SDL_LockMutex(fileManager->mStateMutex);
         fileManager->mState = ERROR;
-        SDL_UnlockMutex(fileManager->mStateMutex);
-
-        SDL_LockMutex(fileManager->mErrorMutex);
         fileManager->mError = fileManager->mCurrentFileSystem->getError();
-        SDL_UnlockMutex(fileManager->mErrorMutex);
+        SDL_UnlockMutex(fileManager->mStateMutex);
         return 0;
     }
 
@@ -255,6 +242,7 @@ int FileManager::fileSystemThreadFunc(void* userData) {
 
     SDL_LockMutex(fileManager->mStateMutex);
     fileManager->mState = READY;
+    fileManager->mError = "";
     SDL_UnlockMutex(fileManager->mStateMutex);
 
     return 0;

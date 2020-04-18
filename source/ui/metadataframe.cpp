@@ -2,6 +2,7 @@
 
 #include "../imgui/imgui.h"
 #include "../imgui/imgui_internal.h"
+#include "../strings.h"
 
 MetaDataFrame::MetaDataFrame() {
 }
@@ -11,7 +12,7 @@ MetaDataFrame::~MetaDataFrame() {
 
 void MetaDataFrame::renderDiskInformation(const FrameData& frameData) {
     ImGui::NewLine();
-    ImGui::TextUnformatted("Disk information");
+    ImGui::TextUnformatted(STR_DISK_INFORMATION);
     ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal);
 
     char temp[32];
@@ -19,39 +20,39 @@ void MetaDataFrame::renderDiskInformation(const FrameData& frameData) {
     const auto rightMargin = ((ImGui::GetWindowContentRegionWidth()/2) + style.FramePadding.x) * 0.33f;
 
     if (!frameData.metaData.diskInformation.title.empty()) {
-        ImGui::TextUnformatted("Title");
+        ImGui::TextUnformatted(STR_TITLE);
         ImGui::SameLine(rightMargin);
         ImGui::TextUnformatted(frameData.metaData.diskInformation.title.c_str());
     }
 
     if (!frameData.metaData.diskInformation.ripper.empty()) {
-        ImGui::TextUnformatted("Ripper");
+        ImGui::TextUnformatted(STR_RIPPER);
         ImGui::SameLine(rightMargin);
         ImGui::TextUnformatted(frameData.metaData.diskInformation.ripper.c_str());
     }
 
     if (!frameData.metaData.diskInformation.converter.empty()) {
-        ImGui::TextUnformatted("Converter");
+        ImGui::TextUnformatted(STR_CONVERTER);
         ImGui::SameLine(rightMargin);
         ImGui::TextUnformatted(frameData.metaData.diskInformation.converter.c_str());
     }
 
     if (!frameData.metaData.diskInformation.copyright.empty()) {
-        ImGui::TextUnformatted("Copyright");
+        ImGui::TextUnformatted(STR_COPYRIGHT);
         ImGui::SameLine(rightMargin);
         ImGui::TextUnformatted(frameData.metaData.diskInformation.copyright.c_str());
     }
 
     if (frameData.metaData.diskInformation.trackCount > 1) {
         sprintf(temp, "%d", frameData.metaData.diskInformation.trackCount);    
-        ImGui::TextUnformatted("Track count");
+        ImGui::TextUnformatted(STR_TRACK_COUNT);
         ImGui::SameLine(rightMargin);
         ImGui::TextUnformatted(temp);
     }
 
     if (frameData.metaData.diskInformation.duration > 0) {
         sprintf(temp, "%d:%02d", frameData.metaData.diskInformation.duration / 60, frameData.metaData.diskInformation.duration % 60);    
-        ImGui::TextUnformatted("Total duration");
+        ImGui::TextUnformatted(STR_TOTAL_DURATION);
         ImGui::SameLine(rightMargin);
         ImGui::TextUnformatted(temp);
     }
@@ -59,7 +60,7 @@ void MetaDataFrame::renderDiskInformation(const FrameData& frameData) {
 
 void MetaDataFrame::renderTrackInformation(const FrameData& frameData) {
     ImGui::NewLine();
-    ImGui::TextUnformatted("Track information");
+    ImGui::TextUnformatted(STR_TRACK_INFORMATION);
     ImGui::SeparatorEx(ImGuiSeparatorFlags_Horizontal);
 
     if (!ImGui::BeginChild(ImGui::GetID("trackMetaData"), ImVec2(0,ImGui::GetContentRegionAvail().y), false)) {
@@ -71,47 +72,47 @@ void MetaDataFrame::renderTrackInformation(const FrameData& frameData) {
     const auto rightMargin = ImGui::GetWindowContentRegionWidth() * 0.33f;
 
     if (!frameData.metaData.trackInformation.title.empty()) {
-        ImGui::TextUnformatted("Title");
+        ImGui::TextUnformatted(STR_TITLE);
         ImGui::SameLine(rightMargin);
         ImGui::TextUnformatted(frameData.metaData.trackInformation.title.c_str());
     }
 
     if (!frameData.metaData.trackInformation.author.empty()) {
-        ImGui::TextUnformatted("Author");
+        ImGui::TextUnformatted(STR_AUTHOR);
         ImGui::SameLine(rightMargin);
         ImGui::TextUnformatted(frameData.metaData.trackInformation.author.c_str());
     }
 
     if (!frameData.metaData.trackInformation.copyright.empty()) {
-        ImGui::TextUnformatted("Copyright");
+        ImGui::TextUnformatted(STR_COPYRIGHT);
         ImGui::SameLine(rightMargin);
         ImGui::TextUnformatted(frameData.metaData.trackInformation.copyright.c_str());
     }
 
     if (frameData.metaData.diskInformation.trackCount > 1) {
         sprintf(temp, "%d/%d", frameData.metaData.trackInformation.trackNumber, frameData.metaData.diskInformation.trackCount);    
-        ImGui::TextUnformatted("Track number");
+        ImGui::TextUnformatted(STR_TRACK_NUMBER);
         ImGui::SameLine(rightMargin);
         ImGui::TextUnformatted(temp);
     }
 
     if (frameData.metaData.trackInformation.position > -1) {
         sprintf(temp, "%d:%02d", frameData.metaData.trackInformation.position / 60, frameData.metaData.trackInformation.position % 60);    
-        ImGui::TextUnformatted("Play time");
+        ImGui::TextUnformatted(STR_PLAY_TIME);
         ImGui::SameLine(rightMargin);
         ImGui::TextUnformatted(temp);
     } 
 
     if (frameData.metaData.trackInformation.duration > 0) {
         sprintf(temp, "%d:%02d", frameData.metaData.trackInformation.duration / 60, frameData.metaData.trackInformation.duration % 60);    
-        ImGui::TextUnformatted("Duration");
+        ImGui::TextUnformatted(STR_DURATION);
         ImGui::SameLine(rightMargin);
         ImGui::TextUnformatted(temp);
     } 
 
     if (!frameData.metaData.trackInformation.comment.empty()) {
         ImGui::NewLine();
-        ImGui::TextUnformatted("Comments");
+        ImGui::TextUnformatted(STR_COMMENTS);
         ImGui::TextWrapped("%s", frameData.metaData.trackInformation.comment.c_str());
     }
 
