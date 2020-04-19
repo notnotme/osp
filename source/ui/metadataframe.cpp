@@ -43,7 +43,7 @@ void MetaDataFrame::renderDiskInformation(const FrameData& frameData) {
         ImGui::TextUnformatted(frameData.metaData.diskInformation.copyright.c_str());
     }
 
-    if (frameData.metaData.diskInformation.trackCount > 1) {
+    if (frameData.metaData.diskInformation.trackCount > 0) {
         sprintf(temp, "%d", frameData.metaData.diskInformation.trackCount);    
         ImGui::TextUnformatted(STR_TRACK_COUNT);
         ImGui::SameLine(rightMargin);

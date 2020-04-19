@@ -189,7 +189,7 @@ void SidPlayDecoder::parseDiskMetaData() {
     }
 
     const auto musicInfo = mTune->getInfo();
-    mMetaData.hasDiskInformation = musicInfo->songs() > 1;
+    mMetaData.hasDiskInformation = musicInfo->songs() >= 1;
     mMetaData.diskInformation.trackCount = musicInfo->songs();
 }
 
