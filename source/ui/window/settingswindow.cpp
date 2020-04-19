@@ -105,6 +105,7 @@ void SettingsWindow::render(const WindowData& windowData,
     const auto windowFlags = ImGuiWindowFlags_None;
     const auto style = ImGui::GetStyle();
 
+    ImGui::SetNextWindowSize(ImVec2(0.0f, 0.0f), ImGuiCond_Appearing);
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x/2, io.DisplaySize.y/2), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
     if (!ImGui::Begin(STR_SETTINGS_WINDOW_TITLE, &mVisible, windowFlags)) {

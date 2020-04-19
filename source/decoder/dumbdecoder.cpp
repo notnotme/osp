@@ -66,7 +66,7 @@ bool DumbDecoder::canRead(const std::string extention) const {
     return false;
 }
 
-bool DumbDecoder::play(const std::vector<char> buffer) {
+bool DumbDecoder::play(const std::vector<char> buffer, bool defaultTune) {
     if (mDumbFile = dumbfile_open_memory(buffer.data(), buffer.size());
         mDumbFile == nullptr) {
         

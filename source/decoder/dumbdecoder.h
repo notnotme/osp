@@ -22,7 +22,7 @@ class DumbDecoder : public Decoder {
 
         virtual bool canRead(const std::string extention) const override;
         virtual const MetaData getMetaData() override;
-        virtual bool play(const std::vector<char> buffer) override;
+        virtual bool play(const std::vector<char> buffer, bool defaultTune) override;
         virtual void stop() override;   
         virtual int process(Uint8* stream, const int len) override;
 

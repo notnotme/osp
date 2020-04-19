@@ -69,7 +69,7 @@ bool Sc68Decoder::canRead(const std::string extention) const {
     return false;
 }
 
-bool Sc68Decoder::play(const std::vector<char> buffer) {
+bool Sc68Decoder::play(const std::vector<char> buffer, bool defaultTune) {
     if (sc68_load_mem(mSC68, buffer.data(), buffer.size()) != 0) {
         mIsSongLoaded = false;
         mError = std::string("Can't play file.");
@@ -77,7 +77,7 @@ bool Sc68Decoder::play(const std::vector<char> buffer) {
         return false;
     }
 
-    if (sc68_play(mSC68, SC68_DEF_TRACK, 0) < 0) {
+    if (sc68_play(mSC68, defaultTune ? SC68_DEF_TRACK : 1, 0) < 0) {
         sc68_close(mSC68);
         mIsSongLoaded = false;
         mError = std::string("No track to play");

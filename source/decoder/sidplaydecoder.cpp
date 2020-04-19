@@ -97,7 +97,7 @@ bool SidPlayDecoder::canRead(const std::string extention) const {
     return false;
 }
 
-bool SidPlayDecoder::play(const std::vector<char> buffer) {
+bool SidPlayDecoder::play(const std::vector<char> buffer, bool defaultTune) {
     if (mTune = std::unique_ptr<SidTune>(new SidTune((const uint_least8_t*) buffer.data(), buffer.size()));
         mTune->getStatus() == false) {
         
@@ -107,7 +107,7 @@ bool SidPlayDecoder::play(const std::vector<char> buffer) {
     }
 
     // Load tune into engine
-    mTune->selectSong(0);
+    mTune->selectSong(defaultTune ? 0 : 1);
     if (!mPlayer.load(mTune.get())) {
         mError = std::string("Can't play file.");
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAYFP: %s", mPlayer.error());

@@ -106,7 +106,7 @@ bool SoundEngine::canHandle(const std::shared_ptr<File> file) const {
     return getDecoder(file) != nullptr;
 }
 
-bool SoundEngine::load(const std::shared_ptr<File> file) {
+bool SoundEngine::load(const std::shared_ptr<File> file, bool defaultTune) {
     const auto path = file->getPath();
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loading %s ...\n", path.c_str());
 
@@ -141,7 +141,7 @@ bool SoundEngine::load(const std::shared_ptr<File> file) {
 
     // Try to start song in internal decoder
     SDL_LockMutex(mDecoderMutex);
-    if (! mCurrentDecoder->play(buffer)) {
+    if (! mCurrentDecoder->play(buffer, defaultTune)) {
         mCurrentDecoder->stop();
         SDL_UnlockMutex(mDecoderMutex);
 

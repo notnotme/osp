@@ -58,11 +58,11 @@ bool GmeDecoder::canRead(const std::string extention) const {
     if(extention == ".sap") { return true; }
     if(extention == ".spc") { return true; }
     if(extention == ".vgm") { return true; }
-    // if(extention == ".vgz") { return true; } ?
+    if(extention == ".vgz") { return true; } 
     return false;
 }
 
-bool GmeDecoder::play(const std::vector<char> buffer) {
+bool GmeDecoder::play(const std::vector<char> buffer, bool defaultTune) {
     // Open file
     if (const auto header = gme_identify_header(buffer.data());
         header[0] == '\0') {
@@ -81,6 +81,7 @@ bool GmeDecoder::play(const std::vector<char> buffer) {
 
     // Enable fine replay and default track
     gme_enable_accuracy(mMusicEmu, 1);
+    gme_set_autoload_playback_limit(mMusicEmu, 1);
     gme_ignore_silence(mMusicEmu, false);
 
     // Fill much meta data as we can

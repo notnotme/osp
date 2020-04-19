@@ -223,7 +223,7 @@ void Osp::render() {
                 case SettingsWindow::ToggleSetting::MOUSE_EMULATION:
                     mSettings.mouseEmulation = !mSettings.mouseEmulation;
                     ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
-                    if (mSettings.mouseEmulation && !PLATFORM_HAS_MOUSE_CURSOR) {
+                    if (!PLATFORM_HAS_MOUSE_CURSOR) {
                         io.MouseDrawCursor = !io.MouseDrawCursor;
                     }
                     // todo save settings
@@ -455,7 +455,7 @@ bool Osp::engineLoad(std::string path, std::string filename) {
         path.append("/").append(filename)));
     
     mLastFileSelected = filename;
-    if (! mSoundEngine.load(file)) {
+    if (! mSoundEngine.load(file, !mSettings.alwaysStartFirstTune)) {
         const auto error = mSoundEngine.getError();
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", error.c_str());
         return false;

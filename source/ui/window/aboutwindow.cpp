@@ -34,12 +34,15 @@ void AboutWindow::render() {
         ImGui::TextUnformatted("OSP is a chiptune player that can handle several\n"
                                 "old sound format produced in the early years of\n"
                                 "computer sound and hacking until now.");
+
+                                #define TEST 0x123456
+
         ImGui::NewLine();
         ImGui::TextUnformatted("This program make use of:");
         ImGui::BulletText("SDL %d.%d.%d", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL);
         ImGui::BulletText("Dear ImGui %s", ImGui::GetVersion());
         ImGui::BulletText("libdumb %s", DUMB_VERSION_STR);
-        ImGui::BulletText("libgme 0.5.5");
+        ImGui::BulletText("libgme 6.0.3");
         ImGui::BulletText("%s", sc68_versionstr());
         ImGui::BulletText("libsidplayfp %d.%d.%d", LIBSIDPLAYFP_VERSION_MAJ, LIBSIDPLAYFP_VERSION_MIN, LIBSIDPLAYFP_VERSION_LEV);
         ImGui::NewLine();

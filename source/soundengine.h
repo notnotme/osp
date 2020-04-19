@@ -27,7 +27,7 @@ class SoundEngine {
         void cleanup();
 
         bool canHandle(const std::shared_ptr<File> file) const;
-        bool load(const std::shared_ptr<File> file);
+        bool load(const std::shared_ptr<File> file, bool defaultTune);
         void stop();
         void pause();
         void play();
