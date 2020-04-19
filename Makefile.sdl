@@ -34,6 +34,7 @@ OBJS		= source/platform/sdl/platform.o \
 			source/filesystem/localfilesystem.o \
 			source/filemanager.o \
 			source/soundengine.o \
+			source/settings.o \
 			source/osp.o \
 			source/main.o
 
@@ -54,7 +55,7 @@ CFLAGS	    += -g -Wl,-q -Wall -O2 `sdl2-config --cflags` `pkg-config sc68 --cfla
 CXXFLAGS    += $(CFLAGS) -fno-exceptions -std=gnu++17
 
 ASFLAGS		= $(CXXFLAGS)
-LIBS		= -lstdc++fs `sdl2-config --libs` -lSDL2_image `pkg-config sc68 --libs` `pkg-config libgme --libs` `pkg-config dumb --libs` -lsidplayfp -lglad -ldl
+LIBS		= -lstdc++fs -lconfig `sdl2-config --libs` -lSDL2_image `pkg-config sc68 --libs` `pkg-config libgme --libs` `pkg-config dumb --libs` -lsidplayfp -lglad -ldl
 
 all:    $(TARGET).elf
 

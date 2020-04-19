@@ -121,18 +121,7 @@ bool setup() {
         return false;
     }
 
-    Osp::Settings settings {
-        .style = 0,
-        .font = 0,
-        .mouseEmulation = true,
-        .touchEnabled = true,
-        .skipUnsupportedTunes = true,
-        .alwaysStartFirstTune = false,
-        .skipSubTunes = false,
-        .dataPath = DATA_PATH
-    };
-
-    if (!osp.setup(settings)) {
+    if (!osp.setup(DATA_PATH)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "osp.initialize failed\n");
         return false;
     }

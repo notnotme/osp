@@ -116,10 +116,10 @@ void SettingsWindow::render(const WindowData& windowData,
     auto tabBarFlags = ImGuiTabBarFlags_NoTooltip;
     if (ImGui::BeginTabBar("ospSettingsTab", tabBarFlags)) {
         renderOspSettingsTab(windowData, onToggleSetting);
-        renderSc68DecoderTab();
-        renderSidplayDecoderTab();
-        renderGmeDecoderTab();
-        renderDumbDecoderTab();
+        //renderSc68DecoderTab();
+        //renderSidplayDecoderTab();
+        //renderGmeDecoderTab();
+        //renderDumbDecoderTab();
         ImGui::EndTabBar();
     }
 

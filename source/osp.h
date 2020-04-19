@@ -1,5 +1,6 @@
 #pragma once
 
+#include "platform.h"
 #include "imgui/imgui.h"
 #include "filesystem/filesystem.h"
 #include "ui/window/aboutwindow.h"
@@ -10,28 +11,19 @@
 #include "ui/metadataframe.h"
 #include "ui/menubar.h"
 #include "filemanager.h"
+#include "settings.h"
 #include "soundengine.h"
 
 #include <string>
+#include <libconfig.h>
 
 class Osp {
 
     public:
-        struct Settings {
-            int style;
-            int font;
-            bool mouseEmulation;
-            bool touchEnabled;
-            bool skipUnsupportedTunes;
-            bool alwaysStartFirstTune;
-            bool skipSubTunes;
-            std::string dataPath;
-        };
-
         Osp();
         virtual ~Osp();
 
-        bool setup(Settings settings);
+        bool setup(std::string dataPath);
         void render();
         void cleanup();
 

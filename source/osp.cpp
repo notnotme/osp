@@ -16,10 +16,9 @@ Osp::Osp() :
 Osp::~Osp() {
 }
 
-bool Osp::setup(Settings settings) {
+bool Osp::setup(std::string dataPath) {
     // Setup sound engine
-    mSettings = settings;
-    if (!mSoundEngine.setup(mSettings.dataPath.c_str())) {
+    if (!mSoundEngine.setup(dataPath.c_str())) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to initialize SoundEngine\n");
         return false;
     }
@@ -139,12 +138,12 @@ void Osp::render() {
                 case 2: ImGui::StyleColorsClassic(); break;
             }
             mSettings.style = style;
-            // todo save setting
+            mSettings.save();
         },
         [&](ImFont* font, int n) {
             io.FontDefault = font;
             mSettings.font = n;
-            // todo save settings
+            mSettings.save();
         },
         [&](MenuBar::MenuAction action) {
             switch (action) {
@@ -226,7 +225,7 @@ void Osp::render() {
                     if (!PLATFORM_HAS_MOUSE_CURSOR) {
                         io.MouseDrawCursor = !io.MouseDrawCursor;
                     }
-                    // todo save settings
+                    mSettings.save();
                     break;
                 case SettingsWindow::ToggleSetting::TOUCH_ENABLED:
                     mSettings.touchEnabled = !mSettings.touchEnabled;
@@ -235,19 +234,19 @@ void Osp::render() {
                     } else {
                         io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
                     }
-                    // todo save settings
+                    mSettings.save();
                     break;
                 case SettingsWindow::ToggleSetting::AUTOSKIP_UNSUPPORTED_FILES:
                     mSettings.skipUnsupportedTunes = !mSettings.skipUnsupportedTunes;
-                    // todo save settings
+                    mSettings.save();
                     break;
                 case SettingsWindow::ToggleSetting::SKIP_SUBTUNES:
                     mSettings.skipSubTunes = !mSettings.skipSubTunes;
-                    // todo save settings
+                    mSettings.save();
                     break;
                 case SettingsWindow::ToggleSetting::ALWAYS_START_FIRST_TRACK:
                     mSettings.alwaysStartFirstTune = !mSettings.alwaysStartFirstTune;
-                    // todo save settings
+                    mSettings.save();
                     break;
                 break;
             }
