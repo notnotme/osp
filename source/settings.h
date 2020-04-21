@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <libconfig.h>
 
 class Settings {
@@ -16,9 +17,7 @@ class Settings {
         Settings();
         virtual ~Settings();
 
-        void save();
-
-    private:
-        Settings(const Settings& copy);
+        void load(std::string filename);
+        void save(std::string filename);
 
 };

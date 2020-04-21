@@ -2,6 +2,7 @@
 
 #include "../imgui/imgui.h"
 #include "../filemanager.h"
+#include "../settings.h"
 
 #include <string>
 #include <functional>
@@ -21,8 +22,7 @@ class MenuBar {
             std::string message;
             FileManager::State fmState;
             bool itemShowWorkspaceCheked;
-            int selectedStyle;
-            int selectedFont;
+            Settings settings;
         };
 
         MenuBar();

@@ -2,21 +2,26 @@
 
 #include "SDL2/SDL_log.h"
 
-Settings::Settings() {
+Settings::Settings() :
+    style(0),
+    font(0),
+    mouseEmulation(true),
+    touchEnabled(true),
+    skipUnsupportedTunes(true),
+    alwaysStartFirstTune(false),
+    skipSubTunes(false) {
+}
+
+Settings::~Settings() {
+}
+
+void Settings::load(std::string filename) {
     config_t cfg;
     config_init(&cfg);
     
-    if (! config_read_file(&cfg, "config.cfg")) {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Unable to load config.cfg\n");
+    if (! config_read_file(&cfg, filename.c_str())) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Unable to load %s\n", filename.c_str());
         config_destroy(&cfg);
-        
-        style = 0;
-        font = 0;
-        mouseEmulation = true;
-        touchEnabled = true;
-        skipUnsupportedTunes = true;
-        alwaysStartFirstTune = false;
-        skipSubTunes = false;
         return;
     }
 
@@ -40,13 +45,10 @@ Settings::Settings() {
     skipSubTunes = value == 1;
 
     config_destroy(&cfg);
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Config loaded.\n");
+    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Config loaded %s\n", filename.c_str());
 }
 
-Settings::~Settings() {
-}
-
-void Settings::save() {
+void Settings::save(std::string filename) {
     config_t cfg;
     config_init(&cfg);
     const auto root = config_root_setting(&cfg);
@@ -59,10 +61,10 @@ void Settings::save() {
     config_setting_set_bool(config_setting_add(root, "alwaysStartFirstTune", CONFIG_TYPE_BOOL), alwaysStartFirstTune);
     config_setting_set_bool(config_setting_add(root, "skipSubTunes", CONFIG_TYPE_BOOL), skipSubTunes);
     
-    if(! config_write_file(&cfg, "config.cfg")) {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Unable to save config.cfg\n");
+    if(! config_write_file(&cfg, filename.c_str())) {
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Unable to save %s\n", filename.c_str());
     } else {
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Config saved.\n");
+        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Config saved %s\n", filename.c_str());
     }
     config_destroy(&cfg);
 }

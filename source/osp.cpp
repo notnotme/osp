@@ -17,6 +17,8 @@ Osp::~Osp() {
 }
 
 bool Osp::setup(std::string dataPath) {
+    mSettings.load(CONFIG_FILENAME);
+
     // Setup sound engine
     if (!mSoundEngine.setup(dataPath.c_str())) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to initialize SoundEngine\n");
@@ -128,43 +130,16 @@ void Osp::render() {
             .message = mStatusMessage,
             .fmState = fmState,
             .itemShowWorkspaceCheked = mShowWorkspace,
-            .selectedStyle = mSettings.style,
-            .selectedFont = mSettings.font
+            .settings = mSettings
         },
         [&](int style) {
-            switch (style) {
-                case 0: ImGui::StyleColorsDark(); break;
-                case 1: ImGui::StyleColorsLight(); break;
-                case 2: ImGui::StyleColorsClassic(); break;
-            }
-            mSettings.style = style;
-            mSettings.save();
+            handleStyleChange(style);
         },
         [&](ImFont* font, int n) {
-            io.FontDefault = font;
-            mSettings.font = n;
-            mSettings.save();
+           handleFontChange(font, n);
         },
         [&](MenuBar::MenuAction action) {
-            switch (action) {
-                case MenuBar::MenuAction::TOGGLE_WORKSPACE_VISIBILITY:
-                    mShowWorkspace = !mShowWorkspace;
-                    break;
-                case MenuBar::MenuAction::SHOW_SETTINGS:
-                    mSettingsWindow.setVisible(true);
-                    break;
-                case MenuBar::MenuAction::SHOW_ABOUT:
-                    mAboutWindow.setVisible(true);
-                    break;
-                case MenuBar::MenuAction::SHOW_METRICS:
-                    mMetricsWindow.setVisible(true);
-                    break;
-                case MenuBar::MenuAction::QUIT:
-                    SDL_Event event;
-                    event.type = SDL_QUIT;
-                    SDL_PushEvent(&event);
-                    break;
-            }
+            handleMenuBarAction(action);
         });
 
     ImGui::PopStyleVar(1);
@@ -211,45 +186,10 @@ void Osp::render() {
 
     // Other windows & popups
     mSettingsWindow.render( {
-            .mouseEmulationEnabled = mSettings.mouseEmulation,
-            .touchEnabled = mSettings.touchEnabled,
-            .skipUnsupportedTunes = mSettings.skipUnsupportedTunes,
-            .alwaysStartFirstTune = mSettings.alwaysStartFirstTune,
-            .skipSubTunes = mSettings.skipSubTunes
+            .settings = mSettings
         },
         [&](SettingsWindow::ToggleSetting setting) {
-            switch (setting) {
-                case SettingsWindow::ToggleSetting::MOUSE_EMULATION:
-                    mSettings.mouseEmulation = !mSettings.mouseEmulation;
-                    ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
-                    if (!PLATFORM_HAS_MOUSE_CURSOR) {
-                        io.MouseDrawCursor = !io.MouseDrawCursor;
-                    }
-                    mSettings.save();
-                    break;
-                case SettingsWindow::ToggleSetting::TOUCH_ENABLED:
-                    mSettings.touchEnabled = !mSettings.touchEnabled;
-                    if (!mSettings.touchEnabled) {
-                        io.ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
-                    } else {
-                        io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
-                    }
-                    mSettings.save();
-                    break;
-                case SettingsWindow::ToggleSetting::AUTOSKIP_UNSUPPORTED_FILES:
-                    mSettings.skipUnsupportedTunes = !mSettings.skipUnsupportedTunes;
-                    mSettings.save();
-                    break;
-                case SettingsWindow::ToggleSetting::SKIP_SUBTUNES:
-                    mSettings.skipSubTunes = !mSettings.skipSubTunes;
-                    mSettings.save();
-                    break;
-                case SettingsWindow::ToggleSetting::ALWAYS_START_FIRST_TRACK:
-                    mSettings.alwaysStartFirstTune = !mSettings.alwaysStartFirstTune;
-                    mSettings.save();
-                    break;
-                break;
-            }
+            handleSettingsChange(setting);
         });
 
     mMetricsWindow.render();
@@ -446,6 +386,82 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                     break;
             }
         break;
+    }
+}
+
+void Osp::handleSettingsChange(const SettingsWindow::ToggleSetting setting) {
+    auto& io = ImGui::GetIO();
+
+    switch (setting) {
+        case SettingsWindow::ToggleSetting::MOUSE_EMULATION:
+            mSettings.mouseEmulation = !mSettings.mouseEmulation;
+            ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
+            if (!PLATFORM_HAS_MOUSE_CURSOR) {
+                io.MouseDrawCursor = !io.MouseDrawCursor;
+            }
+            break;
+        case SettingsWindow::ToggleSetting::TOUCH_ENABLED:
+            mSettings.touchEnabled = !mSettings.touchEnabled;
+            if (!mSettings.touchEnabled) {
+                io.ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
+            } else {
+                io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
+            }
+            break;
+        case SettingsWindow::ToggleSetting::AUTOSKIP_UNSUPPORTED_FILES:
+            mSettings.skipUnsupportedTunes = !mSettings.skipUnsupportedTunes;
+            break;
+        case SettingsWindow::ToggleSetting::SKIP_SUBTUNES:
+            mSettings.skipSubTunes = !mSettings.skipSubTunes;
+            break;
+        case SettingsWindow::ToggleSetting::ALWAYS_START_FIRST_TRACK:
+            mSettings.alwaysStartFirstTune = !mSettings.alwaysStartFirstTune;
+            break;
+        break;
+    }
+    mSettings.save(CONFIG_FILENAME);
+}
+
+void Osp::handleStyleChange(int style) {
+    switch (style) {
+        case 0: ImGui::StyleColorsDark();
+            break;
+        case 1: ImGui::StyleColorsLight();
+            break;
+        case 2: ImGui::StyleColorsClassic();
+            break;
+    }
+    mSettings.style = style;
+    mSettings.save(CONFIG_FILENAME);
+}
+
+void Osp::handleFontChange(ImFont* font, int fontIndex) {
+    auto& io = ImGui::GetIO();
+
+    io.FontDefault = font;
+    mSettings.font = fontIndex;
+    mSettings.save(CONFIG_FILENAME);
+}
+
+void Osp::handleMenuBarAction(const MenuBar::MenuAction action) {
+    switch (action) {
+        case MenuBar::MenuAction::TOGGLE_WORKSPACE_VISIBILITY:
+            mShowWorkspace = !mShowWorkspace;
+            break;
+        case MenuBar::MenuAction::SHOW_SETTINGS:
+            mSettingsWindow.setVisible(true);
+            break;
+        case MenuBar::MenuAction::SHOW_ABOUT:
+            mAboutWindow.setVisible(true);
+            break;
+        case MenuBar::MenuAction::SHOW_METRICS:
+            mMetricsWindow.setVisible(true);
+            break;
+        case MenuBar::MenuAction::QUIT:
+            SDL_Event event;
+            event.type = SDL_QUIT;
+            SDL_PushEvent(&event);
+            break;
     }
 }
 

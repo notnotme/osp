@@ -18,7 +18,7 @@ void SettingsWindow::renderOspSettingsTab(const WindowData& windowData,
         ImGui::TextUnformatted(STR_GENERAL);
         ImGui::Separator();
         
-        bool mouseEmulationEnabled = windowData.mouseEmulationEnabled;
+        bool mouseEmulationEnabled = windowData.settings.mouseEmulation;
         if (ImGui::Checkbox(STR_SETTINGS_MOUSE_EMULATION, &mouseEmulationEnabled)) {
             onToggleSetting(MOUSE_EMULATION);
         }
@@ -26,7 +26,7 @@ void SettingsWindow::renderOspSettingsTab(const WindowData& windowData,
             ImGui::SetTooltip(STR_TOOLTIP_MOUSE_EMULATION);
         }
 
-        bool touchEnabled = windowData.touchEnabled;
+        bool touchEnabled = windowData.settings.touchEnabled;
         if (ImGui::Checkbox(STR_SETTINGS_TOUCH_ENABLED, &touchEnabled)) {
             onToggleSetting(TOUCH_ENABLED);
         }
@@ -38,7 +38,7 @@ void SettingsWindow::renderOspSettingsTab(const WindowData& windowData,
         ImGui::TextUnformatted(STR_AUDIO);
         ImGui::Separator();
 
-        bool autoSkipUnsupported = windowData.skipUnsupportedTunes;
+        bool autoSkipUnsupported = windowData.settings.skipUnsupportedTunes;
         if (ImGui::Checkbox(STR_SKIP_UNSUPPORTED_FILES, &autoSkipUnsupported)) {
             onToggleSetting(AUTOSKIP_UNSUPPORTED_FILES);
         }
@@ -46,7 +46,7 @@ void SettingsWindow::renderOspSettingsTab(const WindowData& windowData,
             ImGui::SetTooltip(STR_TOOLTIP_SKIP_UNSUPPORTED_FILES);
         }
 
-        bool alwaysStartFirstTrack = windowData.alwaysStartFirstTune;
+        bool alwaysStartFirstTrack = windowData.settings.alwaysStartFirstTune;
         if (ImGui::Checkbox(STR_ALWAYS_START_FIRST_TUNE, &alwaysStartFirstTrack)) {
             onToggleSetting(ALWAYS_START_FIRST_TRACK);
         }
@@ -54,7 +54,7 @@ void SettingsWindow::renderOspSettingsTab(const WindowData& windowData,
             ImGui::SetTooltip(STR_TOOLTIP_ALWAYS_START_FIRST_TUNE);
         }
 
-        bool skipSubTunes = windowData.skipSubTunes;
+        bool skipSubTunes = windowData.settings.skipSubTunes;
         if (ImGui::Checkbox(STR_SKIP_SUBTUNES, &skipSubTunes)) {
             onToggleSetting(SKIP_SUBTUNES);
         }

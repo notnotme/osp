@@ -20,6 +20,8 @@
 class Osp {
 
     public:
+        const std::string CONFIG_FILENAME = "config.cfg";
+
         Osp();
         virtual ~Osp();
 
@@ -51,7 +53,12 @@ class Osp {
         std::string getPrevFileName() const;
         std::string getNextFileName() const;
         bool engineLoad(std::string path, std::string filename);
+        
         void handlePlayerButtonClick(const PlayerFrame::ButtonId button);
         void handleExplorerItemClick(const FileSystem::Entry item, const std::filesystem::path currentExplorerPath);
-        
+        void handleSettingsChange(const SettingsWindow::ToggleSetting setting);
+        void handleStyleChange(int style);
+        void handleFontChange(ImFont* font, int fontIndex);
+        void handleMenuBarAction(const MenuBar::MenuAction action);
+
 };

@@ -25,15 +25,15 @@ void MenuBar::render(const MenuBarData& menuBarData,
         }
         if (ImGui::BeginMenu(STR_MENU_ITEM_THEME)) {
 
-            auto style = menuBarData.selectedStyle;
+            auto style = menuBarData.settings.style;
             if (ImGui::Combo(STR_MENU_ITEM_STYLE, &style, "Dark\0Light\0Classic\0")) {
                 onStyleChange(style);
             }
 
-            const auto defaultFont = io.Fonts->Fonts[menuBarData.selectedFont];
+            const auto defaultFont = io.Fonts->Fonts[menuBarData.settings.font];
             if (ImGui::BeginCombo(STR_MENU_ITEM_FONT, defaultFont->GetDebugName())) {
                 for (auto n=0; n<io.Fonts->Fonts.Size; n++) {
-                    ImFont* font = io.Fonts->Fonts[n];
+                    const auto font = io.Fonts->Fonts[n];
                     ImGui::PushID((void*) font);
                     if (ImGui::Selectable(font->GetDebugName(), font == defaultFont)) {
                         onFontChange(font, n);

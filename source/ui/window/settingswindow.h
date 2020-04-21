@@ -1,6 +1,7 @@
 #pragma once
 
 #include "window.h"
+#include "../../settings.h"
 
 #include <functional>
 
@@ -16,11 +17,7 @@ class SettingsWindow : public Window {
         };
 
         struct WindowData {
-            bool mouseEmulationEnabled;
-            bool touchEnabled;
-            bool skipUnsupportedTunes;
-            bool alwaysStartFirstTune;
-            bool skipSubTunes;
+            Settings settings;
         };
 
         SettingsWindow();
