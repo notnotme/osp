@@ -1,5 +1,7 @@
 #include "dumbdecoder.h"
 
+#include "../strings.h"
+
 #include <memory>
 #include <algorithm>
 #include <SDL2/SDL_log.h>
@@ -123,14 +125,52 @@ void DumbDecoder::parseMetaData() {
         mMetaData.trackInformation.title = duh_get_tag(mDuh, "TITLE");
     }
 
+    // Get track comment
     const auto data = duh_get_it_sigdata(mDuh);
-    if (const auto messagePtr = (char*) dumb_it_sd_get_song_message(data);
-        messagePtr != nullptr) {
+    if (const auto commentPtr = (char*) dumb_it_sd_get_song_message(data);
+        commentPtr != nullptr) {
 
-        auto message = std::string(messagePtr);
-        if (!message.empty()) {
-            std::replace(message.begin(), message.end(), '\r', '\n');
-            mMetaData.trackInformation.comment = message;
+        if (auto comment = std::string(commentPtr);
+            !comment.empty()) {
+            
+            std::replace(comment.begin(), comment.end(), '\r', '\n');
+            mMetaData.trackInformation.comment = comment;
+        }
+    }
+
+    // Seek instruments to show others comments
+    const auto nbInstruments = dumb_it_sd_get_n_instruments(data);
+    if (nbInstruments > 0 && !mMetaData.trackInformation.comment.empty()) {
+        mMetaData.trackInformation.comment.append("\n");
+    }
+
+    for (auto i=0; i<nbInstruments; i++) {
+        if (const auto instrumentNamePtr = (char*) dumb_it_sd_get_instrument_name(data, i);
+            instrumentNamePtr != nullptr) {
+             
+            if (const auto comment = std::string(instrumentNamePtr);
+                !comment.empty()) {
+
+                mMetaData.trackInformation.comment.append(comment).append("\n");
+            }
+        }
+    }
+
+     // Seek samples to show others comments
+    const auto nbSamples = dumb_it_sd_get_n_samples(data);
+    if (nbSamples > 0 && !mMetaData.trackInformation.comment.empty()) {
+        mMetaData.trackInformation.comment.append("\n");
+    }
+
+    for (auto i=0; i<nbSamples; i++) {
+        if (const auto sampleNamePtr = (char*) dumb_it_sd_get_sample_name(data, i);
+            sampleNamePtr != nullptr) {
+             
+            if (const auto comment = std::string(sampleNamePtr);
+                !comment.empty()) {
+
+                mMetaData.trackInformation.comment.append(comment).append("\n");
+            }
         }
     }
 

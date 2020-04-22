@@ -113,6 +113,7 @@ void MetaDataFrame::renderTrackInformation(const FrameData& frameData) {
     if (!frameData.metaData.trackInformation.comment.empty()) {
         ImGui::NewLine();
         ImGui::TextUnformatted(STR_COMMENTS);
+        ImGui::Separator();
         ImGui::TextWrapped("%s", frameData.metaData.trackInformation.comment.c_str());
     }
 
