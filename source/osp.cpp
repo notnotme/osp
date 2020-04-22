@@ -7,6 +7,7 @@
 
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_log.h>
+#include <SDL2/SDL_image.h>
 
 Osp::Osp() :
     mShowWorkspace(true),
@@ -16,12 +17,41 @@ Osp::Osp() :
 Osp::~Osp() {
 }
 
-bool Osp::setup(std::string dataPath) {
+bool Osp::setup(const std::string dataPath) {
     mSettings.load(CONFIG_FILENAME);
+
+    // Load spritesheets
+    if (!mSpriteCatalog.setup(std::string(dataPath).append("/spritesheet/spritesheet.json"))) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to load the spritesheet catalog.\n");
+        return false;
+    }
+
+    // Load sprite texture
+    glGenTextures(1, &mTextureSprites);
+    if (mTextureSprites == 0) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to create the spritesheet texture.\n");
+        return false;
+    }
+
+    if (auto spritesheet = IMG_Load(std::string(dataPath).append("/spritesheet/spritesheet.png").c_str());
+        spritesheet != nullptr) {
+    
+        glActiveTexture(0);
+        glBindTexture(GL_TEXTURE_2D, mTextureSprites);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, spritesheet->w, spritesheet->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, spritesheet->pixels);
+        SDL_FreeSurface(spritesheet);
+    } else {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to load the spritesheet texture.\n");
+        return false;
+    }
 
     // Setup sound engine
     if (!mSoundEngine.setup(dataPath.c_str())) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to initialize SoundEngine\n");
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to initialize SoundEngine.\n");
         return false;
     }
 
@@ -61,6 +91,11 @@ bool Osp::setup(std::string dataPath) {
 void Osp::cleanup() {
     mSoundEngine.cleanup();
     mFileManager.cleanup();
+    mSpriteCatalog.cleanup();
+    
+    glDeleteTextures(1, &mTextureSprites);
+    mTextureSprites = 0;
+
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "OSP cleanup.\n");
 }
 
@@ -167,6 +202,12 @@ void Osp::render() {
 
         // Player
         mPlayerFrame.render({
+                .texture = mTextureSprites,
+                .playFrame = mSpriteCatalog.getFrame("play"),
+                .pauseFrame = mSpriteCatalog.getFrame("pause"),
+                .stopFrame = mSpriteCatalog.getFrame("stop"),
+                .nextFrame = mSpriteCatalog.getFrame("next"),
+                .prevFrame = mSpriteCatalog.getFrame("prev"),
                 .state = sndState,
                 .metaData = songMetaData
             },
@@ -193,7 +234,7 @@ void Osp::render() {
         });
 
     mMetricsWindow.render();
-    mAboutWindow.render();
+    mAboutWindow.render(mTextureSprites, mSpriteCatalog.getFrame("logo"));
 }
 
 void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {

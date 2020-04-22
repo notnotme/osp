@@ -48,7 +48,9 @@ bool setup() {
     }
 
     // Setup window icon (optional)
-    if (auto icon = IMG_Load("icon.jpg"); icon != nullptr) {
+    if (auto icon = IMG_Load("icon.jpg");
+        icon != nullptr) {
+        
         SDL_SetWindowIcon(sdlWindow, icon);
         SDL_FreeSurface(icon);
     } else {

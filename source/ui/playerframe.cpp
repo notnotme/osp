@@ -32,26 +32,41 @@ void PlayerFrame::renderButtonBar(const FrameData& frameData, bool disabled,
     std::function<void (ButtonId)> onButtonClick) {
     
     const auto& style = ImGui::GetStyle();
-    
-    const auto numberOfButton = 4;
-    const auto totalSpacing = (numberOfButton-1) * style.ItemSpacing.x;
-    const auto buttonWidth = (ImGui::GetContentRegionAvailWidth()-totalSpacing) / numberOfButton;
-    
-    if (ImGui::Button(frameData.state == SoundEngine::State::STARTED ? STR_BUTTON_PAUSE"###playerPlay" : STR_BUTTON_PLAY"###playerPlay", ImVec2(buttonWidth, 64))) {
+    const auto playButtonFrame = frameData.state == SoundEngine::State::STARTED ? frameData.pauseFrame : frameData.playFrame;
+    const auto startX = (ImGui::GetContentRegionAvailWidth()/2 - (playButtonFrame.size.x * 4)/2 - style.ItemSpacing.x * 6);
+
+    ImGui::NewLine();
+    ImGui::NewLine();
+    ImGui::SameLine(startX);
+    ImGui::PushID(ImGui::GetID("playerButtonPlay"));
+    if (ImGui::ImageButton((ImTextureID)(intptr_t) frameData.texture, playButtonFrame.size, playButtonFrame.uv0, playButtonFrame.uv1)) {
         onButtonClick(PLAY);
     }
+    ImGui::PopID();
+
     ImGui::SameLine();
-    if (ImGui::Button(STR_BUTTON_STOP"##playerStop", ImVec2(buttonWidth, 64))) {
+    
+    ImGui::PushID(ImGui::GetID("playerButtonStop"));
+    if (ImGui::ImageButton((ImTextureID)(intptr_t) frameData.texture, frameData.stopFrame.size, frameData.stopFrame.uv0, frameData.stopFrame.uv1)) {
         onButtonClick(STOP);
     }
+    ImGui::PopID();
+    
     ImGui::SameLine();
-    if (ImGui::Button(STR_BUTTON_BACK"##playerBack", ImVec2(buttonWidth, 64))) {
+    
+    ImGui::PushID(ImGui::GetID("playerButtonPrev"));
+    if (ImGui::ImageButton((ImTextureID)(intptr_t) frameData.texture, frameData.prevFrame.size, frameData.prevFrame.uv0, frameData.prevFrame.uv1)) {
         onButtonClick(PREV);
     }
+    ImGui::PopID();
+    
     ImGui::SameLine();
-    if (ImGui::Button(STR_BUTTON_NEXT"##playerNext", ImVec2(buttonWidth, 64))) {
+    
+    ImGui::PushID(ImGui::GetID("playerButtonNext"));
+    if (ImGui::ImageButton((ImTextureID)(intptr_t) frameData.texture, frameData.nextFrame.size, frameData.nextFrame.uv0, frameData.nextFrame.uv1)) {
         onButtonClick(NEXT);
     }
+    ImGui::PopID();
 }
 
 void PlayerFrame::render(const FrameData& frameData,

@@ -15,7 +15,7 @@ AboutWindow::AboutWindow() :
 AboutWindow::~AboutWindow() {
 }
 
-void AboutWindow::render() {
+void AboutWindow::render(const GLuint texture, const SpriteCatalog::Frame& logoFrame) {
     if (!mVisible) {
         return;
     }
@@ -31,11 +31,13 @@ void AboutWindow::render() {
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x/2, io.DisplaySize.y/2), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     
     if (ImGui::BeginPopupModal(STR_ABOUT_WINDOW_TITLE, &mVisible, windowFlags)) {
+        ImGui::SetCursorPosX(ImGui::GetContentRegionAvailWidth()/2 - logoFrame.size.x/2);
+        ImGui::Image((ImTextureID)(intptr_t) texture, logoFrame.size, logoFrame.uv0, logoFrame.uv1, style.Colors[ImGuiCol_Text]);
+
+        ImGui::Spacing();
         ImGui::TextUnformatted("OSP is a chiptune player that can handle several\n"
                                 "old sound format produced in the early years of\n"
                                 "computer sound and hacking until now.");
-
-                                #define TEST 0x123456
 
         ImGui::NewLine();
         ImGui::TextUnformatted("This program make use of:");

@@ -1,8 +1,10 @@
 #pragma once
 
 #include "window.h"
+#include "../../spritecatalog.h"
 
 #include <string>
+#include <glad/glad.h>
 
 class AboutWindow : public Window {
 
@@ -10,7 +12,7 @@ class AboutWindow : public Window {
         AboutWindow();
         virtual ~AboutWindow();
 
-        void render();
+        void render(const GLuint texture, const SpriteCatalog::Frame& logoFrame);
 
     private:
         AboutWindow(const AboutWindow& copy);

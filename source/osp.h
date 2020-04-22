@@ -10,11 +10,13 @@
 #include "ui/playerframe.h"
 #include "ui/metadataframe.h"
 #include "ui/menubar.h"
+#include "spritecatalog.h"
 #include "filemanager.h"
 #include "settings.h"
 #include "soundengine.h"
 
 #include <string>
+#include <glad/glad.h>
 #include <libconfig.h>
 
 class Osp {
@@ -25,7 +27,7 @@ class Osp {
         Osp();
         virtual ~Osp();
 
-        bool setup(std::string dataPath);
+        bool setup(const std::string dataPath);
         void render();
         void cleanup();
 
@@ -46,6 +48,9 @@ class Osp {
         std::string mStatusMessage;
         std::string mLastFileSelected;
         
+        SpriteCatalog mSpriteCatalog;
+        GLuint mTextureSprites;
+
         Osp(const Osp& copy);
 
         void selectNextTrack(bool skipInvalid, bool autoPlay);

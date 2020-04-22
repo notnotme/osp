@@ -2,14 +2,22 @@
 
 #include "../decoder/decoder.h"
 #include "../soundengine.h"
+#include "../spritecatalog.h"
 
 #include <string>
+#include <glad/glad.h>
 #include <functional>
 
 class PlayerFrame {
 
     public:
         struct FrameData {
+            GLuint texture;
+            SpriteCatalog::Frame playFrame;
+            SpriteCatalog::Frame pauseFrame;
+            SpriteCatalog::Frame stopFrame;
+            SpriteCatalog::Frame nextFrame;
+            SpriteCatalog::Frame prevFrame;
             SoundEngine::State state;
             Decoder::MetaData metaData;
         };
