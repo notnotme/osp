@@ -15,7 +15,7 @@ bool SpriteCatalog::setup(const std::string filename) {
     int catalogWidth, catalogHeight;
 
     root = json_load_file(filename.c_str(), 0, &error);
-    if (!root) {
+    if (root == nullptr) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "json error on line %d: %s\n", error.line, error.text);
         mError = std::string("Cannot load sprite catalog : ").append(filename);
         return false;
@@ -24,26 +24,26 @@ bool SpriteCatalog::setup(const std::string filename) {
     // META ----------------------
     meta = json_object_get(root, "meta");
     frames = json_object_get(root, "frames");
-    if (!meta || !frames) {
+    if (meta == nullptr || frames == nullptr) {
         mError = std::string("Malformed sprite catalog : ").append(filename);
         goto _fail;
     }
     
     size = json_object_get(meta, "size");
-    if (!size) {
+    if (size == nullptr) {
         mError = std::string("Malformed sprite catalog : ").append(filename);
         goto _fail;
     }
 
     value = json_object_get(size, "w");
-    if (!value) {
+    if (value == nullptr) {
         mError = std::string("Malformed sprite catalog : ").append(filename);
         goto _fail;
     }
     catalogWidth = json_integer_value(value);
 
     value = json_object_get(size, "h");
-    if (!value) {
+    if (value == nullptr) {
         mError = std::string("Malformed sprite catalog : ").append(filename);
         goto _fail;
     }
@@ -93,4 +93,8 @@ const SpriteCatalog::Frame SpriteCatalog::getFrame(const std::string name) {
     }
     
     return mCatalog[name];
+}
+
+std::string SpriteCatalog::getError() const {
+    return mError;
 }

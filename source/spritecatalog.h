@@ -19,6 +19,7 @@ class SpriteCatalog {
         virtual bool setup(std::string jsonString);
         virtual void cleanup();
         const Frame getFrame(const std::string name);
+        std::string getError() const;
 
     private:
         SpriteCatalog(const SpriteCatalog& copy);

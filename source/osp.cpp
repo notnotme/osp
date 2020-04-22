@@ -11,7 +11,8 @@
 
 Osp::Osp() :
     mShowWorkspace(true),
-    mStatusMessage("Initializing...") {
+    mStatusMessage("Initializing..."),
+    mTextureSprites(0) {
 }
 
 Osp::~Osp() {
@@ -22,7 +23,7 @@ bool Osp::setup(const std::string dataPath) {
 
     // Load spritesheets
     if (!mSpriteCatalog.setup(std::string(dataPath).append("/spritesheet/spritesheet.json"))) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to load the spritesheet catalog.\n");
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to load the spritesheet catalog: %s.\n", mSpriteCatalog.getError().c_str());
         return false;
     }
 
@@ -33,21 +34,19 @@ bool Osp::setup(const std::string dataPath) {
         return false;
     }
 
-    if (auto spritesheet = IMG_Load(std::string(dataPath).append("/spritesheet/spritesheet.png").c_str());
-        spritesheet != nullptr) {
-    
-        glActiveTexture(0);
-        glBindTexture(GL_TEXTURE_2D, mTextureSprites);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, spritesheet->w, spritesheet->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, spritesheet->pixels);
-        SDL_FreeSurface(spritesheet);
-    } else {
+    const auto spritesheet = IMG_Load(std::string(dataPath).append("/spritesheet/spritesheet.png").c_str());
+    if (spritesheet == nullptr) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to load the spritesheet texture.\n");
         return false;
     }
+    glBindTexture(GL_TEXTURE_2D, mTextureSprites);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, spritesheet->w, spritesheet->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, spritesheet->pixels);
+    SDL_FreeSurface(spritesheet);
+
 
     // Setup sound engine
     if (!mSoundEngine.setup(dataPath.c_str())) {
