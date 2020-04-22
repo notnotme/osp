@@ -31,7 +31,7 @@ void AboutWindow::render(const GLuint texture, const SpriteCatalog::Frame& logoF
     ImGui::SetNextWindowPos(ImVec2(io.DisplaySize.x/2, io.DisplaySize.y/2), ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
     
     if (ImGui::BeginPopupModal(STR_ABOUT_WINDOW_TITLE, &mVisible, windowFlags)) {
-        ImGui::SetCursorPosX(ImGui::GetContentRegionAvailWidth()/2 - logoFrame.size.x/2);
+        ImGui::SetCursorPosX(ImGui::GetContentRegionAvailWidth()/2 - logoFrame.size.x/2 + style.WindowPadding.x);
         ImGui::Image((ImTextureID)(intptr_t) texture, logoFrame.size, logoFrame.uv0, logoFrame.uv1);
 
         ImGui::Spacing();
