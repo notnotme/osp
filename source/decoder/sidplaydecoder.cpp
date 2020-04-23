@@ -6,6 +6,8 @@
 #include <sidplayfp/SidTuneInfo.h>
 #include <SDL2/SDL_log.h>
 
+const std::string SidPlayDecoder::NAME = "sidplayfp";
+
 SidPlayDecoder::SidPlayDecoder(const std::string dataPath) : Decoder(),
     mKernalPath(std::string(dataPath).append("/kernal")),
     mBasicPath(std::string(dataPath).append("/basic")),
@@ -86,7 +88,7 @@ char* SidPlayDecoder::loadRom(const std::string path, const size_t romSize) {
 }
 
 std::string SidPlayDecoder::getName() {
-    return "sidplayfp";
+    return NAME;
 }
 
 bool SidPlayDecoder::canRead(const std::string extention) const {

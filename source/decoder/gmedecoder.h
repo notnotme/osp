@@ -9,6 +9,8 @@
 class GmeDecoder : public Decoder {
 
     public:
+        static const std::string NAME;
+
         GmeDecoder();
         virtual ~GmeDecoder();
         

@@ -2,6 +2,8 @@
 
 #include <SDL2/SDL_log.h>
 
+const std::string GmeDecoder::NAME = "gme";
+
 GmeDecoder::GmeDecoder() :
     Decoder(),
     mMusicEmu(nullptr) {
@@ -43,7 +45,7 @@ int GmeDecoder::getAudioFrequency() const {
 }
 
 std::string GmeDecoder::getName() {
-    return "gme";
+    return NAME;
 }
 
 

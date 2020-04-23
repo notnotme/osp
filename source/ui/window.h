@@ -1,8 +1,9 @@
 #pragma once
 
+#include "frame.h"
 #include <string>
 
-class Window {
+class Window : public Frame {
 
     public:
         Window(const std::string title);

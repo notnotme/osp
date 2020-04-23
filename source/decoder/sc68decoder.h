@@ -9,6 +9,8 @@
 class Sc68Decoder : public Decoder {
 
     public:
+        static const std::string NAME;
+
         Sc68Decoder();
         virtual ~Sc68Decoder();
         

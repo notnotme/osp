@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../decoder/decoder.h"
-#include "../soundengine.h"
+#include "../../decoder/decoder.h"
+#include "../../soundengine.h"
 
 class MetaDataFrame {
 

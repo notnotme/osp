@@ -2,6 +2,8 @@
 
 #include <SDL2/SDL_log.h>
 
+const std::string Sc68Decoder::NAME = "sc68";
+
 Sc68Decoder::Sc68Decoder() :
     Decoder(),
     mSC68(nullptr) {
@@ -59,7 +61,7 @@ int Sc68Decoder::getAudioFrequency() const {
 }
 
 std::string Sc68Decoder::getName() {
-    return "sc68";
+    return NAME;
 }
 
 bool Sc68Decoder::canRead(const std::string extention) const {

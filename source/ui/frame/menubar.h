@@ -1,13 +1,14 @@
 #pragma once
 
-#include "../imgui/imgui.h"
-#include "../filemanager.h"
-#include "../settings.h"
+#include "../../imgui/imgui.h"
+#include "../../filemanager.h"
+#include "../../settings.h"
+#include "../frame.h"
 
 #include <string>
 #include <functional>
 
-class MenuBar {
+class MenuBar : public Frame {
 
     public:
         enum MenuAction {

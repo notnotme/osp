@@ -44,6 +44,7 @@ APP_AUTHOR	:=	notnotme
 APP_VERSION :=	$(GIT_VERSION) ($(GIT_COMMIT))
 BUILD		:=  build
 SOURCES		:=	source/imgui \
+				source/ui/frame \
 				source/ui/window \
 				source/ui \
 				source/decoder \

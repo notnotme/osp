@@ -12,6 +12,8 @@
 class SidPlayDecoder : public Decoder {
 
     public:
+        static const std::string NAME;
+
         SidPlayDecoder(const std::string dataPath);
         virtual ~SidPlayDecoder();
       

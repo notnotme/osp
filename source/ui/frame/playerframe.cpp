@@ -1,7 +1,7 @@
 #include "playerframe.h"
 
-#include "../imgui/imgui.h"
-#include "../strings.h"
+#include "../../imgui/imgui.h"
+#include "../../strings.h"
 
 PlayerFrame::PlayerFrame() {
 }

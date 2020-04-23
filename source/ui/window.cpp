@@ -1,6 +1,7 @@
 #include "window.h"
 
 Window::Window(const std::string title) :
+    Frame(),
     mTitle(title),
     mVisible(false) {
 }

@@ -1,8 +1,8 @@
 #include "metadataframe.h"
 
-#include "../imgui/imgui.h"
-#include "../imgui/imgui_internal.h"
-#include "../strings.h"
+#include "../../imgui/imgui.h"
+#include "../../imgui/imgui_internal.h"
+#include "../../strings.h"
 
 MetaDataFrame::MetaDataFrame() {
 }

@@ -47,7 +47,6 @@ bool Osp::setup(const std::string dataPath) {
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, spritesheet->w, spritesheet->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, spritesheet->pixels);
     SDL_FreeSurface(spritesheet);
 
-
     // Setup sound engine
     if (!mSoundEngine.setup(dataPath.c_str())) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to initialize SoundEngine.\n");
@@ -170,7 +169,7 @@ void Osp::render() {
             handleStyleChange(style);
         },
         [&](ImFont* font, int n) {
-           handleFontChange(font, n);
+            handleFontChange(font, n);
         },
         [&](MenuBar::MenuAction action) {
             handleMenuBarAction(action);
@@ -225,15 +224,22 @@ void Osp::render() {
     ImGui::End();
 
     // Other windows & popups
-    mSettingsWindow.render( {
-            .settings = mSettings
-        },
-        [&](SettingsWindow::ToggleSetting setting) {
-            handleSettingsChange(setting);
-        });
+    if (mSettingsWindow.isVisible()) {
+        mSettingsWindow.render( {
+                .settings = mSettings
+            },
+            [&](SettingsWindow::ToggleSetting setting) {
+                handleSettingsChange(setting);
+            });
+    }
 
-    mMetricsWindow.render();
-    mAboutWindow.render(mTextureSprites, mSpriteCatalog.getFrame("logo"));
+    if (mMetricsWindow.isVisible()) {
+        mMetricsWindow.render();
+    }
+
+    if (mAboutWindow.isVisible()) {
+        mAboutWindow.render(mTextureSprites, mSpriteCatalog.getFrame("logo"));
+    }
 }
 
 void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {

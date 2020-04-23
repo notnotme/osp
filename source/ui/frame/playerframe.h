@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../decoder/decoder.h"
-#include "../soundengine.h"
-#include "../spritecatalog.h"
+#include "../../decoder/decoder.h"
+#include "../../soundengine.h"
+#include "../../spritecatalog.h"
 
 #include <string>
 #include <glad/glad.h>

@@ -9,6 +9,8 @@
 class DumbDecoder : public Decoder {
 
     public:
+        static const std::string NAME;
+
         DumbDecoder();
         virtual ~DumbDecoder();
         

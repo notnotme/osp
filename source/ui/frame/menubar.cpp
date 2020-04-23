@@ -1,9 +1,9 @@
 #include "menubar.h"
 
-#include "../imgui/imgui_impl_sdl.h"
-#include "../strings.h"
+#include "../../imgui/imgui_impl_sdl.h"
+#include "../../strings.h"
 
-MenuBar::MenuBar() {
+MenuBar::MenuBar() : Frame() {
 }
 
 MenuBar::~MenuBar() {

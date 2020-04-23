@@ -6,6 +6,8 @@
 #include <algorithm>
 #include <SDL2/SDL_log.h>
 
+const std::string DumbDecoder::NAME = "dumb";
+
 DumbDecoder::DumbDecoder() :
     Decoder(),
     mDuh(nullptr),
@@ -48,7 +50,7 @@ int DumbDecoder::getAudioFrequency() const {
 }
 
 std::string DumbDecoder::getName() {
-    return "dumb";
+    return NAME;
 }
 
 bool DumbDecoder::canRead(const std::string extention) const {

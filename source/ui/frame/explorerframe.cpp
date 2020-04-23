@@ -1,7 +1,7 @@
 #include "explorerframe.h"
 
-#include "../imgui/imgui.h"
-#include "../strings.h"
+#include "../../imgui/imgui.h"
+#include "../../strings.h"
 
 ExplorerFrame::ExplorerFrame() {
 }
