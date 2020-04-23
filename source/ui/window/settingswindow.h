@@ -4,6 +4,7 @@
 #include "../../settings.h"
 
 #include <functional>
+#include <memory>
 
 class SettingsWindow : public Window {
 
@@ -17,7 +18,7 @@ class SettingsWindow : public Window {
         };
 
         struct WindowData {
-            Settings settings;
+            std::shared_ptr<Settings> settings;
         };
 
         SettingsWindow();

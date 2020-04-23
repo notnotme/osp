@@ -2,6 +2,7 @@
 
 #include "../../imgui/imgui_impl_sdl.h"
 #include "../../strings.h"
+#include "../../app_settings_strings.h"
 
 MenuBar::MenuBar() : Frame() {
 }
@@ -25,12 +26,12 @@ void MenuBar::render(const MenuBarData& menuBarData,
         }
         if (ImGui::BeginMenu(STR_MENU_ITEM_THEME)) {
 
-            auto style = menuBarData.settings.style;
+            auto style = menuBarData.settings->getInt(KEY_APP_STYLE, APP_STYLE_DEFAULT);
             if (ImGui::Combo(STR_MENU_ITEM_STYLE, &style, "Dark\0Light\0Classic\0")) {
                 onStyleChange(style);
             }
 
-            const auto defaultFont = io.Fonts->Fonts[menuBarData.settings.font];
+            const auto defaultFont = io.Fonts->Fonts[menuBarData.settings->getInt(KEY_APP_FONT, APP_FONT_DEFAULT)];
             if (ImGui::BeginCombo(STR_MENU_ITEM_FONT, defaultFont->GetDebugName())) {
                 for (auto n=0; n<io.Fonts->Fonts.Size; n++) {
                     const auto font = io.Fonts->Fonts[n];

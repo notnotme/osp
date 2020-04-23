@@ -6,18 +6,20 @@
 class Settings {
 
     public:
-        int style;
-        int font;
-        bool mouseEmulation;
-        bool touchEnabled;
-        bool skipUnsupportedTunes;
-        bool alwaysStartFirstTune;
-        bool skipSubTunes;
-
         Settings();
         virtual ~Settings();
 
+        void putInt(const std::string key, int value) const;
+        void putBool(const std::string key, bool value) const;
+        int getInt(const std::string key, int defaultValue) const;
+        bool getBool(const std::string key, bool defaultValue) const;
+
         void load(std::string filename);
         void save(std::string filename);
+
+    private:
+        config_t mConfig;
+
+        Settings(const Settings& copy);
 
 };

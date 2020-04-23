@@ -7,6 +7,7 @@
 
 #include <string>
 #include <functional>
+#include <memory>
 
 class MenuBar : public Frame {
 
@@ -23,7 +24,7 @@ class MenuBar : public Frame {
             std::string message;
             FileManager::State fmState;
             bool itemShowWorkspaceCheked;
-            Settings settings;
+            std::shared_ptr<Settings> settings;
         };
 
         MenuBar();

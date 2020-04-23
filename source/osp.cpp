@@ -4,6 +4,7 @@
 #include "imgui/imgui_impl_sdl.h"
 #include "platform.h" 
 #include "strings.h"
+#include "app_settings_strings.h"
 
 #include <SDL2/SDL_events.h>
 #include <SDL2/SDL_log.h>
@@ -11,15 +12,18 @@
 
 Osp::Osp() :
     mShowWorkspace(true),
+    mTextureSprites(0),
     mStatusMessage("Initializing..."),
-    mTextureSprites(0) {
+    mLastFileSelected(""),
+    mSettings(nullptr) {
 }
 
 Osp::~Osp() {
 }
 
 bool Osp::setup(const std::string dataPath) {
-    mSettings.load(CONFIG_FILENAME);
+    mSettings = std::shared_ptr<Settings>(new Settings());
+    mSettings->load(CONFIG_FILENAME);
 
     // Load spritesheets
     if (!mSpriteCatalog.setup(std::string(dataPath).append("/spritesheet/spritesheet.json"))) {
@@ -55,14 +59,15 @@ bool Osp::setup(const std::string dataPath) {
 
     // Apply user configuration
     auto& io = ImGui::GetIO();
-    switch (mSettings.style) {
+    switch (mSettings->getInt(KEY_APP_STYLE, APP_STYLE_DEFAULT)) {
         case 0: ImGui::StyleColorsDark(); break;
         case 1: ImGui::StyleColorsLight(); break;
         case 2: ImGui::StyleColorsClassic(); break;
     }
 
-    if (mSettings.font >= 0 && mSettings.font < io.Fonts->Fonts.Size) {
-        io.FontDefault = io.Fonts->Fonts[mSettings.font];
+    const auto font = mSettings->getInt(KEY_APP_FONT, APP_FONT_DEFAULT);
+    if (font >= 0 && font < io.Fonts->Fonts.Size) {
+        io.FontDefault = io.Fonts->Fonts[font];
     }
    
     // Setup file manager
@@ -71,12 +76,14 @@ bool Osp::setup(const std::string dataPath) {
         return false;
     }
 
-    ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
-    if (mSettings.mouseEmulation && !PLATFORM_HAS_MOUSE_CURSOR) {
+    const auto mouseEmulation = mSettings->getBool(KEY_MOUSE_EMULATION, MOUSE_EMULATION_DEFAULT);
+    ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mouseEmulation);
+    if (mouseEmulation && !PLATFORM_HAS_MOUSE_CURSOR) {
         io.MouseDrawCursor = true;
     }
 
-    if (mSettings.touchEnabled) {
+    const auto touchEnabled = mSettings->getBool(KEY_TOUCH_ENABLED, TOUCH_ENABLED_DEFAULT);
+    if (touchEnabled) {
         io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
     }
 
@@ -121,7 +128,7 @@ void Osp::render() {
         // SoundEngine states
         switch (sndState) {
             case SoundEngine::State::FINISHED_NATURAL:
-                selectNextTrack(mSettings.skipUnsupportedTunes, true);
+                selectNextTrack(mSettings->getBool(KEY_SKIP_UNSUPPORTED_TUNES, SKIP_UNSUPPORTED_TUNES_DEFAULT), true);
                 break;
             case SoundEngine::State::STARTED:
                 mStatusMessage = STR_PLAYING;
@@ -163,7 +170,7 @@ void Osp::render() {
             .message = mStatusMessage,
             .fmState = fmState,
             .itemShowWorkspaceCheked = mShowWorkspace,
-            .settings = mSettings
+            .settings = mSettings,
         },
         [&](int style) {
             handleStyleChange(style);
@@ -243,7 +250,7 @@ void Osp::render() {
 }
 
 void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {
-    if (mSettings.skipSubTunes || !mSoundEngine.nextTrack()) {
+    if (mSettings->getBool(KEY_SKIP_SUBTUNES, SKIP_SUBTUNES_DEFAULT) || !mSoundEngine.nextTrack()) {
         if (const auto nextFileName = getNextFileName();
             nextFileName.empty() == false) {
 
@@ -263,7 +270,7 @@ void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {
 }
 
 void Osp::selectPrevTrack(bool skipInvalid, bool autoPlay) {
-    if (mSettings.skipSubTunes || !mSoundEngine.prevTrack()) {
+    if (mSettings->getBool(KEY_SKIP_SUBTUNES, SKIP_SUBTUNES_DEFAULT) || !mSoundEngine.prevTrack()) {
         if (const auto prevFileName = getPrevFileName();
             prevFileName.empty() == false) {
         
@@ -411,7 +418,7 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                 case SoundEngine::State::PAUSED:
                 case SoundEngine::State::FINISHED:
                 case SoundEngine::State::ERROR:
-                    selectNextTrack(mSettings.skipUnsupportedTunes,
+                    selectNextTrack(mSettings->getBool(KEY_SKIP_UNSUPPORTED_TUNES, SKIP_UNSUPPORTED_TUNES_DEFAULT),
                         sndState != SoundEngine::State::FINISHED && sndState != SoundEngine::State::ERROR);
                     break;
                 default:
@@ -424,7 +431,7 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                 case SoundEngine::State::PAUSED:
                 case SoundEngine::State::FINISHED:
                 case SoundEngine::State::ERROR:
-                    selectPrevTrack(mSettings.skipUnsupportedTunes,
+                    selectPrevTrack(mSettings->getBool(KEY_SKIP_UNSUPPORTED_TUNES, SKIP_UNSUPPORTED_TUNES_DEFAULT),
                         sndState != SoundEngine::State::FINISHED && sndState != SoundEngine::State::ERROR);
                     break;
                 default:
@@ -438,33 +445,47 @@ void Osp::handleSettingsChange(const SettingsWindow::ToggleSetting setting) {
     auto& io = ImGui::GetIO();
 
     switch (setting) {
-        case SettingsWindow::ToggleSetting::MOUSE_EMULATION:
-            mSettings.mouseEmulation = !mSettings.mouseEmulation;
-            ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mSettings.mouseEmulation);
+        case SettingsWindow::ToggleSetting::MOUSE_EMULATION: {
+            auto mouseEmulation = mSettings->getBool(KEY_MOUSE_EMULATION, MOUSE_EMULATION_DEFAULT);
+            mouseEmulation = !mouseEmulation;
+            mSettings->putBool(KEY_MOUSE_EMULATION, mouseEmulation);
+            ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mouseEmulation);
             if (!PLATFORM_HAS_MOUSE_CURSOR) {
                 io.MouseDrawCursor = !io.MouseDrawCursor;
             }
             break;
-        case SettingsWindow::ToggleSetting::TOUCH_ENABLED:
-            mSettings.touchEnabled = !mSettings.touchEnabled;
-            if (!mSettings.touchEnabled) {
+        }
+        case SettingsWindow::ToggleSetting::TOUCH_ENABLED: {
+            auto touchEnabled = mSettings->getBool(KEY_TOUCH_ENABLED, TOUCH_ENABLED_DEFAULT);
+            touchEnabled = !touchEnabled;
+            mSettings->putBool(KEY_TOUCH_ENABLED, touchEnabled);
+            if (!touchEnabled) {
                 io.ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
             } else {
                 io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
             }
             break;
-        case SettingsWindow::ToggleSetting::AUTOSKIP_UNSUPPORTED_FILES:
-            mSettings.skipUnsupportedTunes = !mSettings.skipUnsupportedTunes;
+        }
+        case SettingsWindow::ToggleSetting::AUTOSKIP_UNSUPPORTED_FILES: {
+            auto skipUnsupportedTunes = mSettings->getBool(KEY_SKIP_UNSUPPORTED_TUNES, SKIP_UNSUPPORTED_TUNES_DEFAULT);
+            skipUnsupportedTunes = !skipUnsupportedTunes;
+            mSettings->putBool(KEY_SKIP_UNSUPPORTED_TUNES, skipUnsupportedTunes);
             break;
-        case SettingsWindow::ToggleSetting::SKIP_SUBTUNES:
-            mSettings.skipSubTunes = !mSettings.skipSubTunes;
+        }
+        case SettingsWindow::ToggleSetting::SKIP_SUBTUNES: {
+            auto skipSubTunes = mSettings->getBool(KEY_SKIP_SUBTUNES, SKIP_SUBTUNES_DEFAULT);
+            skipSubTunes = !skipSubTunes;
+            mSettings->putBool(KEY_SKIP_SUBTUNES, skipSubTunes);
             break;
-        case SettingsWindow::ToggleSetting::ALWAYS_START_FIRST_TRACK:
-            mSettings.alwaysStartFirstTune = !mSettings.alwaysStartFirstTune;
+        }
+        case SettingsWindow::ToggleSetting::ALWAYS_START_FIRST_TRACK: {
+            auto alwaysStartFirstTune = mSettings->getBool(KEY_ALWAYS_START_FIRST_TUNE, ALWAYS_START_FIRST_TUNE_DEFAULT);
+            alwaysStartFirstTune = !alwaysStartFirstTune;
+            mSettings->putBool(KEY_ALWAYS_START_FIRST_TUNE, alwaysStartFirstTune);
             break;
-        break;
+        }
     }
-    mSettings.save(CONFIG_FILENAME);
+    mSettings->save(CONFIG_FILENAME);
 }
 
 void Osp::handleStyleChange(int style) {
@@ -476,16 +497,16 @@ void Osp::handleStyleChange(int style) {
         case 2: ImGui::StyleColorsClassic();
             break;
     }
-    mSettings.style = style;
-    mSettings.save(CONFIG_FILENAME);
+    mSettings->putInt(KEY_APP_STYLE, style);
+    mSettings->save(CONFIG_FILENAME);
 }
 
 void Osp::handleFontChange(ImFont* font, int fontIndex) {
     auto& io = ImGui::GetIO();
 
     io.FontDefault = font;
-    mSettings.font = fontIndex;
-    mSettings.save(CONFIG_FILENAME);
+    mSettings->putInt(KEY_APP_FONT, fontIndex);
+    mSettings->save(CONFIG_FILENAME);
 }
 
 void Osp::handleMenuBarAction(const MenuBar::MenuAction action) {
@@ -514,7 +535,7 @@ bool Osp::engineLoad(std::string path, std::string filename) {
     const auto file = mFileManager.getFile(path.append("/").append(filename));
     
     mLastFileSelected = filename;
-    if (! mSoundEngine.load(file, !mSettings.alwaysStartFirstTune)) {
+    if (! mSoundEngine.load(file, !mSettings->getBool(KEY_ALWAYS_START_FIRST_TUNE, ALWAYS_START_FIRST_TUNE_DEFAULT))) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", mSoundEngine.getError().c_str());
         return false;
     }

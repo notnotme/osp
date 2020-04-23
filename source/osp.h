@@ -33,6 +33,11 @@ class Osp {
 
     private:
         bool mShowWorkspace;
+        GLuint mTextureSprites;
+        std::string mStatusMessage;
+        std::string mLastFileSelected;
+        std::shared_ptr<Settings> mSettings;
+
         MenuBar mMenuBar;
         ExplorerFrame mExplorerFrame;
         PlayerFrame mPlayerFrame;
@@ -44,12 +49,7 @@ class Osp {
         
         FileManager mFileManager;
         SoundEngine mSoundEngine;
-        Settings mSettings;
-        std::string mStatusMessage;
-        std::string mLastFileSelected;
-        
         SpriteCatalog mSpriteCatalog;
-        GLuint mTextureSprites;
 
         Osp(const Osp& copy);
 
