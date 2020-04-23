@@ -55,6 +55,7 @@ class SoundEngine {
         std::shared_ptr<Decoder> mCurrentDecoder;
         
         SoundEngine(const SoundEngine& copy);
+        
         std::shared_ptr<Decoder> getDecoder(const std::shared_ptr<File> file) const;
         static void audioCallback(void *userdata, Uint8* stream, int len);
 

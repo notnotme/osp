@@ -15,7 +15,10 @@ Osp::Osp() :
     mTextureSprites(0),
     mStatusMessage("Initializing..."),
     mLastFileSelected(""),
-    mSettings(nullptr) {
+    mSettings(nullptr),
+    mSpriteCatalog(nullptr),
+    mFileManager(nullptr),
+    mSoundEngine(nullptr) {
 }
 
 Osp::~Osp() {
@@ -26,8 +29,9 @@ bool Osp::setup(const std::string dataPath) {
     mSettings->load(CONFIG_FILENAME);
 
     // Load spritesheets
-    if (!mSpriteCatalog.setup(std::string(dataPath).append("/spritesheet/spritesheet.json"))) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to load the spritesheet catalog: %s.\n", mSpriteCatalog.getError().c_str());
+    mSpriteCatalog = std::shared_ptr<SpriteCatalog>(new SpriteCatalog());
+    if (!mSpriteCatalog->setup(std::string(dataPath).append("/spritesheet/spritesheet.json"))) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to load the spritesheet catalog: %s.\n", mSpriteCatalog->getError().c_str());
         return false;
     }
 
@@ -52,7 +56,8 @@ bool Osp::setup(const std::string dataPath) {
     SDL_FreeSurface(spritesheet);
 
     // Setup sound engine
-    if (!mSoundEngine.setup(dataPath.c_str())) {
+    mSoundEngine = std::unique_ptr<SoundEngine>(new SoundEngine());
+    if (!mSoundEngine->setup(dataPath.c_str())) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to initialize SoundEngine.\n");
         return false;
     }
@@ -71,7 +76,8 @@ bool Osp::setup(const std::string dataPath) {
     }
    
     // Setup file manager
-    if (!mFileManager.setup()) {
+    mFileManager = std::unique_ptr<FileManager>(new FileManager());
+    if (!mFileManager->setup()) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Unable to initialize File systems.\n");
         return false;
     }
@@ -94,9 +100,9 @@ bool Osp::setup(const std::string dataPath) {
 }
 
 void Osp::cleanup() {
-    mSoundEngine.cleanup();
-    mFileManager.cleanup();
-    mSpriteCatalog.cleanup();
+    mSoundEngine->cleanup();
+    mFileManager->cleanup();
+    mSpriteCatalog->cleanup();
     
     glDeleteTextures(1, &mTextureSprites);
     mTextureSprites = 0;
@@ -106,15 +112,15 @@ void Osp::cleanup() {
 
 void Osp::render() {
     auto& io = ImGui::GetIO();
-    const auto songMetaData = mSoundEngine.getMetaData();
-    const auto fmState = mFileManager.getState();
-    const auto sndState = mSoundEngine.getState();
+    const auto songMetaData = mSoundEngine->getMetaData();
+    const auto fmState = mFileManager->getState();
+    const auto sndState = mSoundEngine->getState();
 
     // Manage state of FileManager and SoundEngine
     if (fmState != FileManager::State::READY) {
         switch (fmState) {
             case FileManager::State::ERROR:
-                mStatusMessage = mFileManager.getError();
+                mStatusMessage = mFileManager->getError();
                 break;
             default:
                 break;
@@ -122,7 +128,7 @@ void Osp::render() {
     }
     else {
         if (fmState == FileManager::State::ERROR) {
-            mFileManager.clearError();
+            mFileManager->clearError();
         } 
 
         // SoundEngine states
@@ -140,7 +146,7 @@ void Osp::render() {
                 mStatusMessage = STR_READY;
                 break;
             case SoundEngine::State::ERROR:
-                mStatusMessage = mSoundEngine.getError();
+                mStatusMessage = mSoundEngine->getError();
                 break;
             default:
                 break;
@@ -191,16 +197,16 @@ void Osp::render() {
         //Explorer
         const auto selectedItem = !mLastFileSelected.empty()
             ? mLastFileSelected
-            : mFileManager.getLastFolder();
+            : mFileManager->getLastFolder();
 
         mExplorerFrame.render({
-                .currentPath = mFileManager.getCurrentPath(),
-                .listing = mFileManager.getCurrentPathEntries(),
+                .currentPath = mFileManager->getCurrentPath(),
+                .listing = mFileManager->getCurrentPathEntries(),
                 .selectedItemName = selectedItem,
                 .isWorking = fmState == FileManager::State::LOADING
             },
             [&](FileSystem::Entry item) {
-                handleExplorerItemClick(item, mFileManager.getCurrentPath());
+                handleExplorerItemClick(item, mFileManager->getCurrentPath());
             });
 
         ImGui::NextColumn();
@@ -208,13 +214,9 @@ void Osp::render() {
         // Player
         mPlayerFrame.render({
                 .texture = mTextureSprites,
-                .playFrame = mSpriteCatalog.getFrame("play"),
-                .pauseFrame = mSpriteCatalog.getFrame("pause"),
-                .stopFrame = mSpriteCatalog.getFrame("stop"),
-                .nextFrame = mSpriteCatalog.getFrame("next"),
-                .prevFrame = mSpriteCatalog.getFrame("prev"),
                 .state = sndState,
-                .metaData = songMetaData
+                .metaData = songMetaData,
+                .catalog = mSpriteCatalog
             },
             [&](PlayerFrame::ButtonId button) { 
                 handlePlayerButtonClick(button);
@@ -245,52 +247,52 @@ void Osp::render() {
     }
 
     if (mAboutWindow.isVisible()) {
-        mAboutWindow.render(mTextureSprites, mSpriteCatalog.getFrame("logo"));
+        mAboutWindow.render(mTextureSprites, mSpriteCatalog->getFrame("logo"));
     }
 }
 
 void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {
-    if (mSettings->getBool(KEY_SKIP_SUBTUNES, SKIP_SUBTUNES_DEFAULT) || !mSoundEngine.nextTrack()) {
+    if (mSettings->getBool(KEY_SKIP_SUBTUNES, SKIP_SUBTUNES_DEFAULT) || !mSoundEngine->nextTrack()) {
         if (const auto nextFileName = getNextFileName();
             nextFileName.empty() == false) {
 
-            if (!engineLoad(mFileManager.getCurrentPath(), nextFileName)) {
+            if (!engineLoad(mFileManager->getCurrentPath(), nextFileName)) {
                 // Go until we found something to play
                 if (skipInvalid) {
                     selectNextTrack(skipInvalid, autoPlay);
                 }
             } else if (autoPlay) {
-                mSoundEngine.play();
+                mSoundEngine->play();
             }
         }
         else {
-            mSoundEngine.stop();
+            mSoundEngine->stop();
         }
     }
 }
 
 void Osp::selectPrevTrack(bool skipInvalid, bool autoPlay) {
-    if (mSettings->getBool(KEY_SKIP_SUBTUNES, SKIP_SUBTUNES_DEFAULT) || !mSoundEngine.prevTrack()) {
+    if (mSettings->getBool(KEY_SKIP_SUBTUNES, SKIP_SUBTUNES_DEFAULT) || !mSoundEngine->prevTrack()) {
         if (const auto prevFileName = getPrevFileName();
             prevFileName.empty() == false) {
         
-            if (!engineLoad(mFileManager.getCurrentPath(), prevFileName)) {
+            if (!engineLoad(mFileManager->getCurrentPath(), prevFileName)) {
                 // Go until we found something to play
                 if (skipInvalid) {
                     selectPrevTrack(skipInvalid, autoPlay);
                 }
             } else if (autoPlay) {
-                mSoundEngine.play();
+                mSoundEngine->play();
             }
         }
         else {
-            mSoundEngine.stop();
+            mSoundEngine->stop();
         }
     }
 }
 
 std::string Osp::getPrevFileName() const {
-    const auto items = mFileManager.getCurrentPathEntries();
+    const auto items = mFileManager->getCurrentPathEntries();
     const auto itemCount = items.size();
     
     // No item selected, return first file from the end if exists
@@ -323,7 +325,7 @@ std::string Osp::getPrevFileName() const {
 }
 
 std::string Osp::getNextFileName() const {
-    const auto items = mFileManager.getCurrentPathEntries();
+    const auto items = mFileManager->getCurrentPathEntries();
     const auto itemCount = items.size();
     
     // No item selected, return first file item if exists
@@ -357,44 +359,44 @@ std::string Osp::getNextFileName() const {
 }
 
 void Osp::handleExplorerItemClick(const FileSystem::Entry item, const std::filesystem::path currentExplorerPath) {
-    const auto sndState = mSoundEngine.getState();
+    const auto sndState = mSoundEngine->getState();
 
     if (item.folder) {
         mLastFileSelected.clear();
-        if (! mFileManager.navigate(item.name.c_str())) {
+        if (! mFileManager->navigate(item.name.c_str())) {
             // If FileManager process don't started because of an error
             SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", mStatusMessage.c_str());
         } else {
             // If we were in error state it's time to clean
             if (sndState == SoundEngine::State::ERROR) {
-                mSoundEngine.clearError();
+                mSoundEngine->clearError();
             }
         }
     } else {
         if (mLastFileSelected != item.name || sndState == SoundEngine::State::FINISHED) {
-            if (engineLoad(mFileManager.getCurrentPath(), item.name)) {
-                mSoundEngine.play();
+            if (engineLoad(mFileManager->getCurrentPath(), item.name)) {
+                mSoundEngine->play();
             }
         }
     }
 }
 
 void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
-    const auto sndState = mSoundEngine.getState();
+    const auto sndState = mSoundEngine->getState();
 
     switch (button) {
         case PlayerFrame::ButtonId::PLAY:
             switch (sndState) {
                 case SoundEngine::State::STARTED:
-                    mSoundEngine.pause();
+                    mSoundEngine->pause();
                     break;
                 case SoundEngine::State::PAUSED:
-                    mSoundEngine.play();
+                    mSoundEngine->play();
                     break;
                 case SoundEngine::State::FINISHED:
                     if (! mLastFileSelected.empty()) {
-                        if (engineLoad(mFileManager.getCurrentPath(), mLastFileSelected)) {
-                            mSoundEngine.play();
+                        if (engineLoad(mFileManager->getCurrentPath(), mLastFileSelected)) {
+                            mSoundEngine->play();
                         }
                     }
                     break;
@@ -406,7 +408,7 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
             switch (sndState) {
                 case SoundEngine::State::STARTED:
                 case SoundEngine::State::PAUSED:
-                    mSoundEngine.stop();
+                    mSoundEngine->stop();
                     break;
                 default:
                     break;
@@ -532,11 +534,11 @@ void Osp::handleMenuBarAction(const MenuBar::MenuAction action) {
 }
 
 bool Osp::engineLoad(std::string path, std::string filename) {
-    const auto file = mFileManager.getFile(path.append("/").append(filename));
+    const auto file = mFileManager->getFile(path.append("/").append(filename));
     
     mLastFileSelected = filename;
-    if (! mSoundEngine.load(file, !mSettings->getBool(KEY_ALWAYS_START_FIRST_TUNE, ALWAYS_START_FIRST_TUNE_DEFAULT))) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", mSoundEngine.getError().c_str());
+    if (! mSoundEngine->load(file, !mSettings->getBool(KEY_ALWAYS_START_FIRST_TUNE, ALWAYS_START_FIRST_TUNE_DEFAULT))) {
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", mSoundEngine->getError().c_str());
         return false;
     }
 

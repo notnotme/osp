@@ -21,9 +21,10 @@ class SpriteCatalog {
         const Frame getFrame(const std::string name);
         std::string getError() const;
 
-    private:
-        SpriteCatalog(const SpriteCatalog& copy);
+    private:        
         std::string mError;
         std::map<std::string, Frame> mCatalog;
+
+        SpriteCatalog(const SpriteCatalog& copy);
 
 };

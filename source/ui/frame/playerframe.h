@@ -7,19 +7,16 @@
 #include <string>
 #include <glad/glad.h>
 #include <functional>
+#include <memory>
 
 class PlayerFrame {
 
     public:
         struct FrameData {
             GLuint texture;
-            SpriteCatalog::Frame playFrame;
-            SpriteCatalog::Frame pauseFrame;
-            SpriteCatalog::Frame stopFrame;
-            SpriteCatalog::Frame nextFrame;
-            SpriteCatalog::Frame prevFrame;
             SoundEngine::State state;
             Decoder::MetaData metaData;
+            std::shared_ptr<SpriteCatalog> catalog;
         };
 
         enum ButtonId {

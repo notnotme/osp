@@ -37,6 +37,9 @@ class Osp {
         std::string mStatusMessage;
         std::string mLastFileSelected;
         std::shared_ptr<Settings> mSettings;
+        std::shared_ptr<SpriteCatalog> mSpriteCatalog;
+        std::unique_ptr<FileManager> mFileManager;
+        std::unique_ptr<SoundEngine> mSoundEngine;
 
         MenuBar mMenuBar;
         ExplorerFrame mExplorerFrame;
@@ -46,10 +49,6 @@ class Osp {
         AboutWindow mAboutWindow;
         MetricsWindow mMetricsWindow;
         SettingsWindow mSettingsWindow;
-        
-        FileManager mFileManager;
-        SoundEngine mSoundEngine;
-        SpriteCatalog mSpriteCatalog;
 
         Osp(const Osp& copy);
 
