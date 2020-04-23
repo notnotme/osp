@@ -68,7 +68,7 @@ void MenuBar::render(const MenuBarData& menuBarData,
     }
 
     ImGui::Separator();
-    ImGui::Text("Status: %s", menuBarData.message.c_str());      
+    ImGui::Text("%s : %s", STR_STATUS, menuBarData.message.c_str());      
 
     char temp[32];
     sprintf(temp, "%.1f FPS", io.Framerate);

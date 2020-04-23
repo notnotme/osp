@@ -225,7 +225,7 @@ int FileManager::fileSystemThreadFunc(void* userData) {
     if (!fileManager->mCurrentFileSystem->navigate(fileManager->mCurrentPath, list)) {
         SDL_LockMutex(fileManager->mStateMutex);
         fileManager->mState = ERROR;
-        fileManager->mError = fileManager->mCurrentFileSystem->getError();
+        fileManager->mError = std::string(STR_ERROR_CANNOT_NAVIGATE).append(" : ").append(fileManager->mCurrentFileSystem->getError());
         SDL_UnlockMutex(fileManager->mStateMutex);
         return 0;
     }

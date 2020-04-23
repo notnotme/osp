@@ -69,15 +69,14 @@ bool GmeDecoder::play(const std::vector<char> buffer, bool defaultTune) {
     if (const auto header = gme_identify_header(buffer.data());
         header[0] == '\0') {
 
-        mError = std::string("Unknow format: ").append(gme_wrong_file_type);
+        mError = gme_wrong_file_type;
         return false;
     }
 
     if (const auto error = gme_open_data(buffer.data(), buffer.size(), &mMusicEmu, 48000);
         error != nullptr) {
 
-        mError = std::string("Can't play file.");
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "GME: %s", error);
+        mError = "Can't open file.";
         return false;
     }
 
@@ -111,7 +110,6 @@ bool GmeDecoder::nextTrack() {
         if (const auto error = gme_start_track(mMusicEmu, mCurrentTrack);
             error != nullptr) {
             
-            mError = std::string("Can't select previous track.");
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "GME: %s", error);
             return false;
         }
@@ -130,7 +128,6 @@ bool GmeDecoder::prevTrack() {
         if (const auto error = gme_start_track(mMusicEmu, mCurrentTrack);
             error != nullptr) {
 
-            mError = std::string("Can't select previous track.");
             SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "GME: %s", error);
             return false;
         }
@@ -149,7 +146,6 @@ int GmeDecoder::process(Uint8* stream, const int len) {
         error != nullptr) {
 
         mError = error;
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "GME: %s", error);
         return -1;
     }
 

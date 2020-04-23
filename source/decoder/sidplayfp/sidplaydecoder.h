@@ -39,7 +39,7 @@ class SidPlayDecoder : public Decoder {
         std::string mBasicPath;
         std::string mChargenPath;
 
-        sidplayfp mPlayer;
+        std::unique_ptr<sidplayfp> mPlayer;
         std::unique_ptr<sidbuilder> mSIDBuilder;
         std::unique_ptr<SidTune> mTune;
 

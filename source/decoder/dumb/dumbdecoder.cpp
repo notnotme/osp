@@ -1,10 +1,7 @@
 #include "dumbdecoder.h"
 
-#include "../strings.h"
-
 #include <memory>
 #include <algorithm>
-#include <SDL2/SDL_log.h>
 
 const std::string DumbDecoder::NAME = "dumb";
 
@@ -37,7 +34,6 @@ SDL_AudioFormat DumbDecoder::getAudioSampleFormat() const {
 
 const Decoder::MetaData DumbDecoder::getMetaData() {
     if (mSigRenderer == nullptr) {
-        SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Unable to get song information.\n");
         return mMetaData;
     }
 
@@ -74,14 +70,14 @@ bool DumbDecoder::play(const std::vector<char> buffer, bool defaultTune) {
     if (mDumbFile = dumbfile_open_memory(buffer.data(), buffer.size());
         mDumbFile == nullptr) {
         
-        mError = "Can't open file";
+        mError = "Can't open file.";
         return false;
     }
     
     if (mDuh = dumb_read_any(mDumbFile, 0, 0);
         mDuh == nullptr) {
         
-        mError = "Can't read file.";
+        mError = "Unknown format.";
         return false;
     }
 

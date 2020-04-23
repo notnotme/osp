@@ -356,7 +356,6 @@ void Osp::handleExplorerItemClick(const FileSystem::Entry item, const std::files
         mLastFileSelected.clear();
         if (! mFileManager.navigate(item.name.c_str())) {
             // If FileManager process don't started because of an error
-            mStatusMessage = mFileManager.getError();
             SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", mStatusMessage.c_str());
         } else {
             // If we were in error state it's time to clean
@@ -516,8 +515,7 @@ bool Osp::engineLoad(std::string path, std::string filename) {
     
     mLastFileSelected = filename;
     if (! mSoundEngine.load(file, !mSettings.alwaysStartFirstTune)) {
-        const auto error = mSoundEngine.getError();
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "%s", error.c_str());
+        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", mSoundEngine.getError().c_str());
         return false;
     }
 

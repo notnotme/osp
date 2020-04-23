@@ -43,7 +43,6 @@ class SoundEngine {
     private:
         const Decoder::MetaData mEmptyMetaData;
         SDL_mutex* mStateMutex;
-        SDL_mutex* mDecoderMutex;
         std::string mError;
         State mState;
 
@@ -56,7 +55,6 @@ class SoundEngine {
         std::shared_ptr<Decoder> mCurrentDecoder;
         
         SoundEngine(const SoundEngine& copy);
-        void loadAllDecoder(std::filesystem::path dataPath);
         std::shared_ptr<Decoder> getDecoder(const std::shared_ptr<File> file) const;
         static void audioCallback(void *userdata, Uint8* stream, int len);
 

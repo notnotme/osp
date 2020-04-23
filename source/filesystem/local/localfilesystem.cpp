@@ -27,14 +27,14 @@ bool LocalFileSystem::navigate(const std::string path, std::vector<Entry>& list)
     // clear previous listing
     std::error_code errorCode;
     if (!std::filesystem::exists(path, errorCode) || !std::filesystem::is_directory(path, errorCode)) {
-        mError = std::string("Cannot read: ").append(path);
+        mError = path;
         return false;
     }
 
     // add all items to listing
     const auto iterator = std::filesystem::directory_iterator(path, errorCode);
     if (errorCode) {
-        mError = std::string("Cannot read '").append(path).append("' : ").append(errorCode.message());
+        mError = errorCode.message();
         return false;
     }
 

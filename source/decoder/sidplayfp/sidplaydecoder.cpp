@@ -8,10 +8,12 @@
 
 const std::string SidPlayDecoder::NAME = "sidplayfp";
 
-SidPlayDecoder::SidPlayDecoder(const std::string dataPath) : Decoder(),
+SidPlayDecoder::SidPlayDecoder(const std::string dataPath) :
+    Decoder(),
     mKernalPath(std::string(dataPath).append("/kernal")),
     mBasicPath(std::string(dataPath).append("/basic")),
     mChargenPath(std::string(dataPath).append("/chargen")),
+    mPlayer(nullptr),
     mSIDBuilder(nullptr),
     mTune(nullptr) {
 }
@@ -23,13 +25,15 @@ bool SidPlayDecoder::setup() {
     const auto kernal = std::unique_ptr<char[]>(loadRom(mKernalPath.c_str(), 8192));
     const auto basic = std::unique_ptr<char[]>(loadRom(mBasicPath.c_str(), 8192));
     const auto chargen = std::unique_ptr<char[]>(loadRom(mChargenPath.c_str(), 4096));
-    const auto maxsids = (mPlayer.info()).maxsids();
 
-    mPlayer.setRoms((const uint8_t*) kernal.get(), (const uint8_t*) basic.get(), (const uint8_t*) chargen.get());
+    mPlayer = std::unique_ptr<sidplayfp>(new sidplayfp());
+    const auto maxsids = (mPlayer->info()).maxsids();
+
+    mPlayer->setRoms((const uint8_t*) kernal.get(), (const uint8_t*) basic.get(), (const uint8_t*) chargen.get());
     mSIDBuilder = std::unique_ptr<sidbuilder>(new ReSIDfpBuilder("OSP"));
     mSIDBuilder->create(maxsids);
     if (!mSIDBuilder->getStatus()) {
-        mError = std::string("sid error: ").append(mSIDBuilder->error());
+        mError = mSIDBuilder->error();
         return false;
     }
 
@@ -39,8 +43,8 @@ bool SidPlayDecoder::setup() {
     cfg.fastSampling = false;
     cfg.playback = SidConfig::STEREO;
     cfg.sidEmulation = mSIDBuilder.get();
-    if (!mPlayer.config(cfg)) {
-        mError = std::string("sid error: ").append(mPlayer.error());
+    if (!mPlayer->config(cfg)) {
+        mError = mPlayer->error();
         return false;
     }
 
@@ -48,13 +52,21 @@ bool SidPlayDecoder::setup() {
 }
 
 void SidPlayDecoder::cleanup() {
-    if (mPlayer.isPlaying()) {
-        mPlayer.stop();
+    if (mPlayer != nullptr) {
+        mPlayer = nullptr;
+    }
+
+    if (mTune != nullptr) {
+        mTune = nullptr;
+    }
+
+    if (mSIDBuilder != nullptr) {
+        mSIDBuilder = nullptr;
     }
 }
 
 uint8_t SidPlayDecoder::getAudioChannels() const {
-    return mPlayer.config().playback;
+    return mPlayer != nullptr ?  mPlayer->config().playback : 0;
 }
 
 SDL_AudioFormat SidPlayDecoder::getAudioSampleFormat() const {
@@ -62,15 +74,15 @@ SDL_AudioFormat SidPlayDecoder::getAudioSampleFormat() const {
 }
 
 int SidPlayDecoder::getAudioFrequency() const {
-    return mPlayer.config().frequency;
+    return mPlayer != nullptr ? mPlayer->config().frequency : 0;
 }
 
 const Decoder::MetaData SidPlayDecoder::getMetaData() {
-    if (mTune == nullptr) {
+    if (mPlayer == nullptr) {
         return mMetaData;
     }
 
-    mMetaData.trackInformation.position = mPlayer.time();
+    mMetaData.trackInformation.position = mPlayer->time();
     return mMetaData;
 }
 
@@ -103,16 +115,14 @@ bool SidPlayDecoder::play(const std::vector<char> buffer, bool defaultTune) {
     if (mTune = std::unique_ptr<SidTune>(new SidTune((const uint_least8_t*) buffer.data(), buffer.size()));
         mTune->getStatus() == false) {
         
-        mError = std::string("Can't play file.");
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAYFP: %s", mTune->statusString());
+        mError = mTune->statusString();
         return false;
     }
 
     // Load tune into engine
     mTune->selectSong(defaultTune ? 0 : 1);
-    if (!mPlayer.load(mTune.get())) {
-        mError = std::string("Can't play file.");
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAYFP: %s", mPlayer.error());
+    if (!mPlayer->load(mTune.get())) {
+        mError = mPlayer->error();
         return false;
     }
 
@@ -124,21 +134,26 @@ bool SidPlayDecoder::play(const std::vector<char> buffer, bool defaultTune) {
 }
 
 void SidPlayDecoder::stop() {
-    if (mTune != nullptr) {
-        mPlayer.stop();
+    if (mPlayer != nullptr && mPlayer->isPlaying()) {
+        mPlayer->stop();
     }
 }
 
 bool SidPlayDecoder::nextTrack() {
+    if (mPlayer == nullptr || mTune == nullptr) {
+        return false;
+    }
+    
     if (const auto musicInfo = mTune->getInfo();
         (int) musicInfo->currentSong() < mMetaData.diskInformation.trackCount) {
         
-        mPlayer.load(nullptr);
+        mPlayer->load(nullptr);
         if (mTune->selectSong(musicInfo->currentSong()+1) == 0) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAYFP: %s\n", mTune->statusString());
             return false;
         }
 
-        mPlayer.load(mTune.get());
+        mPlayer->load(mTune.get());
         parseTrackMetaData();
         return true;
     }
@@ -147,15 +162,20 @@ bool SidPlayDecoder::nextTrack() {
 }
 
 bool SidPlayDecoder::prevTrack() {
+    if (mPlayer == nullptr || mTune == nullptr) {
+        return false;
+    }
+
     if (const auto musicInfo = mTune->getInfo();
         musicInfo->currentSong() > 1) {
 
-        mPlayer.load(nullptr);
+        mPlayer->load(nullptr);
         if (mTune->selectSong(musicInfo->currentSong()-1) == 0) {
+            SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAYFP: %s\n", mTune->statusString());
             return false;
         }
 
-        mPlayer.load(mTune.get());
+        mPlayer->load(mTune.get());
         parseTrackMetaData();
         return true;
     }
@@ -164,13 +184,13 @@ bool SidPlayDecoder::prevTrack() {
 }
 
 int SidPlayDecoder::process(Uint8* stream, const int len) {
-    if (mTune == nullptr) return -1;
+    if (mPlayer == nullptr) return -1;
 
     unsigned int sz = len >> 1;
-    unsigned int played = mPlayer.play((short*) stream, sz);
+    unsigned int played = mPlayer->play((short*) stream, sz);
 
-    if(played < sz && mPlayer.isPlaying()) {
-        mError = mPlayer.error();
+    if(played < sz && mPlayer->isPlaying()) {
+        mError = mPlayer->error();
         return -1;
     }
     else if (played < sz) {
