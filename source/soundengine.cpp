@@ -1,9 +1,9 @@
 #include "soundengine.h"
 
-#include "decoder/dumbdecoder.h"
-#include "decoder/gmedecoder.h"
-#include "decoder/sc68decoder.h"
-#include "decoder/sidplaydecoder.h"
+#include "decoder/dumb/dumbdecoder.h"
+#include "decoder/gme/gmedecoder.h"
+#include "decoder/sc68/sc68decoder.h"
+#include "decoder/sidplayfp/sidplaydecoder.h"
 #include "strings.h"
 
 #include <algorithm>

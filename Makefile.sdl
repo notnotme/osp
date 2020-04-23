@@ -10,10 +10,10 @@ include git.mk
 TARGET		= osp
 OBJS		= source/platform/sdl/platform.o \
 			source/decoder/decoder.o \
-			source/decoder/dumbdecoder.o \
-			source/decoder/gmedecoder.o \
-			source/decoder/sc68decoder.o \
-			source/decoder/sidplaydecoder.o \
+			source/decoder/dumb/dumbdecoder.o \
+			source/decoder/gme/gmedecoder.o \
+			source/decoder/sc68/sc68decoder.o \
+			source/decoder/sidplayfp/sidplaydecoder.o \
 			source/imgui/imgui.o \
 			source/imgui/imgui_draw.o \
 			source/imgui/imgui_widgets.o \
@@ -31,8 +31,8 @@ OBJS		= source/platform/sdl/platform.o \
 			source/ui/window/settingswindow.o \
 			source/filesystem/file.o \
 			source/filesystem/filesystem.o \
-			source/filesystem/localfile.o \
-			source/filesystem/localfilesystem.o \
+			source/filesystem/local/localfile.o \
+			source/filesystem/local/localfilesystem.o \
 			source/spritecatalog.o \
 			source/filemanager.o \
 			source/soundengine.o \

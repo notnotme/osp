@@ -48,7 +48,12 @@ SOURCES		:=	source/imgui \
 				source/ui/window \
 				source/ui \
 				source/decoder \
+				source/decoder/dumb \
+				source/decoder/gme \
+				source/decoder/sc68 \
+				source/decoder/sidplayfp \
 				source/filesystem \
+				source/filesystem/local \
 				source/platform/switch \
 				source
 #INCLUDES	:=	include

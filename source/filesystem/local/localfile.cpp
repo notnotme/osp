@@ -11,12 +11,10 @@ LocalFile::~LocalFile() {
 }
 
 bool LocalFile::getAsBuffer(std::vector<char>& buffer) {
-    const auto path = getPath();
-
-    std::ifstream ifs(path.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
+    std::ifstream ifs(mPath.c_str(), std::ios::in | std::ios::binary | std::ios::ate);
     if (!ifs.good()) {
         ifs.close();
-        mError = std::string("Unable to open file: ").append(path);
+        mError = std::string("Unable to open file: ").append(mPath);
         return false;
     }
 
@@ -27,7 +25,7 @@ bool LocalFile::getAsBuffer(std::vector<char>& buffer) {
     if (!ifs.read(readBuffer.get(), fileSize)) {
         ifs.close();
 
-        mError = std::string("Unable to read file: ").append(path);
+        mError = std::string("Unable to read file: ").append(mPath);
         return false;
     }
 

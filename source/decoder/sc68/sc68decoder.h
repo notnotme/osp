@@ -1,18 +1,18 @@
 #pragma once
 
-#include "decoder.h"
+#include "../decoder.h"
 #include <string>
 #include <vector>
-#include <dumb.h>
+#include <sc68/sc68.h>
 #include <SDL2/SDL_audio.h>
 
-class DumbDecoder : public Decoder {
+class Sc68Decoder : public Decoder {
 
     public:
         static const std::string NAME;
 
-        DumbDecoder();
-        virtual ~DumbDecoder();
+        Sc68Decoder();
+        virtual ~Sc68Decoder();
         
         virtual bool setup() override;
         virtual void cleanup() override;
@@ -28,12 +28,17 @@ class DumbDecoder : public Decoder {
         virtual void stop() override;   
         virtual int process(Uint8* stream, const int len) override;
 
+        virtual bool nextTrack() override;
+        virtual bool prevTrack() override;
+
     private:
-        DUH *mDuh;
-        DUMBFILE *mDumbFile;
-        DUH_SIGRENDERER *mSigRenderer;
+        int mCurrentTrack;
+        bool mIsSongLoaded;
+        sc68_create_t mSC68Config;
+        sc68_t* mSC68;
 
-        DumbDecoder(const DumbDecoder& copy);
+        Sc68Decoder(const Sc68Decoder& copy);
+        void parseDiskMetaData();
+        void parseTrackMetaData(int track);
 
-        void parseMetaData();
 };

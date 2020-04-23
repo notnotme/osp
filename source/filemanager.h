@@ -30,7 +30,7 @@ class FileManager {
         std::filesystem::path getCurrentPath() const;
         std::vector<FileSystem::Entry> getCurrentPathEntries() const;
         bool navigate(const std::string path);
-        File* getFile(const std::string path);
+        std::shared_ptr<File> getFile(const std::string path);
         State getState() const;
         std::string getError() const;
         void clearError();

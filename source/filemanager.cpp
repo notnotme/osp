@@ -1,7 +1,7 @@
 #include "filemanager.h"
 
+#include "filesystem/local/localfilesystem.h"
 #include "platform.h"
-#include "filesystem/localfilesystem.h"
 #include "strings.h"
 
 #include <algorithm>
@@ -156,7 +156,7 @@ bool FileManager::navigate(const std::string path) {
     }
 }
 
-File* FileManager::getFile(const std::string path) {
+std::shared_ptr<File> FileManager::getFile(const std::string path) {
     if (mCurrentFileSystem != nullptr) {
         return mCurrentFileSystem->getFile(path);
     }

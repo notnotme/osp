@@ -512,8 +512,7 @@ void Osp::handleMenuBarAction(const MenuBar::MenuAction action) {
 }
 
 bool Osp::engineLoad(std::string path, std::string filename) {
-    const auto file = std::shared_ptr<File>(mFileManager.getFile(
-        path.append("/").append(filename)));
+    const auto file = mFileManager.getFile(path.append("/").append(filename));
     
     mLastFileSelected = filename;
     if (! mSoundEngine.load(file, !mSettings.alwaysStartFirstTune)) {

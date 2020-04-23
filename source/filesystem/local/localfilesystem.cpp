@@ -58,6 +58,6 @@ bool LocalFileSystem::navigate(const std::string path, std::vector<Entry>& list)
     return true;
 }
 
-File* LocalFileSystem::getFile(const std::string path) const {
-    return new LocalFile(path);
+std::shared_ptr<File> LocalFileSystem::getFile(const std::string path) const {
+    return std::shared_ptr<File>(new LocalFile(path));
 }
