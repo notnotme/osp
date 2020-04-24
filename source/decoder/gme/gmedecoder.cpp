@@ -1,5 +1,7 @@
 #include "gmedecoder.h"
 
+#include "gme_settings_strings.h"
+
 #include <SDL2/SDL_log.h>
 
 const std::string GmeDecoder::NAME = "gme";
@@ -81,9 +83,9 @@ bool GmeDecoder::play(const std::vector<char> buffer, std::shared_ptr<Settings> 
     }
 
     // Enable fine replay and default track
-    gme_enable_accuracy(mMusicEmu, 1);
-    gme_set_autoload_playback_limit(mMusicEmu, 1);
-    gme_ignore_silence(mMusicEmu, false);
+    gme_enable_accuracy(mMusicEmu, settings->getBool(KEY_GME_ENABLE_ACCURACY, GME_ENABLE_ACCURACY_DEFAULT) ? 1 : 0);
+    gme_set_autoload_playback_limit(mMusicEmu, settings->getBool(KEY_GME_AUTOLOAD_PLAYBACK_LIMIT, GME_AUTOLOAD_PLAYBACK_LIMIT_DEFAULT) ? 1 : 0);
+    gme_ignore_silence(mMusicEmu, settings->getBool(KEY_GME_IGNORE_SILENCE, GME_GME_IGNORE_SILENCE_DEFAULT) ? 1 : 0);
 
     // Fill much meta data as we can
     mCurrentTrack = 0;

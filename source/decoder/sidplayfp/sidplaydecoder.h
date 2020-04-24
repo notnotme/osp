@@ -8,7 +8,7 @@
 #include <memory>                    
 #include <sidplayfp/sidplayfp.h>
 #include <sidplayfp/SidTune.h>
-#include <sidplayfp/builders/residfp.h>
+#include <sidplayfp/sidbuilder.h>
 #include <SDL2/SDL_audio.h>
 
 class SidPlayDecoder : public Decoder {
@@ -37,17 +37,19 @@ class SidPlayDecoder : public Decoder {
         virtual bool prevTrack() override;
 
     private:
-        std::string mKernalPath;
-        std::string mBasicPath;
-        std::string mChargenPath;
+        std::shared_ptr<char[]> mKernalRom;
+        std::shared_ptr<char[]> mBasicRom;
+        std::shared_ptr<char[]> mChargenRom;
 
         std::unique_ptr<sidplayfp> mPlayer;
         std::unique_ptr<sidbuilder> mSIDBuilder;
         std::unique_ptr<SidTune> mTune;
 
         SidPlayDecoder(const SidPlayDecoder& copy);
-        char* loadRom(const std::string path, const size_t romSize);
 
         void parseDiskMetaData();
         void parseTrackMetaData();
+
+        static char* loadRom(const std::string path, const size_t romSize);
+
 };

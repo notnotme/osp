@@ -1,54 +1,36 @@
 #include "sidplaydecoder.h"
 
 #include "../../app_settings_strings.h"
+#include "sidplayfp_settings_strings.h"
 
 #include <fstream>
 #include <sidplayfp/SidConfig.h>
 #include <sidplayfp/SidInfo.h>
 #include <sidplayfp/SidTuneInfo.h>
+#include <sidplayfp/builders/residfp.h>
+#include <sidplayfp/builders/resid.h>
+#include <sidplayfp/builders/hardsid.h>
 #include <SDL2/SDL_log.h>
 
 const std::string SidPlayDecoder::NAME = "sidplayfp";
 
 SidPlayDecoder::SidPlayDecoder(const std::string dataPath) :
     Decoder(),
-    mKernalPath(std::string(dataPath).append("/kernal")),
-    mBasicPath(std::string(dataPath).append("/basic")),
-    mChargenPath(std::string(dataPath).append("/chargen")),
+    mKernalRom(std::shared_ptr<char[]>(loadRom(std::string(dataPath).append("/kernal").c_str(), 8192))),
+    mBasicRom(std::shared_ptr<char[]>(loadRom(std::string(dataPath).append("/basic").c_str(), 8192))),
+    mChargenRom(std::shared_ptr<char[]>(loadRom(std::string(dataPath).append("/chargen").c_str(), 4096))),
     mPlayer(nullptr),
     mSIDBuilder(nullptr),
     mTune(nullptr) {
+
 }
 
 SidPlayDecoder::~SidPlayDecoder() {
 }
 
 bool SidPlayDecoder::setup() {
-    const auto kernal = std::unique_ptr<char[]>(loadRom(mKernalPath.c_str(), 8192));
-    const auto basic = std::unique_ptr<char[]>(loadRom(mBasicPath.c_str(), 8192));
-    const auto chargen = std::unique_ptr<char[]>(loadRom(mChargenPath.c_str(), 4096));
-
     mPlayer = std::unique_ptr<sidplayfp>(new sidplayfp());
-    const auto maxsids = (mPlayer->info()).maxsids();
-
-    mPlayer->setRoms((const uint8_t*) kernal.get(), (const uint8_t*) basic.get(), (const uint8_t*) chargen.get());
-    mSIDBuilder = std::unique_ptr<sidbuilder>(new ReSIDfpBuilder("OSP"));
-    mSIDBuilder->create(maxsids);
-    if (!mSIDBuilder->getStatus()) {
-        mError = mSIDBuilder->error();
-        return false;
-    }
-
-    SidConfig cfg;
-    cfg.frequency = 48000;
-    cfg.samplingMethod = SidConfig::INTERPOLATE;
-    cfg.fastSampling = false;
-    cfg.playback = SidConfig::STEREO;
-    cfg.sidEmulation = mSIDBuilder.get();
-    if (!mPlayer->config(cfg)) {
-        mError = mPlayer->error();
-        return false;
-    }
+    mPlayer->setRoms((const uint8_t*) mKernalRom.get(), (const uint8_t*) mBasicRom.get(), (const uint8_t*) mChargenRom.get());
 
     return true;
 }
@@ -88,19 +70,6 @@ const Decoder::MetaData SidPlayDecoder::getMetaData() {
     return mMetaData;
 }
 
-char* SidPlayDecoder::loadRom(const std::string path, const size_t romSize) {
-    char* buffer = nullptr;
-    std::ifstream is(path, std::ios::binary);
-    if (is.good()) {
-        buffer = new char[romSize];
-        is.read(buffer, romSize);
-    } else {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAYFP: %s\n", path.c_str());
-    }
-    is.close();
-    return buffer;
-}
-
 std::string SidPlayDecoder::getName() {
     return NAME;
 }
@@ -114,6 +83,36 @@ bool SidPlayDecoder::canRead(const std::string extention) const {
 }
 
 bool SidPlayDecoder::play(const std::vector<char> buffer, std::shared_ptr<Settings> settings) {
+
+    switch (settings->getInt(KEY_SIDPLAYFP_SID_EMULATION, SIDPLAYFP_SID_EMULATION_DEFAULT)) {
+        case 1:
+            mSIDBuilder = std::unique_ptr<sidbuilder>(new ReSIDBuilder("OSP"));
+            break;
+        default:
+        case 0:
+            mSIDBuilder = std::unique_ptr<sidbuilder>(new ReSIDfpBuilder("OSP"));
+            break;
+    }
+
+    mSIDBuilder->create(mPlayer->info().maxsids());
+    if (!mSIDBuilder->getStatus()) {
+        mError = mSIDBuilder->error();
+        return false;
+    }
+
+    SidConfig cfg;
+    cfg.frequency = 48000;
+    cfg.samplingMethod = (SidConfig::sampling_method_t) settings->getInt(KEY_SIDPLAYFP_SAMPLING_METHOD, SIDPLAYFP_SAMPLING_METHOD_DEFAULT);
+    cfg.fastSampling = settings->getBool(KEY_SIDPLAYFP_FAST_SAMPLING, SIDPLAYFP_FAST_SAMPLING_DEFAULT);
+    cfg.digiBoost = settings->getBool(KEY_SIDPLAYFP_ENABLE_DIGIBOOST, SIDPLAYFP_ENABLE_DIGIBOOST_DEFAULT);
+    cfg.playback = SidConfig::STEREO;
+    cfg.sidEmulation = mSIDBuilder.get();
+    
+    if (!mPlayer->config(cfg)) {
+        mError = mPlayer->error();
+        return false;
+    }
+
     if (mTune = std::unique_ptr<SidTune>(new SidTune((const uint_least8_t*) buffer.data(), buffer.size()));
         mTune->getStatus() == false) {
         
@@ -122,7 +121,7 @@ bool SidPlayDecoder::play(const std::vector<char> buffer, std::shared_ptr<Settin
     }
 
     // Load tune into engine
-    mTune->selectSong(settings->getBool(KEY_ALWAYS_START_FIRST_TUNE, ALWAYS_START_FIRST_TUNE_DEFAULT) ? 0 : 1);
+    mTune->selectSong(settings->getBool(KEY_APP_ALWAYS_START_FIRST_TUNE, APP_ALWAYS_START_FIRST_TUNE_DEFAULT) ? 0 : 1);
     if (!mPlayer->load(mTune.get())) {
         mError = mPlayer->error();
         return false;
@@ -229,4 +228,17 @@ void SidPlayDecoder::parseTrackMetaData() {
     mMetaData.trackInformation.copyright = musicInfo->infoString(2);
     mMetaData.trackInformation.duration = 0; // todo: how to get it ?
     mMetaData.trackInformation.trackNumber = musicInfo->currentSong();
+}
+
+char* SidPlayDecoder::loadRom(const std::string path, const size_t romSize) {
+    char* buffer = nullptr;
+    std::ifstream is(path, std::ios::binary);
+    if (is.good()) {
+        buffer = new char[romSize];
+        is.read(buffer, romSize);
+    } else {
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SIDPLAYFP: %s\n", path.c_str());
+    }
+    is.close();
+    return buffer;
 }

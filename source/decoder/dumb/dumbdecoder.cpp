@@ -1,5 +1,7 @@
 #include "dumbdecoder.h"
 
+#include "dumb_settings_strings.h"
+
 #include <memory>
 #include <algorithm>
 
@@ -67,6 +69,24 @@ bool DumbDecoder::canRead(const std::string extention) const {
 }
 
 bool DumbDecoder::play(const std::vector<char> buffer, std::shared_ptr<Settings> settings) {
+
+    switch(settings->getInt(KEY_DUMB_MAX_TO_MIX, DUMB_MAX_TO_MIX_DEFAULT)) {
+        case 0:
+            dumb_it_max_to_mix = 64;
+            break;
+        case 1:
+            dumb_it_max_to_mix = 128;
+            break;
+        case 2:
+            dumb_it_max_to_mix = 256;
+            break;
+        case 3:
+            dumb_it_max_to_mix = 512;
+            break;
+        default:
+            dumb_it_max_to_mix = 64;
+    }
+
     if (mDumbFile = dumbfile_open_memory(buffer.data(), buffer.size());
         mDumbFile == nullptr) {
         

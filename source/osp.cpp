@@ -82,13 +82,13 @@ bool Osp::setup(const std::string dataPath) {
         return false;
     }
 
-    const auto mouseEmulation = mSettings->getBool(KEY_MOUSE_EMULATION, MOUSE_EMULATION_DEFAULT);
+    const auto mouseEmulation = mSettings->getBool(KEY_APP_MOUSE_EMULATION, APP_MOUSE_EMULATION_DEFAULT);
     ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mouseEmulation);
     if (mouseEmulation && !PLATFORM_HAS_MOUSE_CURSOR) {
         io.MouseDrawCursor = true;
     }
 
-    const auto touchEnabled = mSettings->getBool(KEY_TOUCH_ENABLED, TOUCH_ENABLED_DEFAULT);
+    const auto touchEnabled = mSettings->getBool(KEY_APP_TOUCH_ENABLED, APP_TOUCH_ENABLED_DEFAULT);
     if (touchEnabled) {
         io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
     }
@@ -134,7 +134,7 @@ void Osp::render() {
         // SoundEngine states
         switch (sndState) {
             case SoundEngine::State::FINISHED_NATURAL:
-                selectNextTrack(mSettings->getBool(KEY_SKIP_UNSUPPORTED_TUNES, SKIP_UNSUPPORTED_TUNES_DEFAULT), true);
+                selectNextTrack(mSettings->getBool(KEY_APP_SKIP_UNSUPPORTED_TUNES, APP_SKIP_UNSUPPORTED_TUNES_DEFAULT), true);
                 break;
             case SoundEngine::State::STARTED:
                 mStatusMessage = STR_PLAYING;
@@ -235,8 +235,8 @@ void Osp::render() {
     mSettingsWindow.render({
             .settings = mSettings
         },
-        [&](SettingsWindow::ToggleAppSetting setting) {
-            handleAppSettingsChange(setting);
+        [&](SettingsWindow::ToggleAppSetting setting, bool value) {
+            handleAppSettingsChange(setting, value);
         },
         [&](std::string key, int value) {
             mSettings->putInt(key, value);
@@ -252,7 +252,7 @@ void Osp::render() {
 }
 
 void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {
-    if (mSettings->getBool(KEY_SKIP_SUBTUNES, SKIP_SUBTUNES_DEFAULT) || !mSoundEngine->nextTrack()) {
+    if (mSettings->getBool(KEY_APP_SKIP_SUBTUNES, APP_SKIP_SUBTUNES_DEFAULT) || !mSoundEngine->nextTrack()) {
         if (const auto nextFileName = getNextFileName();
             nextFileName.empty() == false) {
 
@@ -272,7 +272,7 @@ void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {
 }
 
 void Osp::selectPrevTrack(bool skipInvalid, bool autoPlay) {
-    if (mSettings->getBool(KEY_SKIP_SUBTUNES, SKIP_SUBTUNES_DEFAULT) || !mSoundEngine->prevTrack()) {
+    if (mSettings->getBool(KEY_APP_SKIP_SUBTUNES, APP_SKIP_SUBTUNES_DEFAULT) || !mSoundEngine->prevTrack()) {
         if (const auto prevFileName = getPrevFileName();
             prevFileName.empty() == false) {
         
@@ -420,7 +420,7 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                 case SoundEngine::State::PAUSED:
                 case SoundEngine::State::FINISHED:
                 case SoundEngine::State::ERROR:
-                    selectNextTrack(mSettings->getBool(KEY_SKIP_UNSUPPORTED_TUNES, SKIP_UNSUPPORTED_TUNES_DEFAULT),
+                    selectNextTrack(mSettings->getBool(KEY_APP_SKIP_UNSUPPORTED_TUNES, APP_SKIP_UNSUPPORTED_TUNES_DEFAULT),
                         sndState != SoundEngine::State::FINISHED && sndState != SoundEngine::State::ERROR);
                     break;
                 default:
@@ -433,7 +433,7 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                 case SoundEngine::State::PAUSED:
                 case SoundEngine::State::FINISHED:
                 case SoundEngine::State::ERROR:
-                    selectPrevTrack(mSettings->getBool(KEY_SKIP_UNSUPPORTED_TUNES, SKIP_UNSUPPORTED_TUNES_DEFAULT),
+                    selectPrevTrack(mSettings->getBool(KEY_APP_SKIP_UNSUPPORTED_TUNES, APP_SKIP_UNSUPPORTED_TUNES_DEFAULT),
                         sndState != SoundEngine::State::FINISHED && sndState != SoundEngine::State::ERROR);
                     break;
                 default:
@@ -443,25 +443,21 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
     }
 }
 
-void Osp::handleAppSettingsChange(const SettingsWindow::ToggleAppSetting setting) {
+void Osp::handleAppSettingsChange(const SettingsWindow::ToggleAppSetting setting, bool value) {
     auto& io = ImGui::GetIO();
 
     switch (setting) {
         case SettingsWindow::ToggleAppSetting::MOUSE_EMULATION: {
-            auto mouseEmulation = mSettings->getBool(KEY_MOUSE_EMULATION, MOUSE_EMULATION_DEFAULT);
-            mouseEmulation = !mouseEmulation;
-            mSettings->putBool(KEY_MOUSE_EMULATION, mouseEmulation);
-            ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mouseEmulation);
+            mSettings->putBool(KEY_APP_MOUSE_EMULATION, value);
+            ImGui_ImplSDL2_SetMouseEmulationWithGamepad(value);
             if (!PLATFORM_HAS_MOUSE_CURSOR) {
                 io.MouseDrawCursor = !io.MouseDrawCursor;
             }
             break;
         }
         case SettingsWindow::ToggleAppSetting::TOUCH_ENABLED: {
-            auto touchEnabled = mSettings->getBool(KEY_TOUCH_ENABLED, TOUCH_ENABLED_DEFAULT);
-            touchEnabled = !touchEnabled;
-            mSettings->putBool(KEY_TOUCH_ENABLED, touchEnabled);
-            if (!touchEnabled) {
+            mSettings->putBool(KEY_APP_TOUCH_ENABLED, value);
+            if (!value) {
                 io.ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
             } else {
                 io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
@@ -469,21 +465,15 @@ void Osp::handleAppSettingsChange(const SettingsWindow::ToggleAppSetting setting
             break;
         }
         case SettingsWindow::ToggleAppSetting::AUTOSKIP_UNSUPPORTED_FILES: {
-            auto skipUnsupportedTunes = mSettings->getBool(KEY_SKIP_UNSUPPORTED_TUNES, SKIP_UNSUPPORTED_TUNES_DEFAULT);
-            skipUnsupportedTunes = !skipUnsupportedTunes;
-            mSettings->putBool(KEY_SKIP_UNSUPPORTED_TUNES, skipUnsupportedTunes);
+            mSettings->putBool(KEY_APP_SKIP_UNSUPPORTED_TUNES, value);
             break;
         }
         case SettingsWindow::ToggleAppSetting::SKIP_SUBTUNES: {
-            auto skipSubTunes = mSettings->getBool(KEY_SKIP_SUBTUNES, SKIP_SUBTUNES_DEFAULT);
-            skipSubTunes = !skipSubTunes;
-            mSettings->putBool(KEY_SKIP_SUBTUNES, skipSubTunes);
+            mSettings->putBool(KEY_APP_SKIP_SUBTUNES, value);
             break;
         }
         case SettingsWindow::ToggleAppSetting::ALWAYS_START_FIRST_TRACK: {
-            auto alwaysStartFirstTune = mSettings->getBool(KEY_ALWAYS_START_FIRST_TUNE, ALWAYS_START_FIRST_TUNE_DEFAULT);
-            alwaysStartFirstTune = !alwaysStartFirstTune;
-            mSettings->putBool(KEY_ALWAYS_START_FIRST_TUNE, alwaysStartFirstTune);
+            mSettings->putBool(KEY_APP_ALWAYS_START_FIRST_TUNE, value);
             break;
         }
     }

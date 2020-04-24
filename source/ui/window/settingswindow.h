@@ -25,7 +25,7 @@ class SettingsWindow : public Window {
         virtual ~SettingsWindow();
 
         void render(const WindowData& windowData,
-            std::function<void (ToggleAppSetting)> onToggleSetting,
+            std::function<void (ToggleAppSetting, bool value)> onToggleSetting,
             std::function<void (std::string key, int value)> onDecoderIntSettingChanged,
             std::function<void (std::string key, bool value)> onDecoderBoolSettingChanged);
 
@@ -33,14 +33,22 @@ class SettingsWindow : public Window {
         SettingsWindow(const SettingsWindow& copy);
 
         void renderOspSettingsTab(const WindowData& windowData,
-            std::function<void (ToggleAppSetting)> onToggleSetting);
+            std::function<void (ToggleAppSetting, bool value)> onToggleSetting);
 
         void renderSc68DecoderTab(const WindowData& windowData,
             std::function<void (std::string key, int value)> onDecoderIntSettingChanged,
             std::function<void (std::string key, bool value)> onDecoderBoolSettingChanged);
 
-        void renderSidplayDecoderTab();
-        void renderGmeDecoderTab();
-        void renderDumbDecoderTab();
+        void renderSidplayDecoderTab(const WindowData& windowData,
+            std::function<void (std::string key, int value)> onDecoderIntSettingChanged,
+            std::function<void (std::string key, bool value)> onDecoderBoolSettingChanged);
+
+        void renderGmeDecoderTab(const WindowData& windowData,
+            std::function<void (std::string key, int value)> onDecoderIntSettingChanged,
+            std::function<void (std::string key, bool value)> onDecoderBoolSettingChanged);
+
+        void renderDumbDecoderTab(const WindowData& windowData,
+            std::function<void (std::string key, int value)> onDecoderIntSettingChanged,
+            std::function<void (std::string key, bool value)> onDecoderBoolSettingChanged);
 
 };
