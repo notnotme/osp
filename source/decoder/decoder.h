@@ -1,7 +1,10 @@
 #pragma once
 
+#include "../settings.h"
+
 #include <string>
 #include <vector>
+#include <memory>
 #include <SDL2/SDL_audio.h>
 
 class Decoder {
@@ -46,7 +49,7 @@ class Decoder {
 
         virtual bool canRead(const std::string extention) const = 0;
         virtual const MetaData getMetaData() = 0;
-        virtual bool play(const std::vector<char> buffer, bool defaultTune) = 0;
+        virtual bool play(const std::vector<char> buffer, std::shared_ptr<Settings> settings) = 0;
         virtual void stop() = 0;
         virtual int process(Uint8* stream, const int len) = 0;
 

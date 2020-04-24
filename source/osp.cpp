@@ -153,7 +153,6 @@ void Osp::render() {
         }
     }
 
-
     // Manage UI states / rendering
     auto windowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoResize
         | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBringToFrontOnFocus;
@@ -233,22 +232,23 @@ void Osp::render() {
     ImGui::End();
 
     // Other windows & popups
-    if (mSettingsWindow.isVisible()) {
-        mSettingsWindow.render( {
-                .settings = mSettings
-            },
-            [&](SettingsWindow::ToggleSetting setting) {
-                handleSettingsChange(setting);
-            });
-    }
+    mSettingsWindow.render({
+            .settings = mSettings
+        },
+        [&](SettingsWindow::ToggleAppSetting setting) {
+            handleAppSettingsChange(setting);
+        },
+        [&](std::string key, int value) {
+            mSettings->putInt(key, value);
+            mSettings->save(CONFIG_FILENAME);
+        },
+        [&](std::string key, bool value) {
+            mSettings->putBool(key, value);
+            mSettings->save(CONFIG_FILENAME);
+        });
 
-    if (mMetricsWindow.isVisible()) {
-        mMetricsWindow.render();
-    }
-
-    if (mAboutWindow.isVisible()) {
-        mAboutWindow.render(mTextureSprites, mSpriteCatalog->getFrame("logo"));
-    }
+    mMetricsWindow.render();
+    mAboutWindow.render(mTextureSprites, mSpriteCatalog);
 }
 
 void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {
@@ -443,11 +443,11 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
     }
 }
 
-void Osp::handleSettingsChange(const SettingsWindow::ToggleSetting setting) {
+void Osp::handleAppSettingsChange(const SettingsWindow::ToggleAppSetting setting) {
     auto& io = ImGui::GetIO();
 
     switch (setting) {
-        case SettingsWindow::ToggleSetting::MOUSE_EMULATION: {
+        case SettingsWindow::ToggleAppSetting::MOUSE_EMULATION: {
             auto mouseEmulation = mSettings->getBool(KEY_MOUSE_EMULATION, MOUSE_EMULATION_DEFAULT);
             mouseEmulation = !mouseEmulation;
             mSettings->putBool(KEY_MOUSE_EMULATION, mouseEmulation);
@@ -457,7 +457,7 @@ void Osp::handleSettingsChange(const SettingsWindow::ToggleSetting setting) {
             }
             break;
         }
-        case SettingsWindow::ToggleSetting::TOUCH_ENABLED: {
+        case SettingsWindow::ToggleAppSetting::TOUCH_ENABLED: {
             auto touchEnabled = mSettings->getBool(KEY_TOUCH_ENABLED, TOUCH_ENABLED_DEFAULT);
             touchEnabled = !touchEnabled;
             mSettings->putBool(KEY_TOUCH_ENABLED, touchEnabled);
@@ -468,19 +468,19 @@ void Osp::handleSettingsChange(const SettingsWindow::ToggleSetting setting) {
             }
             break;
         }
-        case SettingsWindow::ToggleSetting::AUTOSKIP_UNSUPPORTED_FILES: {
+        case SettingsWindow::ToggleAppSetting::AUTOSKIP_UNSUPPORTED_FILES: {
             auto skipUnsupportedTunes = mSettings->getBool(KEY_SKIP_UNSUPPORTED_TUNES, SKIP_UNSUPPORTED_TUNES_DEFAULT);
             skipUnsupportedTunes = !skipUnsupportedTunes;
             mSettings->putBool(KEY_SKIP_UNSUPPORTED_TUNES, skipUnsupportedTunes);
             break;
         }
-        case SettingsWindow::ToggleSetting::SKIP_SUBTUNES: {
+        case SettingsWindow::ToggleAppSetting::SKIP_SUBTUNES: {
             auto skipSubTunes = mSettings->getBool(KEY_SKIP_SUBTUNES, SKIP_SUBTUNES_DEFAULT);
             skipSubTunes = !skipSubTunes;
             mSettings->putBool(KEY_SKIP_SUBTUNES, skipSubTunes);
             break;
         }
-        case SettingsWindow::ToggleSetting::ALWAYS_START_FIRST_TRACK: {
+        case SettingsWindow::ToggleAppSetting::ALWAYS_START_FIRST_TRACK: {
             auto alwaysStartFirstTune = mSettings->getBool(KEY_ALWAYS_START_FIRST_TUNE, ALWAYS_START_FIRST_TUNE_DEFAULT);
             alwaysStartFirstTune = !alwaysStartFirstTune;
             mSettings->putBool(KEY_ALWAYS_START_FIRST_TUNE, alwaysStartFirstTune);
@@ -537,7 +537,7 @@ bool Osp::engineLoad(std::string path, std::string filename) {
     const auto file = mFileManager->getFile(path.append("/").append(filename));
     
     mLastFileSelected = filename;
-    if (! mSoundEngine->load(file, !mSettings->getBool(KEY_ALWAYS_START_FIRST_TUNE, ALWAYS_START_FIRST_TUNE_DEFAULT))) {
+    if (! mSoundEngine->load(file, mSettings)) {
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "%s", mSoundEngine->getError().c_str());
         return false;
     }

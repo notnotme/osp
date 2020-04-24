@@ -94,7 +94,7 @@ bool SoundEngine::canHandle(const std::shared_ptr<File> file) const {
     return getDecoder(file) != nullptr;
 }
 
-bool SoundEngine::load(const std::shared_ptr<File> file, bool defaultTune) {
+bool SoundEngine::load(const std::shared_ptr<File> file, std::shared_ptr<Settings> settings) {
     const auto path = file->getPath();
     SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Loading %s ...\n", path.c_str());
 
@@ -129,7 +129,7 @@ bool SoundEngine::load(const std::shared_ptr<File> file, bool defaultTune) {
         return false;
     }
 
-    if (! mCurrentDecoder->play(buffer, defaultTune)) {
+    if (! mCurrentDecoder->play(buffer, settings)) {
         mState = ERROR;
         mError = STR_ERROR_CANT_PLAY_SONG;
         SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Error trying to play song: %s\n", mCurrentDecoder->getError().c_str());

@@ -50,6 +50,7 @@
 #define STR_MOUNT_POINTS                "Mount points"
 #define STR_GENERAL                     "General"
 #define STR_AUDIO                       "Audio"
+#define STR_ENABLE                      "Enable"
 #define STR_PLAYING_S                   ICON_MDI_MUSIC " Playing: %s"
 
 

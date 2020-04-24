@@ -9,7 +9,7 @@
 class SettingsWindow : public Window {
 
     public:
-        enum ToggleSetting {
+        enum ToggleAppSetting {
             MOUSE_EMULATION,
             TOUCH_ENABLED,
             AUTOSKIP_UNSUPPORTED_FILES,
@@ -25,15 +25,20 @@ class SettingsWindow : public Window {
         virtual ~SettingsWindow();
 
         void render(const WindowData& windowData,
-            std::function<void (ToggleSetting)> onToggleSetting);
+            std::function<void (ToggleAppSetting)> onToggleSetting,
+            std::function<void (std::string key, int value)> onDecoderIntSettingChanged,
+            std::function<void (std::string key, bool value)> onDecoderBoolSettingChanged);
 
     private:
         SettingsWindow(const SettingsWindow& copy);
 
         void renderOspSettingsTab(const WindowData& windowData,
-            std::function<void (ToggleSetting)> onToggleSetting);
+            std::function<void (ToggleAppSetting)> onToggleSetting);
 
-        void renderSc68DecoderTab();
+        void renderSc68DecoderTab(const WindowData& windowData,
+            std::function<void (std::string key, int value)> onDecoderIntSettingChanged,
+            std::function<void (std::string key, bool value)> onDecoderBoolSettingChanged);
+
         void renderSidplayDecoderTab();
         void renderGmeDecoderTab();
         void renderDumbDecoderTab();

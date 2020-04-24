@@ -2,6 +2,7 @@
 
 #include "filesystem/file.h"
 #include "decoder/decoder.h"
+#include "settings.h"
 
 #include <string>
 #include <vector>
@@ -27,7 +28,7 @@ class SoundEngine {
         void cleanup();
 
         bool canHandle(const std::shared_ptr<File> file) const;
-        bool load(const std::shared_ptr<File> file, bool defaultTune);
+        bool load(const std::shared_ptr<File> file, std::shared_ptr<Settings> settings);
         void stop();
         void pause();
         void play();

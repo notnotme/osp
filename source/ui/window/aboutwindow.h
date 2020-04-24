@@ -4,6 +4,7 @@
 #include "../../spritecatalog.h"
 
 #include <string>
+#include <memory>
 #include <glad/glad.h>
 
 class AboutWindow : public Window {
@@ -12,7 +13,7 @@ class AboutWindow : public Window {
         AboutWindow();
         virtual ~AboutWindow();
 
-        void render(const GLuint texture, const SpriteCatalog::Frame& logoFrame);
+        void render(const GLuint texture, std::shared_ptr<SpriteCatalog> catalog);
 
     private:
         AboutWindow(const AboutWindow& copy);

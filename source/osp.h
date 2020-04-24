@@ -60,7 +60,7 @@ class Osp {
         
         void handlePlayerButtonClick(const PlayerFrame::ButtonId button);
         void handleExplorerItemClick(const FileSystem::Entry item, const std::filesystem::path currentExplorerPath);
-        void handleSettingsChange(const SettingsWindow::ToggleSetting setting);
+        void handleAppSettingsChange(const SettingsWindow::ToggleAppSetting setting);
         void handleStyleChange(int style);
         void handleFontChange(ImFont* font, int fontIndex);
         void handleMenuBarAction(const MenuBar::MenuAction action);

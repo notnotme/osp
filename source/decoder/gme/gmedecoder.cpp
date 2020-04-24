@@ -64,7 +64,7 @@ bool GmeDecoder::canRead(const std::string extention) const {
     return false;
 }
 
-bool GmeDecoder::play(const std::vector<char> buffer, bool defaultTune) {
+bool GmeDecoder::play(const std::vector<char> buffer, std::shared_ptr<Settings> settings) {
     // Open file
     if (const auto header = gme_identify_header(buffer.data());
         header[0] == '\0') {

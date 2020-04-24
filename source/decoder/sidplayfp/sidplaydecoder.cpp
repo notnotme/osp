@@ -1,5 +1,7 @@
 #include "sidplaydecoder.h"
 
+#include "../../app_settings_strings.h"
+
 #include <fstream>
 #include <sidplayfp/SidConfig.h>
 #include <sidplayfp/SidInfo.h>
@@ -111,7 +113,7 @@ bool SidPlayDecoder::canRead(const std::string extention) const {
     return false;
 }
 
-bool SidPlayDecoder::play(const std::vector<char> buffer, bool defaultTune) {
+bool SidPlayDecoder::play(const std::vector<char> buffer, std::shared_ptr<Settings> settings) {
     if (mTune = std::unique_ptr<SidTune>(new SidTune((const uint_least8_t*) buffer.data(), buffer.size()));
         mTune->getStatus() == false) {
         
@@ -120,7 +122,7 @@ bool SidPlayDecoder::play(const std::vector<char> buffer, bool defaultTune) {
     }
 
     // Load tune into engine
-    mTune->selectSong(defaultTune ? 0 : 1);
+    mTune->selectSong(settings->getBool(KEY_ALWAYS_START_FIRST_TUNE, ALWAYS_START_FIRST_TUNE_DEFAULT) ? 0 : 1);
     if (!mPlayer->load(mTune.get())) {
         mError = mPlayer->error();
         return false;

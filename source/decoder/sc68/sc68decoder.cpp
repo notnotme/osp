@@ -1,5 +1,7 @@
 #include "sc68decoder.h"
 
+#include "../../app_settings_strings.h"
+#include "sc68_settings_strings.h"
 
 #include <SDL2/SDL_log.h>
 
@@ -71,14 +73,22 @@ bool Sc68Decoder::canRead(const std::string extention) const {
     return false;
 }
 
-bool Sc68Decoder::play(const std::vector<char> buffer, bool defaultTune) {
+bool Sc68Decoder::play(const std::vector<char> buffer, std::shared_ptr<Settings> settings) {
     if (sc68_load_mem(mSC68, buffer.data(), buffer.size()) != 0) {
         mIsSongLoaded = false;
         mError = sc68_error(mSC68);
         return false;
     }
 
-    if (sc68_play(mSC68, defaultTune ? SC68_DEF_TRACK : 1, 0) < 0) {
+    if (settings->getBool(KEY_ACIDIFIER, ACIDIFIER_DEFAULT)) {
+        sc68_cntl(mSC68, SC68_SET_ASID, settings->getInt(KEY_ACIDIFIER_FLAGS, ACIDIFIER_FLAGS_DEFAULT));
+    } else {
+        sc68_cntl(mSC68, SC68_SET_ASID, 0);
+    }
+
+    int firstTune = settings->getBool(KEY_ALWAYS_START_FIRST_TUNE, ALWAYS_START_FIRST_TUNE_DEFAULT) ? 1 : SC68_DEF_TRACK;
+    int loopMode = settings->getInt(KEY_LOOP_COUNT, LOOP_COUNT_DEFAULT);
+    if (sc68_play(mSC68, firstTune, loopMode) < 0) {
         sc68_close(mSC68);
         mIsSongLoaded = false;
         mError = sc68_error(mSC68);
