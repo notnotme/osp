@@ -39,7 +39,7 @@ include $(TOPDIR)/git.mk
 #   NACP building is skipped as well.
 #---------------------------------------------------------------------------------
 TARGET		:=	$(notdir $(CURDIR))
-APP_TITLE	:=	Old Shool Player
+APP_TITLE	:=	Old School Player
 APP_AUTHOR	:=	notnotme
 APP_VERSION :=	$(GIT_VERSION) ($(GIT_COMMIT))
 BUILD		:=  build
