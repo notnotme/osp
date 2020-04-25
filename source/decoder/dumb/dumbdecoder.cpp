@@ -47,7 +47,7 @@ int DumbDecoder::getAudioFrequency() const {
     return dumb_resampling_quality;
 }
 
-std::string DumbDecoder::getName() {
+std::string DumbDecoder::getName() const {
     return NAME;
 }
 

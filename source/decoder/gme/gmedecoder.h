@@ -19,8 +19,8 @@ class GmeDecoder : public Decoder {
         
         virtual bool setup() override;
         virtual void cleanup() override;
-        virtual std::string getName() override;
 
+        virtual std::string getName() const override;
         virtual int getAudioFrequency() const override;
         virtual uint8_t getAudioChannels() const override;
         virtual SDL_AudioFormat getAudioSampleFormat() const override;

@@ -46,7 +46,7 @@ int GmeDecoder::getAudioFrequency() const {
     return 48000;
 }
 
-std::string GmeDecoder::getName() {
+std::string GmeDecoder::getName() const {
     return NAME;
 }
 

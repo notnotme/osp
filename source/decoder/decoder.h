@@ -39,10 +39,10 @@ class Decoder {
         Decoder();
         virtual ~Decoder();
 
-        virtual std::string getName() = 0;
         virtual bool setup() = 0;
         virtual void cleanup() = 0;
 
+        virtual std::string getName() const = 0;
         virtual int getAudioFrequency() const = 0;
         virtual uint8_t getAudioChannels() const = 0;
         virtual SDL_AudioFormat getAudioSampleFormat() const = 0;

@@ -19,10 +19,10 @@ class SidPlayDecoder : public Decoder {
         SidPlayDecoder(const std::string dataPath);
         virtual ~SidPlayDecoder();
       
-        virtual std::string getName() override;
         virtual bool setup() override;
         virtual void cleanup() override;
 
+        virtual std::string getName() const override;
         virtual int getAudioFrequency() const override;
         virtual uint8_t getAudioChannels() const override;
         virtual SDL_AudioFormat getAudioSampleFormat() const override;

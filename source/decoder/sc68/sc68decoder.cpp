@@ -62,7 +62,7 @@ int Sc68Decoder::getAudioFrequency() const {
     return mSC68Config.sampling_rate;
 }
 
-std::string Sc68Decoder::getName() {
+std::string Sc68Decoder::getName() const {
     return NAME;
 }
 

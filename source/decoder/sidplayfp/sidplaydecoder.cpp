@@ -70,7 +70,7 @@ const Decoder::MetaData SidPlayDecoder::getMetaData() {
     return mMetaData;
 }
 
-std::string SidPlayDecoder::getName() {
+std::string SidPlayDecoder::getName() const {
     return NAME;
 }
 
