@@ -12,7 +12,7 @@
 class MenuBar : public Frame {
 
     public:
-        enum MenuAction {
+        enum ItemId {
             TOGGLE_WORKSPACE_VISIBILITY,
             SHOW_SETTINGS,
             SHOW_ABOUT,
@@ -31,9 +31,9 @@ class MenuBar : public Frame {
         virtual ~MenuBar();
 
         void render(const MenuBarData& menuBarData,
-            std::function<void (int)> onStyleChange,
-            std::function<void (ImFont*, int)> onFontChange,
-            std::function<void (MenuAction)> onMenuAtion);
+            const std::function<void (int)>& onStyleChange,
+            const std::function<void (ImFont*, int)>& onFontChange,
+            const std::function<void (ItemId)>& onMenuAtion);
 
     private:
         MenuBar(const MenuBar& copy);

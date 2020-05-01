@@ -69,8 +69,8 @@ bool DumbDecoder::canRead(const std::string extention) const {
 }
 
 bool DumbDecoder::play(const std::vector<char> buffer, std::shared_ptr<Settings> settings) {
-
-    switch(settings->getInt(KEY_DUMB_MAX_TO_MIX, DUMB_MAX_TO_MIX_DEFAULT)) {
+    const auto maxToMix = settings->getInt(KEY_DUMB_MAX_TO_MIX, DUMB_MAX_TO_MIX_DEFAULT);
+    switch(maxToMix) {
         case 0:
             dumb_it_max_to_mix = 64;
             break;

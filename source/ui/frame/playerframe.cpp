@@ -29,7 +29,7 @@ void PlayerFrame::renderTitleAndSeekBar(const FrameData& frameData) {
 }
 
 void PlayerFrame::renderButtonBar(const FrameData& frameData, bool disabled,
-    std::function<void (ButtonId)> onButtonClick) {
+    const std::function<void (ButtonId)>& onButtonClick) {
 
     const auto& style = ImGui::GetStyle();
     const auto playSprite = frameData.catalog->getFrame("play");
@@ -75,7 +75,7 @@ void PlayerFrame::renderButtonBar(const FrameData& frameData, bool disabled,
 }
 
 void PlayerFrame::render(const FrameData& frameData,
-    std::function<void (ButtonId)> onButtonClick) {
+    const std::function<void (ButtonId)>& onButtonClick) {
     
     const auto disabled = frameData.state != SoundEngine::State::PAUSED
         && frameData.state != SoundEngine::State::STARTED;

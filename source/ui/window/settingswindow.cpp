@@ -18,7 +18,7 @@ SettingsWindow::~SettingsWindow() {
 }
 
 void SettingsWindow::renderOspSettingsTab(const WindowData& windowData,
-    std::function<void (ToggleAppSetting, bool value)> onToggleSetting) {
+    const std::function<void (AppSetting, bool value)>& onToggleSetting) {
 
     if (ImGui::BeginTabItem(STR_APPLICATION "##applicationTab")) {
         bool mouseEmulationEnabled = windowData.settings->getBool(KEY_APP_MOUSE_EMULATION, APP_MOUSE_EMULATION_DEFAULT);
@@ -66,8 +66,8 @@ void SettingsWindow::renderOspSettingsTab(const WindowData& windowData,
 }
 
 void SettingsWindow::renderSc68DecoderTab(const WindowData& windowData,
-    std::function<void (std::string key, int value)> onDecoderIntSettingChanged,
-    std::function<void (std::string key, bool value)> onDecoderBoolSettingChanged) {
+    const std::function<void (std::string key, int value)>& onDecoderIntSettingChanged,
+    const std::function<void (std::string key, bool value)>& onDecoderBoolSettingChanged) {
 
     if (ImGui::BeginTabItem("SC68##sc68Tab")) {
         auto loopCount = windowData.settings->getInt(KEY_SC68_LOOP_COUNT, SC68_LOOP_COUNT_DEFAULT);
@@ -139,8 +139,8 @@ void SettingsWindow::renderSc68DecoderTab(const WindowData& windowData,
 }
 
 void SettingsWindow::renderSidplayDecoderTab(const WindowData& windowData,
-    std::function<void (std::string key, int value)> onDecoderIntSettingChanged,
-    std::function<void (std::string key, bool value)> onDecoderBoolSettingChanged) {
+    const std::function<void (std::string key, int value)>& onDecoderIntSettingChanged,
+    const std::function<void (std::string key, bool value)>& onDecoderBoolSettingChanged) {
 
     if (ImGui::BeginTabItem("Sidplayfp##sidplayTab")) {
         auto samplingMethod = windowData.settings->getInt(KEY_SIDPLAYFP_SAMPLING_METHOD, SIDPLAYFP_SAMPLING_METHOD_DEFAULT);
@@ -182,8 +182,8 @@ void SettingsWindow::renderSidplayDecoderTab(const WindowData& windowData,
 }
 
 void SettingsWindow::renderGmeDecoderTab(const WindowData& windowData,
-            std::function<void (std::string key, int value)> onDecoderIntSettingChanged,
-            std::function<void (std::string key, bool value)> onDecoderBoolSettingChanged) {
+    const std::function<void (std::string key, int value)>& onDecoderIntSettingChanged,
+    const std::function<void (std::string key, bool value)>& onDecoderBoolSettingChanged) {
 
     if (ImGui::BeginTabItem("Gme##gmeTab")) {
         auto enableAccuracy = windowData.settings->getBool(KEY_GME_ENABLE_ACCURACY, GME_ENABLE_ACCURACY_DEFAULT);
@@ -215,8 +215,8 @@ void SettingsWindow::renderGmeDecoderTab(const WindowData& windowData,
 }
 
 void SettingsWindow::renderDumbDecoderTab(const WindowData& windowData,
-            std::function<void (std::string key, int value)> onDecoderIntSettingChanged,
-            std::function<void (std::string key, bool value)> onDecoderBoolSettingChanged) {
+    const std::function<void (std::string key, int value)>& onDecoderIntSettingChanged,
+    const std::function<void (std::string key, bool value)>& onDecoderBoolSettingChanged) {
 
     if (ImGui::BeginTabItem("Dumb##dumbTab")) {
         auto maxToMix = windowData.settings->getInt(KEY_DUMB_MAX_TO_MIX, DUMB_MAX_TO_MIX_DEFAULT);
@@ -231,9 +231,9 @@ void SettingsWindow::renderDumbDecoderTab(const WindowData& windowData,
 }
 
 void SettingsWindow::render(const WindowData& windowData,
-    std::function<void (ToggleAppSetting, bool value)> onToggleSetting,
-    std::function<void (std::string key, int value)> onDecoderIntSettingChanged,
-    std::function<void (std::string key, bool value)> onDecoderBoolSettingChanged) {
+    const std::function<void (AppSetting, bool value)>& onToggleSetting,
+    const std::function<void (std::string key, int value)>& onDecoderIntSettingChanged,
+    const std::function<void (std::string key, bool value)>& onDecoderBoolSettingChanged) {
 
     if (!mVisible) {
         return;

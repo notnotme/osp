@@ -67,7 +67,6 @@ bool GmeDecoder::canRead(const std::string extention) const {
 }
 
 bool GmeDecoder::play(const std::vector<char> buffer, std::shared_ptr<Settings> settings) {
-    // Open file
     if (const auto header = gme_identify_header(buffer.data());
         header[0] == '\0') {
 
@@ -82,12 +81,14 @@ bool GmeDecoder::play(const std::vector<char> buffer, std::shared_ptr<Settings> 
         return false;
     }
 
-    // Enable fine replay and default track
-    gme_enable_accuracy(mMusicEmu, settings->getBool(KEY_GME_ENABLE_ACCURACY, GME_ENABLE_ACCURACY_DEFAULT) ? 1 : 0);
-    gme_set_autoload_playback_limit(mMusicEmu, settings->getBool(KEY_GME_AUTOLOAD_PLAYBACK_LIMIT, GME_AUTOLOAD_PLAYBACK_LIMIT_DEFAULT) ? 1 : 0);
-    gme_ignore_silence(mMusicEmu, settings->getBool(KEY_GME_IGNORE_SILENCE, GME_GME_IGNORE_SILENCE_DEFAULT) ? 1 : 0);
+    const auto enableAccuracy = settings->getBool(KEY_GME_ENABLE_ACCURACY, GME_ENABLE_ACCURACY_DEFAULT) ? 1 : 0;
+    const auto autoloadPlaybackLimit = settings->getBool(KEY_GME_AUTOLOAD_PLAYBACK_LIMIT, GME_AUTOLOAD_PLAYBACK_LIMIT_DEFAULT) ? 1 : 0;
+    const auto ignoreSilence = settings->getBool(KEY_GME_IGNORE_SILENCE, GME_GME_IGNORE_SILENCE_DEFAULT) ? 1 : 0;
 
-    // Fill much meta data as we can
+    gme_enable_accuracy(mMusicEmu, enableAccuracy);
+    gme_set_autoload_playback_limit(mMusicEmu, autoloadPlaybackLimit);
+    gme_ignore_silence(mMusicEmu, ignoreSilence);
+
     mCurrentTrack = 0;
     gme_start_track(mMusicEmu, mCurrentTrack);
 

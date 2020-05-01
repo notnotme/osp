@@ -15,7 +15,7 @@ void ExplorerFrame::renderPath(const FrameData& frameData) {
 }
 
 void ExplorerFrame::renderExplorer(const FrameData& frameData,
-    std::function<void (FileSystem::Entry)> onItemClick) {
+    const std::function<void (FileSystem::Entry)>& onItemClick) {
     
     const auto tableSize = ImVec2(0, 0);
     const auto tableFlags = ImGuiTableFlags_ScrollY | ImGuiTableFlags_ScrollFreezeTopRow | ImGuiTableFlags_RowBg
@@ -56,7 +56,7 @@ void ExplorerFrame::renderExplorer(const FrameData& frameData,
 }
 
 void ExplorerFrame::render(const FrameData& frameData,
-    std::function<void (FileSystem::Entry)> onItemClick) {
+    const std::function<void (FileSystem::Entry)>& onItemClick) {
     
     renderPath(frameData);
     if (frameData.isWorking) {

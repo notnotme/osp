@@ -83,8 +83,8 @@ bool SidPlayDecoder::canRead(const std::string extention) const {
 }
 
 bool SidPlayDecoder::play(const std::vector<char> buffer, std::shared_ptr<Settings> settings) {
-
-    switch (settings->getInt(KEY_SIDPLAYFP_SID_EMULATION, SIDPLAYFP_SID_EMULATION_DEFAULT)) {
+    const auto sidEmulation = settings->getInt(KEY_SIDPLAYFP_SID_EMULATION, SIDPLAYFP_SID_EMULATION_DEFAULT);
+    switch (sidEmulation) {
         case 1:
             mSIDBuilder = std::unique_ptr<sidbuilder>(new ReSIDBuilder("OSP"));
             break;
@@ -100,11 +100,16 @@ bool SidPlayDecoder::play(const std::vector<char> buffer, std::shared_ptr<Settin
         return false;
     }
 
+    const auto samplingMethod = (SidConfig::sampling_method_t) settings->getInt(KEY_SIDPLAYFP_SAMPLING_METHOD, SIDPLAYFP_SAMPLING_METHOD_DEFAULT);
+    const auto fastSampling = settings->getBool(KEY_SIDPLAYFP_FAST_SAMPLING, SIDPLAYFP_FAST_SAMPLING_DEFAULT);
+    const auto enableDigiboost = settings->getBool(KEY_SIDPLAYFP_ENABLE_DIGIBOOST, SIDPLAYFP_ENABLE_DIGIBOOST_DEFAULT);
+    const auto defaultSong = settings->getBool(KEY_APP_ALWAYS_START_FIRST_TUNE, APP_ALWAYS_START_FIRST_TUNE_DEFAULT) ? 0 : 1;
+
     SidConfig cfg;
     cfg.frequency = 48000;
-    cfg.samplingMethod = (SidConfig::sampling_method_t) settings->getInt(KEY_SIDPLAYFP_SAMPLING_METHOD, SIDPLAYFP_SAMPLING_METHOD_DEFAULT);
-    cfg.fastSampling = settings->getBool(KEY_SIDPLAYFP_FAST_SAMPLING, SIDPLAYFP_FAST_SAMPLING_DEFAULT);
-    cfg.digiBoost = settings->getBool(KEY_SIDPLAYFP_ENABLE_DIGIBOOST, SIDPLAYFP_ENABLE_DIGIBOOST_DEFAULT);
+    cfg.samplingMethod = samplingMethod;
+    cfg.fastSampling = fastSampling;
+    cfg.digiBoost = enableDigiboost;
     cfg.playback = SidConfig::STEREO;
     cfg.sidEmulation = mSIDBuilder.get();
     
@@ -115,13 +120,12 @@ bool SidPlayDecoder::play(const std::vector<char> buffer, std::shared_ptr<Settin
 
     if (mTune = std::unique_ptr<SidTune>(new SidTune((const uint_least8_t*) buffer.data(), buffer.size()));
         mTune->getStatus() == false) {
-        
         mError = mTune->statusString();
         return false;
     }
 
     // Load tune into engine
-    mTune->selectSong(settings->getBool(KEY_APP_ALWAYS_START_FIRST_TUNE, APP_ALWAYS_START_FIRST_TUNE_DEFAULT) ? 0 : 1);
+    mTune->selectSong(defaultSong);
     if (!mPlayer->load(mTune.get())) {
         mError = mPlayer->error();
         return false;

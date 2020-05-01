@@ -80,14 +80,12 @@ bool Sc68Decoder::play(const std::vector<char> buffer, std::shared_ptr<Settings>
         return false;
     }
 
-    if (settings->getBool(KEY_SC68_ACIDIFIER, SC68_ACIDIFIER_DEFAULT)) {
-        sc68_cntl(mSC68, SC68_SET_ASID, settings->getInt(KEY_SC68_ACIDIFIER_FLAGS, SC68_ACIDIFIER_FLAGS_DEFAULT));
-    } else {
-        sc68_cntl(mSC68, SC68_SET_ASID, 0);
-    }
+    const auto aSIDifierEnabled = settings->getBool(KEY_SC68_ACIDIFIER, SC68_ACIDIFIER_DEFAULT);
+    const auto aSIDifierFlags = settings->getInt(KEY_SC68_ACIDIFIER_FLAGS, SC68_ACIDIFIER_FLAGS_DEFAULT);
+    const auto firstTune = settings->getBool(KEY_APP_ALWAYS_START_FIRST_TUNE, APP_ALWAYS_START_FIRST_TUNE_DEFAULT) ? 1 : SC68_DEF_TRACK;
+    const auto loopMode = settings->getInt(KEY_SC68_LOOP_COUNT, SC68_LOOP_COUNT_DEFAULT);
 
-    int firstTune = settings->getBool(KEY_APP_ALWAYS_START_FIRST_TUNE, APP_ALWAYS_START_FIRST_TUNE_DEFAULT) ? 1 : SC68_DEF_TRACK;
-    int loopMode = settings->getInt(KEY_SC68_LOOP_COUNT, SC68_LOOP_COUNT_DEFAULT);
+    sc68_cntl(mSC68, SC68_SET_ASID, aSIDifierEnabled ? aSIDifierFlags : 0);
     if (sc68_play(mSC68, firstTune, loopMode) < 0) {
         sc68_close(mSC68);
         mIsSongLoaded = false;

@@ -183,7 +183,7 @@ void Osp::render() {
         [&](ImFont* font, int n) {
             handleFontChange(font, n);
         },
-        [&](MenuBar::MenuAction action) {
+        [&](MenuBar::ItemId action) {
             handleMenuBarAction(action);
         });
 
@@ -235,7 +235,7 @@ void Osp::render() {
     mSettingsWindow.render({
             .settings = mSettings
         },
-        [&](SettingsWindow::ToggleAppSetting setting, bool value) {
+        [&](SettingsWindow::AppSetting setting, bool value) {
             handleAppSettingsChange(setting, value);
         },
         [&](std::string key, int value) {
@@ -443,11 +443,11 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
     }
 }
 
-void Osp::handleAppSettingsChange(const SettingsWindow::ToggleAppSetting setting, bool value) {
+void Osp::handleAppSettingsChange(const SettingsWindow::AppSetting setting, bool value) {
     auto& io = ImGui::GetIO();
 
     switch (setting) {
-        case SettingsWindow::ToggleAppSetting::MOUSE_EMULATION: {
+        case SettingsWindow::AppSetting::MOUSE_EMULATION: {
             mSettings->putBool(KEY_APP_MOUSE_EMULATION, value);
             ImGui_ImplSDL2_SetMouseEmulationWithGamepad(value);
             if (!PLATFORM_HAS_MOUSE_CURSOR) {
@@ -455,7 +455,7 @@ void Osp::handleAppSettingsChange(const SettingsWindow::ToggleAppSetting setting
             }
             break;
         }
-        case SettingsWindow::ToggleAppSetting::TOUCH_ENABLED: {
+        case SettingsWindow::AppSetting::TOUCH_ENABLED: {
             mSettings->putBool(KEY_APP_TOUCH_ENABLED, value);
             if (!value) {
                 io.ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
@@ -464,15 +464,15 @@ void Osp::handleAppSettingsChange(const SettingsWindow::ToggleAppSetting setting
             }
             break;
         }
-        case SettingsWindow::ToggleAppSetting::AUTOSKIP_UNSUPPORTED_FILES: {
+        case SettingsWindow::AppSetting::AUTOSKIP_UNSUPPORTED_FILES: {
             mSettings->putBool(KEY_APP_SKIP_UNSUPPORTED_TUNES, value);
             break;
         }
-        case SettingsWindow::ToggleAppSetting::SKIP_SUBTUNES: {
+        case SettingsWindow::AppSetting::SKIP_SUBTUNES: {
             mSettings->putBool(KEY_APP_SKIP_SUBTUNES, value);
             break;
         }
-        case SettingsWindow::ToggleAppSetting::ALWAYS_START_FIRST_TRACK: {
+        case SettingsWindow::AppSetting::ALWAYS_START_FIRST_TRACK: {
             mSettings->putBool(KEY_APP_ALWAYS_START_FIRST_TUNE, value);
             break;
         }
@@ -501,21 +501,21 @@ void Osp::handleFontChange(ImFont* font, int fontIndex) {
     mSettings->save(CONFIG_FILENAME);
 }
 
-void Osp::handleMenuBarAction(const MenuBar::MenuAction action) {
+void Osp::handleMenuBarAction(const MenuBar::ItemId action) {
     switch (action) {
-        case MenuBar::MenuAction::TOGGLE_WORKSPACE_VISIBILITY:
+        case MenuBar::ItemId::TOGGLE_WORKSPACE_VISIBILITY:
             mShowWorkspace = !mShowWorkspace;
             break;
-        case MenuBar::MenuAction::SHOW_SETTINGS:
+        case MenuBar::ItemId::SHOW_SETTINGS:
             mSettingsWindow.setVisible(true);
             break;
-        case MenuBar::MenuAction::SHOW_ABOUT:
+        case MenuBar::ItemId::SHOW_ABOUT:
             mAboutWindow.setVisible(true);
             break;
-        case MenuBar::MenuAction::SHOW_METRICS:
+        case MenuBar::ItemId::SHOW_METRICS:
             mMetricsWindow.setVisible(true);
             break;
-        case MenuBar::MenuAction::QUIT:
+        case MenuBar::ItemId::QUIT:
             SDL_Event event;
             event.type = SDL_QUIT;
             SDL_PushEvent(&event);

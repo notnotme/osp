@@ -20,13 +20,13 @@ class ExplorerFrame {
         virtual ~ExplorerFrame();
 
         void render(const FrameData& frameData,
-            std::function<void (FileSystem::Entry)> onItemClick);
+            const std::function<void (FileSystem::Entry)>& onItemClick);
 
     private:
         ExplorerFrame(const ExplorerFrame& copy);
 
         void renderPath(const FrameData& frameData);
         void renderExplorer(const FrameData& frameData,
-            std::function<void (FileSystem::Entry)> onItemClick);
+            const std::function<void (FileSystem::Entry)>& onItemClick);
         
 };
