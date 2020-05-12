@@ -133,8 +133,10 @@ void Osp::render() {
 
         // SoundEngine states
         switch (sndState) {
-            case SoundEngine::State::FINISHED_NATURAL:
-                selectNextTrack(mSettings->getBool(KEY_APP_SKIP_UNSUPPORTED_TUNES, APP_SKIP_UNSUPPORTED_TUNES_DEFAULT), true);
+            case SoundEngine::State::FINISHED_NATURAL: {
+                    const auto skipUnsupportedTunes = mSettings->getBool(KEY_APP_SKIP_UNSUPPORTED_TUNES, APP_SKIP_UNSUPPORTED_TUNES_DEFAULT);
+                    selectNextTrack(skipUnsupportedTunes, true);
+                }
                 break;
             case SoundEngine::State::STARTED:
                 mStatusMessage = STR_PLAYING;
@@ -252,7 +254,8 @@ void Osp::render() {
 }
 
 void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {
-    if (mSettings->getBool(KEY_APP_SKIP_SUBTUNES, APP_SKIP_SUBTUNES_DEFAULT) || !mSoundEngine->nextTrack()) {
+    const auto skipSubTunes = mSettings->getBool(KEY_APP_SKIP_SUBTUNES, APP_SKIP_SUBTUNES_DEFAULT);
+    if (skipSubTunes || !mSoundEngine->nextTrack()) {
         if (const auto nextFileName = getNextFileName();
             nextFileName.empty() == false) {
 
@@ -272,7 +275,8 @@ void Osp::selectNextTrack(bool skipInvalid, bool autoPlay) {
 }
 
 void Osp::selectPrevTrack(bool skipInvalid, bool autoPlay) {
-    if (mSettings->getBool(KEY_APP_SKIP_SUBTUNES, APP_SKIP_SUBTUNES_DEFAULT) || !mSoundEngine->prevTrack()) {
+    const auto skipSubTunes = mSettings->getBool(KEY_APP_SKIP_SUBTUNES, APP_SKIP_SUBTUNES_DEFAULT);
+    if (skipSubTunes || !mSoundEngine->prevTrack()) {
         if (const auto prevFileName = getPrevFileName();
             prevFileName.empty() == false) {
         
@@ -419,9 +423,11 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                 case SoundEngine::State::STARTED:
                 case SoundEngine::State::PAUSED:
                 case SoundEngine::State::FINISHED:
-                case SoundEngine::State::ERROR:
-                    selectNextTrack(mSettings->getBool(KEY_APP_SKIP_UNSUPPORTED_TUNES, APP_SKIP_UNSUPPORTED_TUNES_DEFAULT),
+                case SoundEngine::State::ERROR: {
+                    const auto skipUnsupportedTunes = mSettings->getBool(KEY_APP_SKIP_UNSUPPORTED_TUNES, APP_SKIP_UNSUPPORTED_TUNES_DEFAULT);
+                    selectNextTrack(skipUnsupportedTunes,
                         sndState != SoundEngine::State::FINISHED && sndState != SoundEngine::State::ERROR);
+                    }
                     break;
                 default:
                     break;
@@ -432,9 +438,11 @@ void Osp::handlePlayerButtonClick(const PlayerFrame::ButtonId button) {
                 case SoundEngine::State::STARTED:
                 case SoundEngine::State::PAUSED:
                 case SoundEngine::State::FINISHED:
-                case SoundEngine::State::ERROR:
-                    selectPrevTrack(mSettings->getBool(KEY_APP_SKIP_UNSUPPORTED_TUNES, APP_SKIP_UNSUPPORTED_TUNES_DEFAULT),
+                case SoundEngine::State::ERROR: {
+                    const auto skipUnsupportedTunes = mSettings->getBool(KEY_APP_SKIP_UNSUPPORTED_TUNES, APP_SKIP_UNSUPPORTED_TUNES_DEFAULT);
+                    selectPrevTrack(skipUnsupportedTunes,
                         sndState != SoundEngine::State::FINISHED && sndState != SoundEngine::State::ERROR);
+                    }
                     break;
                 default:
                     break;
@@ -450,9 +458,7 @@ void Osp::handleAppSettingsChange(const SettingsWindow::AppSetting setting, bool
         case SettingsWindow::AppSetting::MOUSE_EMULATION: {
             mSettings->putBool(KEY_APP_MOUSE_EMULATION, value);
             ImGui_ImplSDL2_SetMouseEmulationWithGamepad(value);
-            if (!PLATFORM_HAS_MOUSE_CURSOR) {
-                io.MouseDrawCursor = !io.MouseDrawCursor;
-            }
+            io.MouseDrawCursor = !PLATFORM_HAS_MOUSE_CURSOR;
             break;
         }
         case SettingsWindow::AppSetting::TOUCH_ENABLED: {
