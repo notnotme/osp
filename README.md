@@ -1,6 +1,26 @@
 # OSP - Old School Player
 Yet another chiptune player.
 
+### Supported formats:
+
+sid, psid, rsid, mus, snd, sndh, sc68, it, xm, mod, stm, s3m, 669, amf, dsm, mtm, okt, psm, ptm, riff, ay, gbs, gym, hes, kss, nsf, nsfe, sap, spc, vgm, vgz.
+
+### Controls:
+
+- With mouse emulation:   
+    - Left joystick: move cursor
+    - Right joystick: scroll up/down in area allowed to scroll
+    - A: click
+    - L shoulder: Speed down mouse and scroll (keep button down)
+    - R shoulder: Speed up mouse and scroll (keep button down)
+
+- Mouse emulation with gamepad is enabled by default, you can disable it in the settings window.
+
+- Touch controls can be enabled/disabled (it work as a "mouse right click" only)
+
+- Nintendo switch usb mouse support (please disable manually mouse emulation in this case)
+
+### Build
 
 To be able to compile the project you need the following libraries installed in your system:
 
