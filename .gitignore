@@ -5,5 +5,7 @@
 *.nsp
 .vscode
 config.cfg
+settings.cfg
 /build
-/romfs/c64roms
+/romfs/c64roms/**
+!/romfs/c64roms/readme.md

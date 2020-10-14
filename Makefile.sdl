@@ -1,71 +1,72 @@
 # SDL2 target
-# We provide our own glad loader for GL 3.0 Core in source/port/glad
-# StSoundLibrary temporarly included in source/port/StSoundLibrary but will be removed later when alpha is working
-
 include git.mk
 
 #---------------------------------------------------------------------------------
 # TARGET
 #---------------------------------------------------------------------------------
-TARGET		= osp
-OBJS		= source/platform/sdl/platform.o \
-			source/decoder/decoder.o \
-			source/decoder/dumb/dumbdecoder.o \
-			source/decoder/gme/gmedecoder.o \
-			source/decoder/sc68/sc68decoder.o \
-			source/decoder/sidplayfp/sidplaydecoder.o \
-			source/imgui/imgui.o \
-			source/imgui/imgui_draw.o \
-			source/imgui/imgui_widgets.o \
-			source/imgui/imgui_demo.o \
-			source/imgui/imgui_impl_opengl3.o \
-			source/imgui/imgui_impl_sdl.o \
-			source/ui/frame.o \
-			source/ui/window.o \
-			source/ui/frame/metadataframe.o \
-			source/ui/frame/explorerframe.o \
-			source/ui/frame/playerframe.o \
-			source/ui/frame/menubar.o \
-			source/ui/window/aboutwindow.o \
-			source/ui/window/metricswindow.o \
-			source/ui/window/settingswindow.o \
-			source/filesystem/file.o \
-			source/filesystem/filesystem.o \
-			source/filesystem/local/localfile.o \
-			source/filesystem/local/localfilesystem.o \
-			source/spritecatalog.o \
-			source/filemanager.o \
-			source/soundengine.o \
-			source/settings.o \
-			source/osp.o \
-			source/main.o
+TARGET	= osp
+OBJS	=\
+		include/imgui/imgui.o \
+		include/imgui/imgui_draw.o \
+		include/imgui/imgui_widgets.o \
+		include/imgui/imgui_demo.o \
+		include/imgui/imgui_impl_opengl3.o \
+		include/imgui/imgui_impl_sdl.o \
+		source/tools/AtlasTexture.o \
+		source/tools/ConfigFile.o \
+		source/tools/LanguageFile.o \
+		source/system/file/MountPoint.o \
+		source/system/file/LocalMountPoint.o \
+		source/system/audio/Plugin.o \
+		source/system/audio/OpenmptPlugin.o \
+		source/system/audio/GmePlugin.o \
+		source/system/audio/SidplayfpPlugin.o \
+		source/system/audio/Sc68Plugin.o \
+		source/system/FileSystem.o \
+		source/system/AudioSystem.o \
+		source/system/RenderSystem.o \
+		source/system/UiSystem.o \
+		source/main.o
 
-PREFIX	= 
-CC		= $(PREFIX)gcc-8
-CXX		= $(PREFIX)g++-8
-AR		= $(PREFIX)ar
-STRIP	= $(PREFIX)strip
+PREFIX	=
+CC		= $(PREFIX)gcc
+CXX		= $(PREFIX)g++
 
-CFLAGS	    += -g -Wl,-q -Wall -O2 `sdl2-config --cflags` `pkg-config sc68 --cflags` `pkg-config libgme --cflags` `pkg-config dumb --cflags` \
-				-DIMGUI_DISABLE_DEMO_WINDOWS \
-				-DIMGUI_IMPL_OPENGL_LOADER_GLAD \
-				-Isource/port/sdl \
-				-DGIT_VERSION=\"$(GIT_VERSION)\" \
-				-DGIT_COMMIT=\"$(GIT_COMMIT)\" \
-				-DBUILD_DATE=\"$(BUILD_DATE)\"
+CFLAGS	+= -Wl,-q -Wall -DIMGUI_IMPL_OPENGL_LOADER_GLAD -Iinclude/imgui -Iinclude \
+			`sdl2-config --cflags` \
+			`pkg-config SDL2_image --cflags` \
+			`pkg-config jansson --cflags` \
+			`pkg-config fmt --cflags` \
+			`pkg-config libconfig++ --cflags` \
+			`pkg-config libopenmpt --cflags` \
+			`pkg-config libgme --cflags` \
+			`pkg-config libsidplayfp --cflags` \
+			`pkg-config sc68 --cflags` \
+			-DGIT_VERSION=\"$(GIT_VERSION)\" \
+			-DGIT_COMMIT=\"$(GIT_COMMIT)\" \
+			-DBUILD_DATE=\"$(BUILD_DATE)\"
 
-CXXFLAGS    += $(CFLAGS) -fno-exceptions -std=gnu++17
+ifneq ($(DEBUG),)
+CFLAGS	+= -g -O0 -DDEBUG
+else
+CFLAGS	+= -O3 -DNDEBUG -DIMGUI_DISABLE_DEMO_WINDOWS
+endif
 
-ASFLAGS		= $(CXXFLAGS)
-LIBS		= -lstdc++fs -lconfig `sdl2-config --libs` -lSDL2_image  -ljansson \
-			`pkg-config sc68 --libs` \
-			`pkg-config libgme --libs` \
-			`pkg-config dumb --libs` \
-			-lsidplayfp -lglad -ldl
+CXXFLAGS    += $(CFLAGS) -std=gnu++17
+LIBS		= -lglad -ldl \
+				`sdl2-config --libs`  \
+				`pkg-config SDL2_image --libs` \
+				`pkg-config jansson --libs` \
+				`pkg-config fmt --libs` \
+				`pkg-config libconfig++ --libs` \
+				`pkg-config libopenmpt --libs --static` \
+				`pkg-config libgme --libs --static` \
+				`pkg-config libsidplayfp --libs --static` \
+				`pkg-config sc68 --libs --static`
 
-all:    $(TARGET).elf
+all: $(TARGET).elf
 
-$(TARGET).elf:  $(OBJS)
+$(TARGET).elf: $(OBJS)
 	$(CXX) $(CXXFLAGS) $^ $(LIBS) -o $@
 
 clean:

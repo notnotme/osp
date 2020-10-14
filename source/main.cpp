@@ -1,221 +1,217 @@
-#include "osp.h"
-#include "platform.h"
-
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_sdl.h"
-#include "imgui/imgui_impl_opengl3.h"
-#include "IconsMaterialDesignIcons_c.h"
+/*
+ * This file is part of OSP (https://github.com/notnotme/osp).
+ * Copyright (c) 2020 Romain Graillot
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, version 3.
+ *
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+ * General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <http://www.gnu.org/licenses/>.
+ */
+#include <stdexcept>
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
 #include <glad/glad.h>
+#include <fmt/format.h>
+#if defined(__SWITCH__)
+#include <switch.h>
+#endif
 
-Osp osp;
-SDL_Window *sdlWindow = nullptr;
-SDL_GLContext glContext = nullptr;
-auto applicationExit = false;
-auto sdlWindowWidth = 1280, sdlWindowHeight = 720;
-ImWchar iconRanges[] = { ICON_MIN_MDI, ICON_MAX_MDI, 0 };
+#include <ECS.h>
 
-bool setup() {
-    // Setup port specific code
-    // Needed on switch to handle romfs and setup nxlink in debug build for example
-    if (!PLATFORM_setup()) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "PLATFORM_setup\n");
-        return false;
-    }
+#include "system/AudioSystem.h"
+#include "system/FileSystem.h"
+#include "system/RenderSystem.h"
+#include "system/UiSystem.h"
+#include "tools/ConfigFile.h"
+#include "config.h"
 
-    // init SDL subsystems
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER | SDL_INIT_AUDIO) < 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_Init: %s\n", SDL_GetError());
-        return false;
-    }
+int main(int argc, char *argv[])
+{
+    // Initial screen configuration
+    auto w = 1280;
+    auto h = 720;
 
-    // create an SDL window 
+    // Initialize platform specifique + SDL and OpenGL
+#if defined(__SWITCH__)
+    // 1280x720 = screen size in portable mode
+    auto switchIsDocked = false;
+    if (R_FAILED(romfsInit()))
+        throw std::runtime_error("romfsInit failed");
+
+    if (R_FAILED(setInitialize()))
+        throw std::runtime_error("setsysInitialize failed");
+
+    TRACE("SWITCH started romfs and set modules.");
+#endif
+
+    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) < 0)
+        throw std::runtime_error(SDL_GetError());
+
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
     SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
-    if (sdlWindow = SDL_CreateWindow("OSP", 0, 0, sdlWindowWidth, sdlWindowHeight, SDL_WINDOW_OPENGL);
-        sdlWindow == nullptr) {
 
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "SDL_CreateWindow: %s\n", SDL_GetError());
-        return false;
-    }
+    auto windowFlags = (int) SDL_WINDOW_OPENGL;
+#if !defined(__SWITCH__)
+    windowFlags |= (int) SDL_WINDOW_RESIZABLE;
+#endif
 
-    // Setup window icon (optional)
-    if (auto icon = IMG_Load("icon.jpg");
-        icon != nullptr) {
-        
-        SDL_SetWindowIcon(sdlWindow, icon);
-        SDL_FreeSurface(icon);
-    } else {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "Cannot set window icon: %s\n", SDL_GetError());
-    }
+    auto* window = SDL_CreateWindow("OSP", 0, 0, w, h, windowFlags);
+    if (!window)
+        throw std::runtime_error(SDL_GetError());
 
-    // Init GL context, Enable vsync and set initial window size, icon
-    glContext = SDL_GL_CreateContext(sdlWindow);
-    SDL_GL_MakeCurrent(sdlWindow, glContext);
+    TRACE("SDL_Window created.");
+
+    auto context = SDL_GL_CreateContext(window);
+    SDL_SetWindowSize(window, w, h);
+    SDL_GL_MakeCurrent(window, context);
     SDL_GL_SetSwapInterval(1);
-    SDL_SetWindowSize(sdlWindow, sdlWindowWidth, sdlWindowHeight);
 
-    // todo: maybe move gl loading to PORT_loadGL
-    if (gladLoadGL() == 0) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "Failed to initialize OpenGL loader!\n");
-        return false;
+    if (gladLoadGL() == 0)
+        throw std::runtime_error("gladLoadGL failed");
+
+    TRACE("OpenGL context created.");
+
+#if defined(__SWITCH__)
+    // Critical on platform with only a gamepad
+    if (SDL_GameControllerOpen(0) == nullptr)
+        throw std::runtime_error(SDL_GetError());
+#endif
+
+    // Try to load app config from disk
+    ConfigFile configFile;
+    try
+    {
+        configFile.load(APP_CONFIG_NAME);
+        TRACE("App config loaded {:s}", APP_CONFIG_NAME);
+    }
+    catch(const std::exception& e)
+    {
+        TRACE("App config not found {:s}", APP_CONFIG_NAME);
     }
 
-    // open CONTROLLER_PLAYER_1 
-    // when railed, both joycons are mapped to joystick #0,
-    // else joycons are individually mapped to joystick #0, joystick #1, ...
-    // https://github.com/devkitPro/SDL/blob/switch-sdl2/src/joystick/switch/SDL_sysjoystick.c#L45
-    if (SDL_GameControllerOpen(0) == 0) {
-        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "SDL_GameControllerOpen: %s\n", SDL_GetError());
+    auto config = configFile.getGroupOrCreate("main");
+
+    // Load the language file
+    LanguageFile languageFile;
+    try
+    {
+        auto folder = fmt::format("{:s}lang", DATAPATH);
+        auto lang = config.get("lang", (int) LanguageFile::Language::ENGLISH);
+        if (lang < 0 || lang >= LanguageFile::Language::MAX_LANG)
+            lang = 0;
+
+        languageFile.load(folder, (LanguageFile::Language) lang);
+        TRACE("Language file loaded {:s}", languageFile.getFilename());
+    }
+    catch(const std::exception& e)
+    {
+        TRACE("Language file not found {:s}", languageFile.getFilename());
     }
 
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    auto& io = ImGui::GetIO();
-    io.LogFilename = nullptr;
-    io.IniFilename = nullptr;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+    // Initialize the ECS and start the differents Systems (order matter)
+    auto* world = ECS::World::createWorld();
+    world->registerSystem(new RenderSystem(window));
+    world->registerSystem(new UiSystem(config, languageFile, window));
+    world->registerSystem(new FileSystem(config, languageFile));
+    world->registerSystem(new AudioSystem(config));
 
-    auto& style = ImGui::GetStyle();
-    style.FramePadding = ImVec2(8, 8);
-    style.WindowRounding = 4;
-    style.TabRounding = 4;
-    style.PopupRounding = 4;
-    style.ChildRounding = 4;
-    style.FrameRounding = 3;
-    style.FrameBorderSize = 1;
-    style.ScrollbarSize = 16;
+    TRACE("ECS created.");
 
-    // Load Fonts
-    ImFontConfig imFontConfig;
-    imFontConfig.MergeMode = true;
-    imFontConfig.PixelSnapH = true;
-    imFontConfig.OversampleH = 1;
-    imFontConfig.OversampleV = 1;
-
-    imFontConfig.GlyphMinAdvanceX = 16.0f;
-    io.Fonts->AddFontFromFileTTF(DATA_PATH "/font/AtariST8x16SystemFont.ttf", 16.0f);
-    io.Fonts->AddFontFromFileTTF(DATA_PATH "/font/" FONT_ICON_FILE_NAME_MDI, 16.0f, &imFontConfig, iconRanges);
-
-    imFontConfig.GlyphMinAdvanceX = 13.0f; // default font size
-    io.Fonts->AddFontDefault();
-    io.Fonts->AddFontFromFileTTF(DATA_PATH "/font/" FONT_ICON_FILE_NAME_MDI, 13.0f, &imFontConfig, iconRanges);
-
-    // ImGui Platform/Renderer bindings
-    if (!ImGui_ImplSDL2_InitForOpenGL(sdlWindow, glContext, true)) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "ImGui_ImplSDL2_InitForOpenGL failed\n");
-        return false;
-    }
-
-    if (!ImGui_ImplOpenGL3_Init("#version 330 core")) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "ImGui_ImplOpenGL3_Init failed\n");
-        return false;
-    }
-
-    if (!osp.setup(DATA_PATH)) {
-        SDL_LogError(SDL_LOG_CATEGORY_APPLICATION, "osp.initialize failed\n");
-        return false;
-    }
-
-    return true;
-}
-
-void cleanup() {
-    // exit osp
-    osp.cleanup();
-
-    // exit ImGui
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-
-    // Quit SDL
-    IMG_Quit();
-    SDL_GL_DeleteContext(glContext);
-    SDL_DestroyWindow(sdlWindow);
-    SDL_Quit();
-
-    ImGui::DestroyContext(nullptr);
-    sdlWindow = nullptr;
-    glContext = nullptr;
-
-    // Cleanup port specific code
-    PLATFORM_cleanup();
-}
-
-int main(int argc, char *argv[]) {
-    if (!setup()) {
-        cleanup();
-        return -1;
-    }
-
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Run.");
-    SDL_Event sdlEvent;
-    while (!applicationExit) {
-        
-        // Poll events
-        while (SDL_PollEvent(&sdlEvent)) {
-            ImGui_ImplSDL2_ProcessEvent(&sdlEvent);
-            switch (sdlEvent.type) {
+    SDL_Event event;
+    auto done = false;
+    auto time = 0ul;
+    auto frequency = SDL_GetPerformanceFrequency();
+    while (!done)
+    {
+        // Process SDL_QUIT event but pass the rest into the ECS event system
+        while (SDL_PollEvent(&event))
+        {
+            switch (event.type)
+            {
                 case SDL_QUIT:
-                    applicationExit = true;
-                    break;
-                case SDL_WINDOWEVENT:
-                    if (sdlEvent.window.windowID == SDL_GetWindowID(sdlWindow)) {
-                        switch (sdlEvent.window.event) {
-                            case SDL_WINDOWEVENT_CLOSE:
-                                sdlEvent.type = SDL_QUIT;
-                                SDL_PushEvent(&sdlEvent);
-                                break;
-                            default:
-                                break;
-                        }
-                    }
-                    break;
+                    done = true;
+                break;
                 case SDL_CONTROLLERBUTTONDOWN:
-                    // seek for joystick #0
-                    if (sdlEvent.cbutton.which == 0) {
-                       if (sdlEvent.cbutton.button == SDL_CONTROLLER_BUTTON_START) {
-                            // (+) button down, shortway exit
-                            sdlEvent.type = SDL_QUIT;
-                            SDL_PushEvent(&sdlEvent);
+                    if (event.cbutton.which == 0)
+                    {
+                        if (event.cbutton.button == SDL_CONTROLLER_BUTTON_START)
+                        {
+                            SDL_Event quitEvent;
+                            quitEvent.type = SDL_QUIT;
+                            SDL_PushEvent(&quitEvent);
                         }
                     }
-                    break;
+                default:
+                    world->emit<SDL_Event>(event);
             }
         }
 
-        // This is used in the switch port to handle docked/handheld mode
-        // maybe useful as well for other patform supporting SDL2
-        PLATFORM_beforeRender(sdlWindow);
-        
-        SDL_GetWindowSize(sdlWindow, &sdlWindowWidth, &sdlWindowHeight);
-        glViewport(0, 0, sdlWindowWidth, sdlWindowHeight);
-        glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-        
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL2_NewFrame(sdlWindow);
+#if defined(__SWITCH__)
+        // Check docked status to change screen size if needed
+        switch (appletGetOperationMode())
+        {
+            default:
+            case AppletOperationMode_Handheld:
+                if (switchIsDocked == true)
+                {
+                    world->emit<ScreenSizeChangeEvent>({.size = glm::ivec2(1280, 720)});
+                    switchIsDocked = false;
+                }
+            break;
+            case AppletOperationMode_Docked:
+                if (switchIsDocked == false)
+                {
+                    world->emit<ScreenSizeChangeEvent>({.size = glm::ivec2(1920, 1080)});
+                    switchIsDocked = true;
+                }
+            break;
+        }
+#endif
 
-        ImGui::NewFrame();
-        osp.render();
-        ImGui::Render();
-        
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        SDL_GL_SwapWindow(sdlWindow);
+        // Update systems
+        auto currentTime = SDL_GetPerformanceCounter();
+        auto elapsed = time > 0 ? (float)((double)(currentTime - time) / frequency) : (float)(1.0f / 60.0f);
+        time = currentTime;
+        world->tick(elapsed);
+
+        SDL_GL_SwapWindow(window);
     }
 
-    cleanup();
-    SDL_LogInfo(SDL_LOG_CATEGORY_APPLICATION, "Exit.");
+    // clean up
+    world->destroyWorld();
+    TRACE("ECS destroyed.");
+
+    SDL_GL_DeleteContext(context);
+    TRACE("OpenGL context destroyed.");
+
+    SDL_DestroyWindow(window);
+    TRACE("SDL_Window destroyed.");
+
+    // Save settings
+    configFile.save(APP_CONFIG_NAME);
+    TRACE("App config saved {:s}", APP_CONFIG_NAME);
+
+    SDL_Quit();
+
+#if defined(__SWITCH__)
+    if (R_FAILED(romfsExit()))
+        throw std::runtime_error("romfsExit failed");
+
+    setExit();
+    TRACE("SWITCH stopped romfs and set module.");
+#endif
+
     return 0;
 }

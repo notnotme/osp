@@ -1,0 +1,62 @@
+{
+    "ic_quit"                           : "\uf157 Quitter",
+    "ic_show_workspace"                 : "\ufd22 Afficher l'interface",
+    "ic_show_settings"                  : "\uf494 Paramètres",
+    "ic_about"                          : "\uf78a À propos",
+    "ic_about_imgui"                    : "\uf78a À propos d'ImGui",
+    "ic_loading"                        : "\uf51f Chargement",
+
+    "application"                       : "Application",
+    "help"                              : "Aide",
+    "cancel"                            : "Annuler",
+    "about"                             : "À propos",
+    "explorer.filename"                 : "Nom",
+    "explorer.filesize"                 : "Taille",
+
+    "status.ready"                      : "Prêt.",
+
+    "settings"                          : "Paramètres",
+    "settings.mouse_emulation"          : "Emulation de la souris",
+    "settings.touch_enabled"            : "Activer l'ecran tactile",
+    "settings.style"                    : "Style",
+    "settings.lang"                     : "Langage",
+
+    "files.unsupported_file_type"       : "Type de fichier non pris en charge:",
+
+    "about.introduction"                : "OSP est un lecteur de chiptune capable de gérer plusieurs anciens formats sonores qui sont produits depuis les premières années du son informatique et du piratage.",
+    "about.make_use_of"                 : "Ce programme utilise:",
+    "about.integrated_fonts"            : "Polices intégrées:",
+
+    "player"                            : "Lecteur",
+    "player.title"                      : "Titre",
+    "player.track"                      : "Piste",
+    "player.duration"                   : "Durée",
+    "player.position"                   : "Position",
+
+    "metadata"                          : "Metadonnées",
+    "metadata.type"                     : "Type",
+    "metadata.author"                   : "Autheur",
+    "metadata.last_saved"               : "Dernière sauvegarde",
+    "metadata.album"                    : "Album",
+    "metadata.genre"                    : "Genre",
+    "metadata.copyright"                : "Copyright",
+    "metadata.ripper"                   : "Ripper",
+    "metadata.converter"                : "Convertisseur",
+    "metadata.replay"                   : "Replay",
+    "metadata.game"                     : "Jeu",
+    "metadata.system"                   : "Système",
+    "metadata.dumper"                   : "Dumper",
+    "metadata.comments"                 : "Commentaires",
+    "metadata.comments_or_samples"      : "Commentaires, instruments et samples",
+
+    "plugin.always_start_first_track"   : "Toujours démarrer la première piste",
+    "plugin.loop_song"                  : "Redémarre la musique sans s'arrêter",
+    "plugin.enable_accuracy"            : "Lecture précise",
+    "plugin.autoload_playback_limit"    : "Charger automatiquement les limites",
+    "plugin.ignore_silence"             : "Ignorer le silence",
+    "plugin.emulate_paula_chip"         : "Emuler la puce PAULA avec les modules Amiga",
+    "plugin.enable_asidifier"           : "Activer aSIDifier avec les pistes compatibles",
+    "plugin.enable_digiboost"           : "Activer le digiboost quand le SID modèle 8580 est utilisé",
+    "plugin.enable_fast_sampling"       : "Activer l'échantillonnage rapide",
+    "plugin.sampling_method"            : "Méthode d'échantillonnage"
+}
