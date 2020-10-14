@@ -518,7 +518,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                 ImGui::SetTooltip("todo");
 
 
-            bool touchEnabled =  mConfig.get("touch_enabled", true);
+            bool touchEnabled =  mConfig.get("touch_enabled", false);
             if (ImGui::Checkbox(mLanguageFile.getc("settings.touch_enabled"), &touchEnabled))
             {
                 mConfig.set("touch_enabled", touchEnabled);
