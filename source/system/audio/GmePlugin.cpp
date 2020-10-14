@@ -18,7 +18,7 @@
 
 #include <stdexcept>
 
-// Need to undef check because it's causing issue with fmt
+// Need to undef check because it's causing issue with fmt when used with gme ?
 #undef check
 #include <fmt/format.h>
 
@@ -165,10 +165,10 @@ void GmePlugin::drawStats(ECS::World* world, LanguageFile languageFile, float de
     gme_info_t* info;
     SDL_LockMutex(mMutex);
     gme_track_info(mMusicEmu, &info, mCurrentTrack);
+    auto position = (gme_tell_samples(mMusicEmu) / 48000) / 2;
+    auto duration = (info->length > 0 ? info->length : info->play_length) / 1000;
     SDL_UnlockMutex(mMutex);
 
-    auto duration = (info->length > 0 ? info->length : info->play_length) / 1000;
-    auto position = (gme_tell_samples(mMusicEmu) / 48000) / 2;
 
     if (Plugin::beginTable(languageFile.getc("player"), false))
     {

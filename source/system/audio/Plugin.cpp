@@ -50,9 +50,7 @@ bool Plugin::beginTable(std::string label, bool scrollable, bool twoColumns)
 
     auto labelC = label.c_str();
     if (!ImGui::BeginTable(labelC, twoColumns ? 2 : 1, tableFlags))
-    {
         return false;
-    }
 
     if (scrollable)
         ImGui::TableSetupScrollFreeze(0, 1);

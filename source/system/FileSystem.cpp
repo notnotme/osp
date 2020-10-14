@@ -132,7 +132,7 @@ void FileSystem::listMountPoints(ECS::World* world)
 
 void FileSystem::receive(ECS::World* world, const AudioSystemConfiguredEvent& event)
 {
-    // AudioSystem is configured and tells us what plugin is in use, keep a copy of that
+    // AudioSystem is configured and tells us what files are supported, keep a copy of that
     for (auto pluginInfo : event.pluginInformations)
     {
         auto pluginExtensions = pluginInfo.supportedExtensions;
@@ -239,7 +239,8 @@ void FileSystem::receive(ECS::World* world, const FileSystemCancelTaskEvent& eve
 int FileSystem::workerThreadFuncDirectory(void* thiz)
 {
     TRACE("Directory thread alive.");
-    SDL_SetThreadPriority(SDL_THREAD_PRIORITY_LOW);
+    if (SDL_SetThreadPriority(SDL_THREAD_PRIORITY_LOW) != 0)
+        TRACE("Set SDL_THREAD_PRIORITY_LOW failed");
 
     auto* fileSystem = (FileSystem*) thiz;
 

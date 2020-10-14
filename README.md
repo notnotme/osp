@@ -24,9 +24,9 @@ snd, sndh, sc68, sid, psid, rsid, mus, ay, gbs, gym, hes, kss, nsf, nsfe, sap, s
 
 To be able to compile the project you need the following libraries installed in your system:
 
-- libsdl2, libsdl2-image
-- libgme, libsidplayfp, libsc68 and libopenmpt
-- Glad loader with 3.3 Core capabilities (your video card must support OpenGL 3.3 Core)
+- libsdl2, libsdl2-image, libjansson, libfmt, libconfig++ wich can be found is your package manager usually.
+- [libgme](https://github.com/ShiftMediaProject/game-music-emu), [libsidplayfp](https://sourceforge.net/projects/sidplay-residfp/), [libsc68](https://sourceforge.net/projects/sc68/) and [libopenmpt](https://lib.openmpt.org/libopenmpt/) wich can be optained by following the links above in case they are not available on your system.
+- [Glad loader](https://glad.dav1d.de/) installed with 3.3 Core capabilities (your video card must support OpenGL 3.3 Core)
 
 
 Currently this code can be build for Nintendo Switch and Linux but you may need to tweak the Makefile.sdl to fit your Linux needs.

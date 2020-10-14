@@ -219,8 +219,6 @@ void AudioSystem::audioCallback(void* thiz, uint8_t* stream, int len)
         });
         SDL_UnlockMutex(audioSystem->mMutex);
     }
-
-    // todo populate metadata
 }
 
 void AudioSystem::receive(ECS::World* world, const FileLoadedEvent& event)

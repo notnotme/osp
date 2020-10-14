@@ -45,10 +45,7 @@ int main(int argc, char *argv[])
     if (R_FAILED(romfsInit()))
         throw std::runtime_error("romfsInit failed");
 
-    if (R_FAILED(setInitialize()))
-        throw std::runtime_error("setsysInitialize failed");
-
-    TRACE("SWITCH started romfs and set modules.");
+    TRACE("SWITCH started romfs module.");
 #endif
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) < 0)
@@ -209,8 +206,7 @@ int main(int argc, char *argv[])
     if (R_FAILED(romfsExit()))
         throw std::runtime_error("romfsExit failed");
 
-    setExit();
-    TRACE("SWITCH stopped romfs and set module.");
+    TRACE("SWITCH stopped romfs module.");
 #endif
 
     return 0;
