@@ -24,9 +24,8 @@
 OpenmptPlugin::OpenmptPlugin() :
 Plugin(),
 mModule(nullptr),
-mMutex(SDL_CreateMutex()),
-mCurrentTrack(0),
-mTrackCount(0)
+mMutex(SDL_CreateMutex())
+
 {
 }
 
@@ -76,32 +75,24 @@ void OpenmptPlugin::open(const std::vector<uint8_t>& buffer)
     mLoopEnabled = mConfig.get("loop", false);
 
     mModule = new openmpt::module(buffer);
-    mCurrentTrack = mModule->get_selected_subsong();
-    mTrackCount = mModule->get_num_subsongs();
     mModule->ctl_set_boolean("render.resampler.emulate_amiga", amigaRessampler);
     mModule->ctl_set_text("play.at_end", mLoopEnabled ? "continue" : "stop");
 }
 
 int OpenmptPlugin::getCurrentTrack()
 {
-    return mCurrentTrack+1;
+    return 1;
 }
 
 int OpenmptPlugin::getTrackCount()
 {
-    return mTrackCount;
+    return 1;
 }
 
 void OpenmptPlugin::setSubSong(int subsong)
 {
     if (mModule == nullptr)
         return;
-
-
-    if (subsong > 0 && subsong <= mTrackCount)
-    {
-        mModule->select_subsong(subsong);
-    }
 }
 
 void OpenmptPlugin::close()
@@ -145,19 +136,21 @@ void OpenmptPlugin::drawStats(ECS::World* world, LanguageFile languageFile, floa
     SDL_LockMutex(mMutex);
     auto type = mModule->get_metadata("type");
     auto type_long = mModule->get_metadata("type_long");
+    auto original_type = mModule->get_metadata("type");
+    auto original_type_long = mModule->get_metadata("type_long");
     auto artist = mModule->get_metadata("artist");
+    auto tracker = mModule->get_metadata("tracker");
     auto title = mModule->get_metadata("title");
     auto date = mModule->get_metadata("date");
     auto msg = mModule->get_metadata("message");
     auto duration = (int) mModule->get_duration_seconds();
     auto position = (int) mModule->get_position_seconds();
-    mCurrentTrack = mModule->get_selected_subsong();
     SDL_UnlockMutex(mMutex);
 
     if (Plugin::beginTable(languageFile.getc("player"), false))
     {
         Plugin::drawRow(languageFile.getc("player.title"),      title);
-        Plugin::drawRow(languageFile.getc("player.track"),      fmt::format("{:d}/{:d}",     mCurrentTrack+1, mTrackCount));
+        Plugin::drawRow(languageFile.getc("player.track"),      "1/1");
         Plugin::drawRow(languageFile.getc("player.duration"),   fmt::format("{:d}:{:02d}",   duration / 60, duration % 60));
         Plugin::drawRow(languageFile.getc("player.position"),   fmt::format("{:d}:{:02}",    position / 60, position % 60));
         Plugin::endTable();
@@ -166,9 +159,11 @@ void OpenmptPlugin::drawStats(ECS::World* world, LanguageFile languageFile, floa
 
     if (Plugin::beginTable(languageFile.getc("metadata"),  false))
     {
-        Plugin::drawRow(languageFile.getc("metadata.type"),         fmt::format("{:s} ({:s})",   type_long, type));
-        Plugin::drawRow(languageFile.getc("metadata.author"),       artist);
-        Plugin::drawRow(languageFile.getc("metadata.last_saved"),   date);
+        Plugin::drawRow(languageFile.getc("metadata.type"),             fmt::format("{:s} ({:s})",   type_long, type));
+        Plugin::drawRow(languageFile.getc("metadata.original_type"),    fmt::format("{:s} ({:s})",   original_type_long, original_type));
+        Plugin::drawRow(languageFile.getc("metadata.author"),           artist);
+        Plugin::drawRow(languageFile.getc("metadata.last_saved"),       date);
+        Plugin::drawRow(languageFile.getc("metadata.tracker_used"),     tracker);
         Plugin::endTable();
         ImGui::NewLine();
     }

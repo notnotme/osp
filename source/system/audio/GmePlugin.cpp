@@ -108,8 +108,10 @@ void GmePlugin::setSubSong(int subsong)
 
     if (subsong > 0 && subsong <= mTrackCount)
     {
+        SDL_LockMutex(mMutex);
         mCurrentTrack = subsong-1;
         gme_start_track(mMusicEmu, mCurrentTrack);
+        SDL_UnlockMutex(mMutex);
     }
 }
 

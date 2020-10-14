@@ -40,7 +40,6 @@ And some font:
 - [Material Design Icons](https://materialdesignicons.com/)
 
 Todos:
-- More metadata parsing
 - Move the metadata into a tab
 - Create a playlist tab
     - Add a popup menu to the explorer items with some options

@@ -56,8 +56,6 @@ private:
     openmpt::module* mModule;
     SDL_mutex* mMutex;
     bool mLoopEnabled;
-    int mCurrentTrack;
-    int mTrackCount;
 
 
     OpenmptPlugin(const OpenmptPlugin& copy);

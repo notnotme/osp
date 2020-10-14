@@ -35,7 +35,9 @@
 
     "metadata"                          : "Metadonnées",
     "metadata.type"                     : "Type",
+    "metadata.original_type"            : "Type d'origine",
     "metadata.author"                   : "Autheur",
+    "metadata.tracker_used"             : "Tracker utilisé",
     "metadata.last_saved"               : "Dernière sauvegarde",
     "metadata.album"                    : "Album",
     "metadata.genre"                    : "Genre",
@@ -48,6 +50,10 @@
     "metadata.dumper"                   : "Dumper",
     "metadata.comments"                 : "Commentaires",
     "metadata.comments_or_samples"      : "Commentaires, instruments et samples",
+    "metadata.hardware"                 : "Hardware",
+    "metadata.sid_model"                : "SID",
+    "metadata.sid_compatibility"        : "Compatibilité",
+    "metadata.clock_speed"              : "Vitesse d'horloge",
 
     "plugin.always_start_first_track"   : "Toujours démarrer la première piste",
     "plugin.loop_song"                  : "Redémarre la musique sans s'arrêter",
@@ -58,5 +64,8 @@
     "plugin.enable_asidifier"           : "Activer aSIDifier avec les pistes compatibles",
     "plugin.enable_digiboost"           : "Activer le digiboost quand le SID modèle 8580 est utilisé",
     "plugin.enable_fast_sampling"       : "Activer l'échantillonnage rapide",
-    "plugin.sampling_method"            : "Méthode d'échantillonnage"
+    "plugin.sampling_method"            : "Méthode d'échantillonnage",
+
+    "unknown"                           : "Inconnu",
+    "Any"                               : "Tous"
 }

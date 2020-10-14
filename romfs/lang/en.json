@@ -35,7 +35,9 @@
 
     "metadata"                          : "Metadata",
     "metadata.type"                     : "Type",
+    "metadata.original_type"            : "Original type",
     "metadata.author"                   : "Author",
+    "metadata.tracker_used"             : "Tracker used",
     "metadata.last_saved"               : "Last saved",
     "metadata.album"                    : "Album",
     "metadata.genre"                    : "Genre",
@@ -48,6 +50,10 @@
     "metadata.dumper"                   : "Dumper",
     "metadata.comments"                 : "Comments",
     "metadata.comments_or_samples"      : "Comments, instruments and samples",
+    "metadata.hardware"                 : "Hardware",
+    "metadata.sid_model"                : "SID",
+    "metadata.sid_compatibility"        : "Compatibility",
+    "metadata.clock_speed"              : "Clock speed",
 
     "plugin.always_start_first_track"   : "Always start at the first track",
     "plugin.loop_song"                  : "Loop song instead of stop",
@@ -58,5 +64,8 @@
     "plugin.enable_asidifier"           : "Enable aSIDifier whith compatible tracks",
     "plugin.enable_digiboost"           : "Enable digiboost when 8580 SID model is used",
     "plugin.enable_fast_sampling"       : "Enable fast sampling",
-    "plugin.sampling_method"            : "Sampling method"
+    "plugin.sampling_method"            : "Sampling method",
+
+    "unknown"                           : "Unknown",
+    "Any"                               : "Any"
 }

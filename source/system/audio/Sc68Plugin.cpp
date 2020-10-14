@@ -119,11 +119,13 @@ void Sc68Plugin::setSubSong(int subsong)
 
     if (subsong > 0 && subsong <= mTrackCount)
     {
+        SDL_LockMutex(mMutex);
         mCurrentTrack = subsong;
         auto loop = mConfig.get("loop", false);
         sc68_stop(mSC68);
         sc68_play(mSC68, subsong, loop ? SC68_INF_LOOP : SC68_DEF_LOOP);
         sc68_process(mSC68, nullptr, 0);
+        SDL_UnlockMutex(mMutex);
     }
 }
 
@@ -209,6 +211,16 @@ void Sc68Plugin::drawStats(ECS::World* world, LanguageFile languageFile, float d
         Plugin::drawRow(languageFile.getc("metadata.ripper"),       diskInfo.ripper);
         Plugin::drawRow(languageFile.getc("metadata.converter"),    diskInfo.converter);
         Plugin::drawRow(languageFile.getc("metadata.replay"),       diskInfo.replay);
+
+        auto& style = ImGui::GetStyle();
+        auto testSize = ImGui::CalcTextSize("[STE YM AMIGA ASID]");
+        Plugin::drawRow(languageFile.getc("metadata.hardware"),     diskInfo.trk.hw);
+        ImGui::SameLine(ImGui::GetContentRegionAvailWidth() - (testSize.x + style.FramePadding.x)); ImGui::TextUnformatted("[");
+        ImGui::SameLine(); if (diskInfo.trk.ste)    ImGui::TextUnformatted("STE");      else ImGui::TextDisabled("STE");
+        ImGui::SameLine(); if (diskInfo.trk.ym)     ImGui::TextUnformatted("YM");       else ImGui::TextDisabled("YM");
+        ImGui::SameLine(); if (diskInfo.trk.amiga)  ImGui::TextUnformatted("AMIGA");    else ImGui::TextDisabled("AMIGA");
+        ImGui::SameLine(); if (diskInfo.trk.asid)   ImGui::TextUnformatted("ASID");     else ImGui::TextDisabled("ASID");
+        ImGui::SameLine(); ImGui::TextUnformatted("]");
         Plugin::endTable();
         ImGui::NewLine();
     }
