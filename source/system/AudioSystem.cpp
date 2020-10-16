@@ -101,10 +101,15 @@ void AudioSystem::configure(ECS::World* world)
                 {
                     plugin->drawSettings(world, languageFile, deltaTime);
                 },
-            .drawStats =
+            .drawPlayerStats =
                 [plugin](ECS::World* world, LanguageFile languageFile, float deltaTime)
                 {
-                    plugin->drawStats(world, languageFile, deltaTime);
+                    plugin->drawPlayerStats(world, languageFile, deltaTime);
+                },
+            .drawMetadata =
+                [plugin](ECS::World* world, LanguageFile languageFile, float deltaTime)
+                {
+                    plugin->drawMetadata(world, languageFile, deltaTime);
                 }
         });
     }
@@ -223,12 +228,12 @@ void AudioSystem::audioCallback(void* thiz, uint8_t* stream, int len)
 
 void AudioSystem::receive(ECS::World* world, const FileLoadedEvent& event)
 {
-    TRACE("Received FileLoadedEvent: {:s} ({:d} Kb).", event.name, (uint32_t) event.buffer.size() / 1024);
+    TRACE("Received FileLoadedEvent: {:s} ({:d} Kb).", event.path, (uint32_t) event.buffer.size() / 1024);
 
     // Stop playback
     stopAudio(world);
 
-    std::string fileExtension = std::filesystem::path(event.name).extension();
+    std::string fileExtension = std::filesystem::path(event.path).extension();
     std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), ::tolower);
 
     for (auto* plugin : mPlugins)
@@ -269,7 +274,7 @@ void AudioSystem::receive(ECS::World* world, const FileLoadedEvent& event)
     }
 
     // Start playing right now and tells everyone
-    mCurrentFileLoaded = event.name;
+    mCurrentFileLoaded = event.path;
     TRACE("File loaded, starting audio playback...");
 
     SDL_PauseAudioDevice(mAudioDevice, false);

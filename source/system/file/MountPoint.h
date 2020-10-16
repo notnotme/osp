@@ -29,10 +29,11 @@ public:
     typedef std::function<bool (std::string, bool, uintmax_t)> ItemListener;
     typedef std::function<bool (const std::vector<uint8_t>&)> FileListener;
 
-    MountPoint();
+    MountPoint(std::string name, std::string scheme);
     virtual ~MountPoint();
 
-    virtual std::string getName() = 0;
+    std::string getName();
+    std::string getScheme();
 
     virtual void setup() = 0;
     virtual void cleanup() = 0;
@@ -40,5 +41,8 @@ public:
     virtual void getFile(std::filesystem::path path, size_t chunkBufferSize, FileListener fileListener) = 0;
 
 private:
+    std::string mName;
+    std::string mScheme;
+
     MountPoint(const MountPoint& copy);
 };

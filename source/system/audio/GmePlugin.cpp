@@ -135,7 +135,14 @@ bool GmePlugin::decode(uint8_t* stream, size_t len)
     SDL_LockMutex(mMutex);
     auto size = (int) len / 2;
     auto error = gme_play(mMusicEmu, size, (short*) stream);
+
     bool ended = gme_track_ended(mMusicEmu);
+    if (ended && mCurrentTrack+1 < mTrackCount)
+    {
+        mCurrentTrack++;
+        gme_start_track(mMusicEmu, mCurrentTrack);
+        ended = false;
+    }
     SDL_UnlockMutex(mMutex);
 
     if (error != nullptr)
@@ -159,7 +166,7 @@ void GmePlugin::drawSettings(ECS::World* world, LanguageFile languageFile, float
         mConfig.set("ignore_silence", ignoreSilence);
 }
 
-void GmePlugin::drawStats(ECS::World* world, LanguageFile languageFile, float deltaTime)
+void GmePlugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile, float deltaTime)
 {
     if (mMusicEmu == nullptr)
         return;
@@ -171,7 +178,6 @@ void GmePlugin::drawStats(ECS::World* world, LanguageFile languageFile, float de
     auto duration = (info->length > 0 ? info->length : info->play_length) / 1000;
     SDL_UnlockMutex(mMutex);
 
-
     if (Plugin::beginTable(languageFile.getc("player"), false))
     {
         Plugin::drawRow(languageFile.getc("player.title"),        info->song);
@@ -179,8 +185,20 @@ void GmePlugin::drawStats(ECS::World* world, LanguageFile languageFile, float de
         Plugin::drawRow(languageFile.getc("player.duration"),     fmt::format("{:d}:{:02d}",   duration / 60, duration % 60));
         Plugin::drawRow(languageFile.getc("player.position"),     fmt::format("{:d}:{:02}",    position / 60, position % 60));
         Plugin::endTable();
-        ImGui::NewLine();
     }
+
+    gme_free_info(info);
+}
+
+void GmePlugin::drawMetadata(ECS::World* world, LanguageFile languageFile, float deltaTime)
+{
+    if (mMusicEmu == nullptr)
+        return;
+
+    gme_info_t* info;
+    SDL_LockMutex(mMutex);
+    gme_track_info(mMusicEmu, &info, mCurrentTrack);
+    SDL_UnlockMutex(mMutex);
 
     if (Plugin::beginTable(languageFile.getc("metadata"), false))
     {
@@ -190,15 +208,18 @@ void GmePlugin::drawStats(ECS::World* world, LanguageFile languageFile, float de
         Plugin::drawRow(languageFile.getc("metadata.system"),       info->system);
         Plugin::drawRow(languageFile.getc("metadata.dumper"),       info->dumper);
         ImGui::EndTable();
-        ImGui::NewLine();
     }
 
     if (strlen(info->comment) > 0)
     {
+        ImGui::Spacing();
         if (Plugin::beginTable(languageFile.getc("metadata.comments"), true, false))
         {
+            auto& io = ImGui::GetIO();
+            ImGui::PushFont(io.Fonts->Fonts[1]);
             ImGui::TableNextColumn();
             ImGui::TextWrapped("%s", info->comment);
+            ImGui::PopFont();
             Plugin::endTable();
         }
     }

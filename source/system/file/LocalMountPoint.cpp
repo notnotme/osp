@@ -20,19 +20,13 @@
 #include <fstream>
 
 
-LocalMountPoint::LocalMountPoint(std::string mountPoint) :
-MountPoint(),
-mMountPoint(mountPoint)
+LocalMountPoint::LocalMountPoint(std::string name, std::string root) :
+MountPoint(name, root)
 {
 }
 
 LocalMountPoint::~LocalMountPoint()
 {
-}
-
-std::string LocalMountPoint::getName()
-{
-    return mMountPoint;
 }
 
 void LocalMountPoint::setup()

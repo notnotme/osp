@@ -17,6 +17,7 @@
 #include "FileSystem.h"
 
 #include <algorithm>
+#include <filesystem>
 #include <fmt/format.h>
 #include <fmt/ranges.h>
 
@@ -32,8 +33,7 @@ mConfig(config),
 mLanguageFile(languageFile),
 mWorkerThreadState(IDLE),
 mWorkerThread(nullptr),
-mWorkerThreadMutex(SDL_CreateMutex()),
-mCurrentMountPoint(nullptr)
+mWorkerThreadMutex(SDL_CreateMutex())
 {
 }
 
@@ -47,7 +47,7 @@ void FileSystem::configure(ECS::World* world)
     TRACE(">>>");
 
     // Add mount point
-    mMountPoints.push_back(new LocalMountPoint(DEFAULT_MOUNTPOINT));
+    mMountPoints.push_back(new LocalMountPoint(mLanguageFile.getc("mount_points.default_filesystem"), DEFAULT_MOUNTPOINT));
 
     // Initialize all mount point
     for (auto* mountPoint : mMountPoints)
@@ -125,7 +125,7 @@ void FileSystem::listMountPoints(ECS::World* world)
 
     world->emit<DirectoryLoadedEvent>
     ({
-        .path = "Mount points",
+        .path = "",
         .items = items
     });
 }
@@ -144,59 +144,41 @@ void FileSystem::receive(ECS::World* world, const AudioSystemConfiguredEvent& ev
 
 void FileSystem::receive(ECS::World* world, const FileSystemLoadTaskEvent& event)
 {
-    TRACE("Received FileSystemLoadTaskEvent type {:d}, {:s}.", event.type, event.path);
+    TRACE("Received FileSystemLoadTaskEvent type {:d}, {:s}", event.type, event.path);
 
     // Cancel any work
     cancelWorkerThread();
 
+    // Build path to navigate
+    mPathToNavigate.clear();
+    auto path = std::filesystem::path(event.path);
+    for (auto elm : path)
+        mPathToNavigate.push_back(elm);
+
+    // Replace the mount point name by his scheme if present
+    for (auto* mountPoint : mMountPoints)
+        if (mPathToNavigate[0] == mountPoint->getName())
+        {
+            mPathToNavigate[0] = mountPoint->getScheme();
+            break;
+        }
+
     if (event.type == FileSystemLoadTaskEvent::LOAD_DIRECTORY)
     {
-        // Requesting a directory to be opened and listed
-        if (event.path == ".." && mCurrentPathStack.size() == 1)
+        // Catch if we request the mount point listing
+        if (mPathToNavigate.size() == 2 && mPathToNavigate[1] == "..")
         {
-            mCurrentPathStack.pop_back();
-            mCurrentMountPoint = nullptr;
             listMountPoints(world);
             return;
         }
-        else
-        {
-            if (mCurrentPathStack.empty())
-            {
-                for (auto* mountPoint : mMountPoints)
-                {
-                    if (mountPoint->getName() == event.path)
-                    {
-                        mCurrentMountPoint = mountPoint;
-                        mCurrentPathStack.push_back(event.path);
-                        TRACE("New mount point selected: \"{:s}\".", mountPoint->getName());
-                        break;
-                    }
-                }
-            }
-            else if (event.path == "..")
-            {
-                if (!mCurrentPathStack.empty())
-                    mCurrentPathStack.pop_back();
-            }
-            else
-            {
-                mCurrentPathStack.push_back(event.path);
-            }
 
-            std::filesystem::path fullPath;
-            for (auto part : mCurrentPathStack)
-                fullPath.append(part);
-
-            // Navigate to mPathToNavigate using the current mount point
-            mPathToNavigate = fullPath;
-            mWorkerThread = SDL_CreateThread(workerThreadFuncDirectory, "OSPFST", this);
-        }
+        // Navigate to mPathToNavigate
+        mWorkerThread = SDL_CreateThread(workerThreadFuncDirectory, "OSPFST", this);
     }
     else if (event.type == FileSystemLoadTaskEvent::LOAD_FILE)
     {
         // Requesting a file to be read - check extension supported (convert to lower case)
-        std::string fileExtension = std::filesystem::path(event.path).extension();
+        std::string fileExtension = path.extension();
         std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), ::tolower);
 
         bool supported = false;
@@ -210,22 +192,17 @@ void FileSystem::receive(ECS::World* world, const FileSystemLoadTaskEvent& event
         if (!supported)
         {
             // The file is not usable by any audio plugin
-            auto message = fmt::format("{:s} {:s}", mLanguageFile.getc("files.unsupported_file_type"), event.path);
+            auto message = fmt::format("{:s} {:s}", mLanguageFile.getc("files.unsupported_file_type"), path.filename().c_str());
             world->emit<NotificationMessageEvent>
             ({
                 .type = NotificationMessageEvent::INFO,
                 .message = message
             });
-            TRACE(message);
+            TRACE("{:s}", message);
             return;
         }
 
-        std::filesystem::path fullPath;
-        for (auto part : mCurrentPathStack)
-            fullPath.append(part);
-
-        // Get the file stored in mPathToNavigate using the current mount point, in a thread
-        mPathToNavigate = fullPath.append(event.path);
+        // Get the file stored in mPathToNavigate
         mWorkerThread = SDL_CreateThread(workerThreadFuncFile, "OSPFST", this);
     }
 }
@@ -253,12 +230,34 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
     });
     SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
 
-    // Get listing from mount point
+    // Select the mount point to use
+    auto* selectedMountPoint = (MountPoint*) nullptr;
+    for (auto* mountPoint : fileSystem->mMountPoints)
+        if (fileSystem->mPathToNavigate[0] == mountPoint->getScheme())
+        {
+            selectedMountPoint = mountPoint;
+            break;
+        }
+
+    if (selectedMountPoint == nullptr)
+        throw std::runtime_error(fmt::format("No mountpoint available to open {:s}", fileSystem->mPathToNavigate.back()));
+
+    if (fileSystem->mPathToNavigate.back() == "..")
+    {
+        // We want to go up
+        fileSystem->mPathToNavigate.pop_back();
+        fileSystem->mPathToNavigate.pop_back();
+    }
+
+    auto path = std::filesystem::path();
+    for (auto elm : fileSystem->mPathToNavigate)
+        path.append(elm);
+
     auto items = std::vector<DirectoryLoadedEvent::Item>();
     try
     {
-        fileSystem->mCurrentMountPoint->navigate(
-            fileSystem->mPathToNavigate,
+        selectedMountPoint->navigate(
+            path,
             [&](std::string name, bool isFolder, uintmax_t size)
             {
                 items.push_back
@@ -313,7 +312,7 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
         SDL_LockMutex(fileSystem->mWorkerThreadMutex);
         fileSystem->mPendingDirectoryLoadedEvent.emplace(
         (DirectoryLoadedEvent) {
-            .path = fileSystem->mPathToNavigate,
+            .path = path,
             .items = items
         });
 
@@ -333,7 +332,6 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
         });
 
         // Restore old path
-        fileSystem->mCurrentPathStack.pop_back();
         SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
     }
 
@@ -358,11 +356,27 @@ int FileSystem::workerThreadFuncFile(void* thiz)
     });
     SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
 
+    // Select mountpoint to use
+    auto* selectedMountPoint = (MountPoint*) nullptr;
+    for (auto* mountPoint : fileSystem->mMountPoints)
+        if (fileSystem->mPathToNavigate[0] == mountPoint->getScheme())
+        {
+            selectedMountPoint = mountPoint;
+            break;
+        }
+
+    if (selectedMountPoint == nullptr)
+        throw std::runtime_error(fmt::format("No mountpoint available to open {:s}", fileSystem->mPathToNavigate.back()));
+
+    auto path = std::filesystem::path();
+    for (auto elm : fileSystem->mPathToNavigate)
+        path.append(elm);
+
     auto fileBuffer = std::vector<uint8_t>();
     try
     {
-        fileSystem->mCurrentMountPoint->getFile(
-            fileSystem->mPathToNavigate,
+        selectedMountPoint->getFile(
+            path,
             FILE_CHUNK_SIZE,
             [&](const std::vector<uint8_t>& chunkBuffer)
             {
@@ -393,7 +407,7 @@ int FileSystem::workerThreadFuncFile(void* thiz)
         SDL_LockMutex(fileSystem->mWorkerThreadMutex);
         fileSystem->mPendingFileLoadedEvent.emplace(
         (FileLoadedEvent) {
-            .name = fileSystem->mPathToNavigate,
+            .path = path,
             .buffer = fileBuffer
         });
 

@@ -38,6 +38,7 @@ This source code is bundled with a version of ImGui (1.79 tables branch).
 And some font:
 - [Atari ST 8x16](https://www.dafont.com/fr/atari-st-8x16-system-font.font)
 - [Material Design Icons](https://materialdesignicons.com/)
+- [Roboto](https://fonts.google.com/specimen/Roboto)
 
 Todos:
 - Move the metadata into a tab

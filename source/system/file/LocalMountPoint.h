@@ -26,10 +26,8 @@ class LocalMountPoint :
 public MountPoint
 {
 public:
-    LocalMountPoint(std::string mountPoint);
+    LocalMountPoint(std::string name, std::string root);
     virtual ~LocalMountPoint();
-
-    virtual std::string getName() override;
 
     virtual void setup() override;
     virtual void cleanup() override;
@@ -37,7 +35,7 @@ public:
     virtual void getFile(std::filesystem::path path, size_t chunkBufferSize, FileListener fileListener) override;
 
 private:
-    const std::string mMountPoint;
+    std::string mDrive;
 
     LocalMountPoint(const LocalMountPoint& copy);
 };

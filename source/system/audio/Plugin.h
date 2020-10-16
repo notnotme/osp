@@ -46,11 +46,12 @@ public:
     virtual void setSubSong(int subsong) = 0;
 
     virtual void drawSettings(ECS::World* world, LanguageFile languageFile, float deltaTime) = 0;
-    virtual void drawStats(ECS::World* world, LanguageFile languageFile, float deltaTime) = 0;
+    virtual void drawPlayerStats(ECS::World* world, LanguageFile languageFile, float deltaTime) = 0;
+    virtual void drawMetadata(ECS::World* world, LanguageFile languageFile, float deltaTime) = 0;
 
 protected:
     Config mConfig;
-    bool beginTable(std::string label, bool scrollable, bool twoColumns = true);
+    bool beginTable(std::string label, bool scrollable, bool twoColumns = true, float firstColumnWeight = 0.4f);
     void endTable();
     void drawRow(std::string label, std::string value);
 

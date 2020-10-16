@@ -17,7 +17,7 @@
 #pragma once
 
 #include <vector>
-#include <filesystem>
+#include <string>
 #include <optional>
 
 #include <SDL2/SDL.h>
@@ -66,12 +66,10 @@ private:
     WorkThreadStatus mWorkerThreadState;
     SDL_Thread* mWorkerThread;
     SDL_mutex* mWorkerThreadMutex;
-    MountPoint* mCurrentMountPoint;
 
-    std::filesystem::path mPathToNavigate;
+    std::vector<std::string> mPathToNavigate;
     std::vector<MountPoint*> mMountPoints;
     std::vector<std::string> mSupportedExtensions;
-    std::vector<std::string> mCurrentPathStack;
     std::optional<FileSystemBusyEvent> mPendingFileSystemBusyEvent;
     std::optional<DirectoryLoadedEvent> mPendingDirectoryLoadedEvent;
     std::optional<FileLoadedEvent> mPendingFileLoadedEvent;

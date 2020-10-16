@@ -18,6 +18,7 @@
 
 #include <vector>
 #include <optional>
+#include <string>
 
 #include <SDL2/SDL.h>
 #include <ECS.h>
@@ -58,10 +59,10 @@ private:
     SDL_AudioDeviceID mAudioDevice;
     SDL_mutex* mMutex;
     Plugin* mCurrentPlugin;
+    AudioSystemStatus mPlayStatus;
 
     std::string mCurrentFileLoaded;
     std::vector<Plugin*> mPlugins;
-    AudioSystemStatus mPlayStatus;
     std::optional<NotificationMessageEvent> mPendingNotificationMessageEvent;
     std::optional<AudioSystemPlayEvent> mPendingAudioSystemPlayEvent;
 

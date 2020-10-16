@@ -30,13 +30,15 @@ struct AudioSystemConfiguredEvent
     struct PluginInformation
     {
         typedef std::function<void (ECS::World*, LanguageFile, float)> DrawSettings;
-        typedef std::function<void (ECS::World*, LanguageFile, float)> DrawStats;
+        typedef std::function<void (ECS::World*, LanguageFile, float)> DrawPlayerStats;
+        typedef std::function<void (ECS::World*, LanguageFile, float)> DrawMetadata;
 
         std::string name;
         std::string version;
         std::vector<std::string> supportedExtensions;
         DrawSettings drawSettings;
-        DrawStats drawStats;
+        DrawPlayerStats drawPlayerStats;
+        DrawMetadata drawMetadata;
     };
 
     std::vector<PluginInformation> pluginInformations;

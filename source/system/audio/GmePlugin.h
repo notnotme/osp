@@ -50,7 +50,8 @@ public:
     virtual void setSubSong(int subsong);
 
     virtual void drawSettings(ECS::World* world, LanguageFile languageFile, float deltaTime) override;
-    virtual void drawStats(ECS::World* world, LanguageFile languageFile, float deltaTime) override;
+    virtual void drawPlayerStats(ECS::World* world, LanguageFile languageFile, float deltaTime) override;
+    virtual void drawMetadata(ECS::World* world, LanguageFile languageFile, float deltaTime) override;
 
 private:
     Music_Emu* mMusicEmu;

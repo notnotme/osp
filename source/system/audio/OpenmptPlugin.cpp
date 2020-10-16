@@ -110,8 +110,11 @@ bool OpenmptPlugin::decode(uint8_t* stream, size_t len)
         return false;
 
     SDL_LockMutex(mMutex);
-    auto size = (int) len / 4;
+    auto size = (size_t) len / 4;
     auto reads = mModule->read_interleaved_stereo(48000, size, (int16_t*) stream);
+    if (reads != size && mLoopEnabled) // loop
+        reads = mModule->read_interleaved_stereo(48000, size - reads, (int16_t*) &stream[reads]);
+
     SDL_UnlockMutex(mMutex);
 
     return reads > 0 || mLoopEnabled;
@@ -128,21 +131,13 @@ void OpenmptPlugin::drawSettings(ECS::World* world, LanguageFile languageFile, f
         mConfig.set("emulate_paula_chip", amigaRessampler);
 }
 
-void OpenmptPlugin::drawStats(ECS::World* world, LanguageFile languageFile, float deltaTime)
+void OpenmptPlugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile, float deltaTime)
 {
     if (mModule == nullptr)
         return;
 
     SDL_LockMutex(mMutex);
-    auto type = mModule->get_metadata("type");
-    auto type_long = mModule->get_metadata("type_long");
-    auto original_type = mModule->get_metadata("type");
-    auto original_type_long = mModule->get_metadata("type_long");
-    auto artist = mModule->get_metadata("artist");
-    auto tracker = mModule->get_metadata("tracker");
     auto title = mModule->get_metadata("title");
-    auto date = mModule->get_metadata("date");
-    auto msg = mModule->get_metadata("message");
     auto duration = (int) mModule->get_duration_seconds();
     auto position = (int) mModule->get_position_seconds();
     SDL_UnlockMutex(mMutex);
@@ -154,8 +149,24 @@ void OpenmptPlugin::drawStats(ECS::World* world, LanguageFile languageFile, floa
         Plugin::drawRow(languageFile.getc("player.duration"),   fmt::format("{:d}:{:02d}",   duration / 60, duration % 60));
         Plugin::drawRow(languageFile.getc("player.position"),   fmt::format("{:d}:{:02}",    position / 60, position % 60));
         Plugin::endTable();
-        ImGui::NewLine();
     }
+}
+
+void OpenmptPlugin::drawMetadata(ECS::World* world, LanguageFile languageFile, float deltaTime)
+{
+    if (mModule == nullptr)
+        return;
+
+    SDL_LockMutex(mMutex);
+    auto type = mModule->get_metadata("type");
+    auto type_long = mModule->get_metadata("type_long");
+    auto original_type = mModule->get_metadata("type");
+    auto original_type_long = mModule->get_metadata("type_long");
+    auto artist = mModule->get_metadata("artist");
+    auto tracker = mModule->get_metadata("tracker");
+    auto date = mModule->get_metadata("date");
+    auto msg = mModule->get_metadata("message");
+    SDL_UnlockMutex(mMutex);
 
     if (Plugin::beginTable(languageFile.getc("metadata"),  false))
     {
@@ -165,15 +176,18 @@ void OpenmptPlugin::drawStats(ECS::World* world, LanguageFile languageFile, floa
         Plugin::drawRow(languageFile.getc("metadata.last_saved"),       date);
         Plugin::drawRow(languageFile.getc("metadata.tracker_used"),     tracker);
         Plugin::endTable();
-        ImGui::NewLine();
     }
 
     if (msg.length() > 0)
     {
+        ImGui::Spacing();
         if (Plugin::beginTable(languageFile.getc("metadata.comments_or_samples"), true, false))
         {
+            auto& io = ImGui::GetIO();
+            ImGui::PushFont(io.Fonts->Fonts[1]);
             ImGui::TableNextColumn();
             ImGui::TextWrapped("%s", msg.c_str());
+            ImGui::PopFont();
             Plugin::endTable();
         }
     }

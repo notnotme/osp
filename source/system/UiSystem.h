@@ -66,6 +66,13 @@ private:
         float displayTimeMs;
     };
 
+    struct Playlist
+    {
+        std::vector<std::string> paths;
+        int index;
+        bool inUse;
+    };
+
     enum AudioSystemStatus
     {
         PLAYING,
@@ -78,6 +85,7 @@ private:
     LanguageFile mLanguageFile;
     AtlasTexture mIconAtlas;
     AudioSystemStatus mAudioSystemStatus;
+    Playlist mPlaylist;
 
     bool mShowWorkSpace;
     bool mShowDemoWindow;

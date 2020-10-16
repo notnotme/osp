@@ -172,22 +172,20 @@ void Sc68Plugin::drawSettings(ECS::World *world, LanguageFile languageFile, floa
         mConfig.set("enable_asidifier", aSIDifierEnabled);
 }
 
-void Sc68Plugin::drawStats(ECS::World* world, LanguageFile languageFile, float deltaTime)
+void Sc68Plugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile, float deltaTime)
 {
     if (mSC68 == nullptr)
         return;
 
-    sc68_music_info_t diskInfo;
     sc68_music_info_t trackInfo;
 
     SDL_LockMutex(mMutex);
     mCurrentTrack = sc68_cntl(mSC68, SC68_GET_TRACK);
-    int diskResult = sc68_music_info(mSC68, &diskInfo, -1, 0);
     int trackResult = sc68_music_info(mSC68, &trackInfo, mCurrentTrack, 0);
     auto position = sc68_cntl(mSC68, SC68_GET_POS) / 1000;
     SDL_UnlockMutex(mMutex);
 
-    if (diskResult != 0 || trackResult != 0)
+    if (trackResult != 0)
         return;
 
     auto duration = trackInfo.trk.time_ms / 1000;
@@ -199,8 +197,24 @@ void Sc68Plugin::drawStats(ECS::World* world, LanguageFile languageFile, float d
         Plugin::drawRow(languageFile.getc("player.duration"),   fmt::format("{:d}:{:02d}",   duration / 60, duration % 60));
         Plugin::drawRow(languageFile.getc("player.position"),   fmt::format("{:d}:{:02}",    position / 60, position % 60));
         Plugin::endTable();
-        ImGui::NewLine();
     }
+}
+
+void Sc68Plugin::drawMetadata(ECS::World* world, LanguageFile languageFile, float deltaTime)
+{
+    if (mSC68 == nullptr)
+        return;
+
+    sc68_music_info_t diskInfo;
+    sc68_music_info_t trackInfo;
+
+    SDL_LockMutex(mMutex);
+    int diskResult = sc68_music_info(mSC68, &diskInfo, -1, 0);
+    int trackResult = sc68_music_info(mSC68, &trackInfo, mCurrentTrack, 0);
+    SDL_UnlockMutex(mMutex);
+
+    if (diskResult != 0 || trackResult != 0)
+        return;
 
     if (Plugin::beginTable(languageFile.getc("metadata"), false))
     {
@@ -211,17 +225,15 @@ void Sc68Plugin::drawStats(ECS::World* world, LanguageFile languageFile, float d
         Plugin::drawRow(languageFile.getc("metadata.ripper"),       diskInfo.ripper);
         Plugin::drawRow(languageFile.getc("metadata.converter"),    diskInfo.converter);
         Plugin::drawRow(languageFile.getc("metadata.replay"),       diskInfo.replay);
-
-        auto& style = ImGui::GetStyle();
-        auto testSize = ImGui::CalcTextSize("[STE YM AMIGA ASID]");
         Plugin::drawRow(languageFile.getc("metadata.hardware"),     diskInfo.trk.hw);
-        ImGui::SameLine(ImGui::GetContentRegionAvailWidth() - (testSize.x + style.FramePadding.x)); ImGui::TextUnformatted("[");
-        ImGui::SameLine(); if (diskInfo.trk.ste)    ImGui::TextUnformatted("STE");      else ImGui::TextDisabled("STE");
-        ImGui::SameLine(); if (diskInfo.trk.ym)     ImGui::TextUnformatted("YM");       else ImGui::TextDisabled("YM");
-        ImGui::SameLine(); if (diskInfo.trk.amiga)  ImGui::TextUnformatted("AMIGA");    else ImGui::TextDisabled("AMIGA");
-        ImGui::SameLine(); if (diskInfo.trk.asid)   ImGui::TextUnformatted("ASID");     else ImGui::TextDisabled("ASID");
-        ImGui::SameLine(); ImGui::TextUnformatted("]");
+        if (diskInfo.trk.asid)
+        {
+            auto& style = ImGui::GetStyle();
+            auto textSize = ImGui::CalcTextSize("[ASID]");
+            auto textOffset = (ImGui::GetContentRegionAvailWidth() + style.FramePadding.x * 2) - textSize.x;
+            ImGui::SameLine(textOffset, 0);
+            ImGui::Text("[ASID]");
+        }
         Plugin::endTable();
-        ImGui::NewLine();
     }
 }

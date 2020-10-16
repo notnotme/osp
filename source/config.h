@@ -25,22 +25,13 @@
 #endif
 
 // Default data access path for LocalFileSystem.
-#if defined(__SWITCH__)
-#define DEFAULT_MOUNTPOINT "sdmc:/"
-#else
 #define DEFAULT_MOUNTPOINT "/"
-#endif
 
 // Silence log if we are not in DEBUG mode
 #ifndef DEBUG
-#define TRACE(fmtt,...) ((void)0)
+#define TRACE(fmtt, ...) ((void)0)
 #else
 #include <fmt/core.h>
-#define TRACE(fmtt,...) fmt::print( \
-        std::string(__FILE__).append(" ") \
-        .append(__FUNCTION__/*__PRETTY_FUNCTION__*/).append(": ") \
-        .append(fmtt) \
-        .append("\n"), \
-        ## __VA_ARGS__)
+#define TRACE(fmtt, ...) fmt::print("{:s} {:s}: " fmtt "\n", __FILE__, __FUNCTION__, ## __VA_ARGS__)
 // Meh
 #endif

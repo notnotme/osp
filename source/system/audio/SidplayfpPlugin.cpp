@@ -77,7 +77,7 @@ void SidplayfpPlugin::setup(Config config)
         mKernalRom = loadRom(fmt::format("{:s}c64roms/kernal", DATAPATH));
         mBasicRom = loadRom(fmt::format("{:s}c64roms/basic", DATAPATH));
         mChargenRom = loadRom(fmt::format("{:s}c64roms/chargen", DATAPATH));
-        mPlayer->setRoms(&mKernalRom[0], &mBasicRom[0], &mChargenRom[0]);
+        mPlayer->setRoms(mKernalRom.data(), mBasicRom.data(), mChargenRom.data());
     }
     catch(const std::exception& e)
     {
@@ -220,7 +220,7 @@ void SidplayfpPlugin::drawSettings(ECS::World* world, LanguageFile languageFile,
         mConfig.set("sampling_method", samplingMethod);
 }
 
-void SidplayfpPlugin::drawStats(ECS::World* world, LanguageFile languageFile, float deltaTime)
+void SidplayfpPlugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile, float deltaTime)
 {
     if (mTune == nullptr)
         return;
@@ -228,33 +228,6 @@ void SidplayfpPlugin::drawStats(ECS::World* world, LanguageFile languageFile, fl
     SDL_LockMutex(mMutex);
     auto musicInfo = mTune->getInfo();
     auto title = musicInfo->infoString(0);
-    auto author = musicInfo->infoString(1);
-    auto copyright =  musicInfo->infoString(2);
-    auto sidModelStr = ""; switch (musicInfo->sidModel(0))
-    {
-        default:
-        case SidTuneInfo::SIDMODEL_UNKNOWN: sidModelStr = languageFile.getc("unknown"); break;
-        case SidTuneInfo::SIDMODEL_6581:    sidModelStr = "6581"; break;
-        case SidTuneInfo::SIDMODEL_8580:    sidModelStr = "8580"; break;
-        case SidTuneInfo::SIDMODEL_ANY:     sidModelStr = languageFile.getc("any"); break;
-    }
-    auto clockStr = ""; switch (musicInfo->clockSpeed())
-    {
-        default:
-        case SidTuneInfo::CLOCK_UNKNOWN:    clockStr = languageFile.getc("unknown"); break;
-        case SidTuneInfo::CLOCK_PAL:        clockStr = "PAL"; break;
-        case SidTuneInfo::CLOCK_NTSC:       clockStr = "NTSC"; break;
-        case SidTuneInfo::CLOCK_ANY:        clockStr = languageFile.getc("any"); break;
-    }
-    auto compatibilityStr = ""; switch (musicInfo->compatibility())
-    {
-        default:
-        case SidTuneInfo::COMPATIBILITY_BASIC:  compatibilityStr = "Basic"; break;
-        case SidTuneInfo::COMPATIBILITY_C64:    compatibilityStr = "C64"; break;
-        case SidTuneInfo::COMPATIBILITY_PSID:   compatibilityStr = "PSID"; break;
-        case SidTuneInfo::COMPATIBILITY_R64:    compatibilityStr = "R64"; break;
-    }
-
     mCurrentTrack = musicInfo->currentSong(); // Never change while playing ?
     SDL_UnlockMutex(mMutex);
 
@@ -263,29 +236,67 @@ void SidplayfpPlugin::drawStats(ECS::World* world, LanguageFile languageFile, fl
         Plugin::drawRow(languageFile.getc("player.title"),    title);
         Plugin::drawRow(languageFile.getc("player.track"),    fmt::format("{:d}/{:d}", mCurrentTrack, mTrackCount));
         Plugin::endTable();
-        ImGui::NewLine();
     }
+}
+
+void SidplayfpPlugin::drawMetadata(ECS::World* world, LanguageFile languageFile, float deltaTime)
+{
+    if (mTune == nullptr)
+        return;
+
+    SDL_LockMutex(mMutex);
+    auto musicInfo = mTune->getInfo();
+    auto author = musicInfo->infoString(1);
+    auto copyright =  musicInfo->infoString(2);
+    auto sidModel = musicInfo->sidModel(0);
+    auto clockSpeed = musicInfo->clockSpeed();
+    auto compatibility = musicInfo->compatibility();
+    SDL_UnlockMutex(mMutex);
 
     if (Plugin::beginTable(languageFile.getc("metadata"), false))
     {
         Plugin::drawRow(languageFile.getc("metadata.author"),               author);
         Plugin::drawRow(languageFile.getc("metadata.copyright"),            copyright);
-        Plugin::drawRow(languageFile.getc("metadata.sid_model"),            sidModelStr);
-        Plugin::drawRow(languageFile.getc("metadata.clock_speed"),          clockStr);
-        Plugin::drawRow(languageFile.getc("metadata.sid_compatibility"),    compatibilityStr);
+
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(languageFile.getc("metadata.sid_model"));
+        ImGui::TableNextColumn();
+        if (sidModel == SidTuneInfo::SIDMODEL_6581)         ImGui::TextUnformatted("6581");
+        else if (sidModel == SidTuneInfo::SIDMODEL_8580)    ImGui::TextUnformatted("8580");
+        else if (sidModel == SidTuneInfo::SIDMODEL_ANY)     ImGui::Text("%s", languageFile.getc("ANY"));
+        else if (sidModel == SidTuneInfo::SIDMODEL_UNKNOWN) ImGui::Text("%s", languageFile.getc("UNKNOWN"));
+
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(languageFile.getc("metadata.clock_speed"));
+        ImGui::TableNextColumn();
+        if (clockSpeed == SidTuneInfo::CLOCK_NTSC)          ImGui::TextUnformatted("NTSC");
+        else if (clockSpeed == SidTuneInfo::CLOCK_PAL)      ImGui::TextUnformatted("PAL");
+        else if (clockSpeed == SidTuneInfo::CLOCK_ANY)      ImGui::Text("%s", languageFile.getc("ANY"));
+        else if (clockSpeed == SidTuneInfo::CLOCK_UNKNOWN)  ImGui::Text("%s", languageFile.getc("UNKNOWN"));
+
+        ImGui::TableNextColumn(); ImGui::TextUnformatted(languageFile.getc("metadata.sid_compatibility"));
+        ImGui::TableNextColumn();
+        if (compatibility == SidTuneInfo::COMPATIBILITY_BASIC)      ImGui::TextUnformatted("BASIC");
+        else if (compatibility == SidTuneInfo::COMPATIBILITY_C64)   ImGui::TextUnformatted("C64");
+        else if (compatibility == SidTuneInfo::COMPATIBILITY_PSID)  ImGui::TextUnformatted("PSID");
+        else if (compatibility == SidTuneInfo::COMPATIBILITY_R64)   ImGui::TextUnformatted("R64");
+
         Plugin::endTable();
-        ImGui::NewLine();
     }
 
     auto commentCount = musicInfo->numberOfCommentStrings();
     if (commentCount > 0)
+    {
+        ImGui::Spacing();
         if (Plugin::beginTable(languageFile.getc("metadata.comments"), true, false))
         {
+            auto& io = ImGui::GetIO();
+            ImGui::PushFont(io.Fonts->Fonts[1]);
             ImGui::TableNextColumn();
             for (unsigned int i=0; i<commentCount; ++i)
-                ImGui::TextUnformatted(musicInfo->commentString(i));
+                ImGui::TextUnformatted("%s\n", musicInfo->commentString(i));
+            ImGui::PopFont();
             Plugin::endTable();
         }
+    }
 }
 
 std::vector<uint8_t> SidplayfpPlugin::loadRom(const std::string path)

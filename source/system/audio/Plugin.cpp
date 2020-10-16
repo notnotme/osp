@@ -40,16 +40,15 @@ void Plugin::cleanup()
 {
 }
 
-bool Plugin::beginTable(std::string label, bool scrollable, bool twoColumns)
+bool Plugin::beginTable(std::string id, bool scrollable, bool twoColumns, float firstColumnWeight)
 {
     auto tableFlags = ImGuiTableFlags_RowBg
-        | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_BordersOuterV | ImGuiTableFlags_BordersInnerV;
+        | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_BordersOuterV;
 
     if (scrollable)
         tableFlags |= ImGuiTableFlags_ScrollY;
 
-    auto labelC = label.c_str();
-    if (!ImGui::BeginTable(labelC, twoColumns ? 2 : 1, tableFlags))
+    if (!ImGui::BeginTable(id.c_str(), twoColumns ? 2 : 1, tableFlags))
         return false;
 
     if (scrollable)
@@ -57,15 +56,15 @@ bool Plugin::beginTable(std::string label, bool scrollable, bool twoColumns)
 
     if (twoColumns)
     {
-        ImGui::TableSetupColumn(labelC, ImGuiTableColumnFlags_NoHide, 0.4f);
-        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_NoHide);
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_None, firstColumnWeight);
+        ImGui::TableSetupColumn("", ImGuiTableColumnFlags_None);
     }
     else
     {
-        ImGui::TableSetupColumn(labelC, ImGuiTableColumnFlags_NoHide);
+        ImGui::TableSetupColumn(id.c_str(), ImGuiTableColumnFlags_None);
+        ImGui::TableHeadersRow();
     }
 
-    ImGui::TableHeadersRow();
     return true;
 }
 
