@@ -57,3 +57,4 @@ Some ideas:
 - Vu meter around the player controls (left and right)
 - When the worspace is not visible, add options to show something (minigames, song information, shiny shaders...)
 - Battery save mode (black screen, stop refreshing or do it at 15fps ?)
+- Add a better touch support
