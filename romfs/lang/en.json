@@ -10,8 +10,15 @@
     "help"                              : "Help",
     "cancel"                            : "Cancel",
     "about"                             : "About",
-    "explorer.filename"                 : "Name",
-    "explorer.filesize"                 : "Size",
+    "filename"                          : "Name",
+    "filesize"                          : "Size",
+    "unknown"                           : "Unknown",
+    "any"                               : "Any",
+    "UNKNOWN"                           : "UNKNOWN",
+    "ANY"                               : "ANY",
+    "playlist"                          : "Playlist",
+    "mount_points"                      : "Mount points",
+    "mount_points.default_filesystem"   : "Local filesystem",
 
     "status.ready"                      : "Ready.",
 
@@ -64,8 +71,5 @@
     "plugin.enable_asidifier"           : "Enable aSIDifier whith compatible tracks",
     "plugin.enable_digiboost"           : "Enable digiboost when 8580 SID model is used",
     "plugin.enable_fast_sampling"       : "Enable fast sampling",
-    "plugin.sampling_method"            : "Sampling method",
-
-    "unknown"                           : "Unknown",
-    "Any"                               : "Any"
+    "plugin.sampling_method"            : "Sampling method"
 }

@@ -10,8 +10,15 @@
     "help"                              : "Aide",
     "cancel"                            : "Annuler",
     "about"                             : "À propos",
-    "explorer.filename"                 : "Nom",
-    "explorer.filesize"                 : "Taille",
+    "filename"                          : "Nom",
+    "filesize"                          : "Taille",
+    "unknown"                           : "Inconnu",
+    "any"                               : "Tous",
+    "UNKNOWN"                           : "INCONNU",
+    "ANY"                               : "TOUS",
+    "playlist"                          : "Liste de lecture",
+    "mount_points"                      : "Points de montage",
+    "mount_points.default_filesystem"   : "Système de fichiers local",
 
     "status.ready"                      : "Prêt.",
 
@@ -64,8 +71,5 @@
     "plugin.enable_asidifier"           : "Activer aSIDifier avec les pistes compatibles",
     "plugin.enable_digiboost"           : "Activer le digiboost quand le SID modèle 8580 est utilisé",
     "plugin.enable_fast_sampling"       : "Activer l'échantillonnage rapide",
-    "plugin.sampling_method"            : "Méthode d'échantillonnage",
-
-    "unknown"                           : "Inconnu",
-    "Any"                               : "Tous"
+    "plugin.sampling_method"            : "Méthode d'échantillonnage"
 }
