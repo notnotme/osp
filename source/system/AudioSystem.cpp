@@ -144,7 +144,7 @@ void AudioSystem::unconfigure(ECS::World* world)
     world->unsubscribe<AudioSystemPlayTaskEvent>(this);
 
     // Release SDL resources used for audio
-    stopAudio(world);
+    stopAudio(world, true, false);
     SDL_ClearQueuedAudio(mAudioDevice);
     SDL_CloseAudioDevice(mAudioDevice);
 
@@ -173,7 +173,7 @@ void AudioSystem::tick(ECS::World* world, float deltaTime)
     SDL_UnlockMutex(mMutex);
 }
 
-void AudioSystem::stopAudio(ECS::World* world)
+void AudioSystem::stopAudio(ECS::World* world, bool userStop, bool sendEvent)
 {
     TRACE("Stop audio playback.");
 
@@ -183,7 +183,7 @@ void AudioSystem::stopAudio(ECS::World* world)
     // Prepare an event to tell everyone we stopped playback
     auto event =
     (AudioSystemPlayEvent) {
-        .type = AudioSystemPlayEvent::STOPPED,
+        .type = userStop ? AudioSystemPlayEvent::STOPPED_BY_USER : AudioSystemPlayEvent::STOPPED,
         .pluginName = mCurrentPlugin != nullptr ? mCurrentPlugin->getName() : "null",
         .filename = mCurrentFileLoaded
     };
@@ -197,16 +197,17 @@ void AudioSystem::stopAudio(ECS::World* world)
     mPlayStatus = NO_FILE;
     mCurrentFileLoaded = "";
 
-    if (world != nullptr)
+    if (sendEvent)
     {
-        world->emit<AudioSystemPlayEvent>(event);
-    }
-    else
-    {
-        // If World is null place the event in the optional, this was probably called from a thread (audio callback)
-        SDL_LockMutex(mMutex);
-        mPendingAudioSystemPlayEvent.emplace(event);
-        SDL_UnlockMutex(mMutex);
+        if (world != nullptr)
+        {
+            world->emit<AudioSystemPlayEvent>(event);
+        }
+        else
+        {
+            // If World is null place the event in the optional, this was probably called from a thread (audio callback)
+            mPendingAudioSystemPlayEvent.emplace(event);
+        }
     }
 }
 
@@ -220,7 +221,9 @@ void AudioSystem::audioCallback(void* thiz, uint8_t* stream, int len)
         // Decode some frames of sound using the current decoder
         if (! audioSystem->mCurrentPlugin->decode(stream, len))
         {
-            audioSystem->stopAudio(nullptr);
+            SDL_LockMutex(audioSystem->mMutex);
+            audioSystem->stopAudio(nullptr, false, true);
+            SDL_UnlockMutex(audioSystem->mMutex);
             return;
         }
     }
@@ -230,8 +233,8 @@ void AudioSystem::audioCallback(void* thiz, uint8_t* stream, int len)
         TRACE("Audio callback error: {:s}", error);
 
         // Something bad happened, stop audio and send a notification about it
-        audioSystem->stopAudio(nullptr);
         SDL_LockMutex(audioSystem->mMutex);
+        audioSystem->stopAudio(nullptr, true, true);
         audioSystem->mPendingNotificationMessageEvent.emplace(
         (NotificationMessageEvent) {
             .type = NotificationMessageEvent::ERROR,
@@ -246,7 +249,10 @@ void AudioSystem::receive(ECS::World* world, const FileLoadedEvent& event)
     TRACE("Received FileLoadedEvent: {:s} ({:d} Kb).", event.path, (uint32_t) event.buffer.size() / 1024);
 
     // Stop playback
-    stopAudio(world);
+    if (mCurrentPlugin != nullptr)
+    {
+        stopAudio(world, false, false);
+    }
 
     std::string fileExtension = std::filesystem::path(event.path).extension();
     std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), ::tolower);
@@ -278,9 +284,7 @@ void AudioSystem::receive(ECS::World* world, const FileLoadedEvent& event)
     catch(const std::exception& e)
     {
         // Something bad happened, tells everyone and close the plugin that was in use
-        mCurrentPlugin->close();
-        mCurrentPlugin = nullptr;
-
+        stopAudio(world, true, true);
         world->emit<NotificationMessageEvent>
         ({
             .type = NotificationMessageEvent::ERROR,
@@ -350,6 +354,17 @@ void AudioSystem::receive(ECS::World* world, const AudioSystemPlayTaskEvent& eve
         case AudioSystemPlayTaskEvent::PREV_SUBSONG:
             if (mCurrentPlugin->getTrackCount() <= 1)
             {
+                SDL_LockMutex(mMutex);
+                world->emit<AudioSystemPlayEvent>
+                ({
+                    .type = AudioSystemPlayEvent::NO_PREV_SUBSONG,
+                    .pluginName = mCurrentPlugin->getName(),
+                    .filename = mCurrentFileLoaded
+                });
+                SDL_UnlockMutex(mMutex);
+                // Don't send a notification. NO_NEXT_SUBSONG is counsidered as a non playing status
+                // and UiSystem will update according to the event just sent
+                stopAudio(world, false, false);
                 break;
             }
 
@@ -367,6 +382,17 @@ void AudioSystem::receive(ECS::World* world, const AudioSystemPlayTaskEvent& eve
         case AudioSystemPlayTaskEvent::NEXT_SUBSONG:
             if (mCurrentPlugin->getTrackCount() <= 1)
             {
+                SDL_LockMutex(mMutex);
+                world->emit<AudioSystemPlayEvent>
+                ({
+                    .type = AudioSystemPlayEvent::NO_NEXT_SUBSONG,
+                    .pluginName = mCurrentPlugin->getName(),
+                    .filename = mCurrentFileLoaded
+                });
+                SDL_UnlockMutex(mMutex);
+                // Don't send a notification. NO_NEXT_SUBSONG is counsidered as a non playing status
+                // and UiSystem will update according to the event just sent
+                stopAudio(world, false, false);
                 break;
             }
 
@@ -384,7 +410,8 @@ void AudioSystem::receive(ECS::World* world, const AudioSystemPlayTaskEvent& eve
         case AudioSystemPlayTaskEvent::STOP:
             if (mPlayStatus != NO_FILE)
             {
-                stopAudio(world);
+                // If the user request a stop, then stop and send an event.
+                stopAudio(world, true, true);
             }
         break;
     }

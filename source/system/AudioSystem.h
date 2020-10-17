@@ -68,6 +68,6 @@ private:
 
     AudioSystem(const AudioSystem& copy);
 
-    void stopAudio(ECS::World* world);
+    void stopAudio(ECS::World* world, bool userStop, bool sendEvent);
     static void audioCallback(void* thiz, uint8_t* stream, int len);
 };

@@ -107,5 +107,9 @@ private:
     void pushNotification(NotificationMessageEvent::Type type, std::string message);
     bool isFileSupported(std::string path);
     void processFileItemSelection(ECS::World* world, DirectoryLoadedEvent::Item item, bool addToPlaylist);
-    void processPlaylistSelection(ECS::World* world, int selectedIndex, bool remove);
+    void processPlaylistItemSelection(ECS::World* world, int selectedIndex, bool remove);
+
+    void resetPlaylist(bool eraseAllPaths);
+    void processNextPlaylistItem(ECS::World* world);
+    void processPrevPlaylistItem(ECS::World* world);
 };

@@ -16,6 +16,8 @@
  */
 #include "UiSystem.h"
 
+#include <algorithm>
+#include <random>
 #include <stdexcept>
 #include <filesystem>
 #include <fmt/format.h>
@@ -112,9 +114,10 @@ void UiSystem::configure(ECS::World* world)
     ImWchar iconRanges[] = { 0x0030, 0xFFCB, 0 };
     ImFontConfig imFontConfig;
     imFontConfig.MergeMode = true;
-    imFontConfig.GlyphMinAdvanceX = 20.0f;
-    imFontConfig.GlyphMaxAdvanceX = 20.0f;
-    io.Fonts->AddFontFromFileTTF(DATAPATH "font/materialdesignicons-webfont.ttf", 20.0f, &imFontConfig, iconRanges);
+    imFontConfig.GlyphMinAdvanceX = 22.0f;
+    imFontConfig.GlyphMaxAdvanceX = 22.0f;
+    imFontConfig.GlyphOffset.y = 1.0f;
+    io.Fonts->AddFontFromFileTTF(DATAPATH "font/materialdesignicons-webfont.ttf", 22.0f, &imFontConfig, iconRanges);
     io.Fonts->AddFontFromFileTTF(DATAPATH "font/AtariST8x16SystemFont.ttf", 16.0f);
     io.Fonts->Build();
 
@@ -314,7 +317,9 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                     // Context menu (right click)
                     if (item.name != ".." && ImGui::BeginPopupContextItem(rowId, ImGuiPopupFlags_MouseButtonRight))
                     {
-                        if (ImGui::MenuItem("\uf416 Add to playlist", nullptr, false, !item.isFolder && isFileSupported(item.name)))
+                        auto textAddToPlaylist =  mLanguageFile.getc("add_to_playlist");
+                        auto menuItemId = fmt::format("\uf416 {:s}", textAddToPlaylist);
+                        if (ImGui::MenuItem(menuItemId.c_str(), nullptr, false, !item.isFolder && isFileSupported(item.name)))
                         {
                             processFileItemSelection(world, item, true);
                         }
@@ -409,8 +414,18 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         {
             switch (mAudioSystemStatus)
             {
-                case PLAYING:   world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::PAUSE}); break;
-                case PAUSED:    world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::PLAY}); break;
+                case PLAYING:
+                    world->emit<AudioSystemPlayTaskEvent>
+                    ({
+                        .type = AudioSystemPlayTaskEvent::PAUSE
+                    });
+                break;
+                case PAUSED:
+                    world->emit<AudioSystemPlayTaskEvent>
+                    ({
+                        .type = AudioSystemPlayTaskEvent::PLAY
+                    });
+                break;
                 default: break;
             }
         }
@@ -449,9 +464,10 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         // ----------------------------------------------------------
         // ----------------------------------------------------------
         // Right panel - track information if a song is loaded (wrapped in a frame)
+        windowFlags = ImGuiWindowFlags_None;
         windowSize = ImVec2(ImGui::GetContentRegionAvailWidth(), 108);
         ImGui::Spacing();
-        if (ImGui::BeginChild("##playerWrapper", windowSize, false, 0))
+        if (ImGui::BeginChild("##playerWrapper", windowSize, false, windowFlags))
         {
             if (mCurrentPluginUsed.has_value())
             {
@@ -496,14 +512,24 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                 ImGui::PopStyleVar();
                 // Summary / buttons
                 auto itemsCount = mPlaylist.paths.size();
-                auto itemCountStr = fmt::format("{:d} items", itemsCount).c_str();
+                auto fileStr = mLanguageFile.getc("file_s");
+                auto itemCountStr = fmt::format("{:d} {:s}", itemsCount, fileStr).c_str();
                 auto textSize = ImGui::CalcTextSize(itemCountStr);
                 auto textOffsetX = (ImGui::GetContentRegionAvailWidth() + style.FramePadding.x * 2) - textSize.x;
-
                 ImGui::Spacing();
-                ImGui::SmallButton("\uf49f");
+                if (ImGui::SmallButton("\uf49f"))
+                {
+                    // Shuffle playlist
+                    resetPlaylist(false);
+
+                    auto rng = std::default_random_engine {};
+                    std::shuffle(std::begin(mPlaylist.paths), std::end(mPlaylist.paths), rng);
+                }
                 ImGui::SameLine();
-                ImGui::SmallButton("\uf413");
+                if (ImGui::SmallButton("\uf413"))
+                {
+                    resetPlaylist(true);
+                }
                 ImGui::SameLine(textOffsetX, 0);
                 ImGui::TextUnformatted(itemCountStr);
                 ImGui::Spacing();
@@ -528,7 +554,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
 
                             // Column [LEFT] - icon
                             ImGui::TableNextColumn();
-                            if (mPlaylist.index == row)
+                            if (mPlaylist.inUse && mPlaylist.index == row)
                             {
                                 ImGui::TextUnformatted("\ufa12");
                             }
@@ -540,9 +566,9 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                             // Column [MIDDLE] - name
                             ImGui::TableNextColumn();
                             auto selectableFlags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap;
-                            if (ImGui::Selectable(filename.c_str(), false, selectableFlags))
+                            if (ImGui::Selectable(filename.c_str(), mPlaylist.index == row, selectableFlags))
                             {
-                                processPlaylistSelection(world, row, false);
+                                processPlaylistItemSelection(world, row, false);
                             }
 
                             // Column [RIGHT] - Button(s)
@@ -550,7 +576,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                             ImGui::TableNextColumn();
                             if (ImGui::SmallButton(buttonDeleteId.c_str()))
                             {
-                                processPlaylistSelection(world, row, true);
+                                processPlaylistItemSelection(world, row, true);
                             }
                         }
                     }
@@ -860,28 +886,28 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
 {
     TRACE("Received AudioSystemPlayEvent: {:d}", event.type);
 
-    if (event.type != AudioSystemPlayEvent::STOPPED)
+    switch (event.type)
     {
-        // Refresh current information about used plugin in needed
-        if (!mCurrentPluginUsed.has_value() || (mCurrentPluginUsed.value().name != event.pluginName))
-        {
-            for (auto pluginInfo : mPluginInformations)
+        case AudioSystemPlayEvent::PLAYING:
+            // Refresh current information about used plugin in needed
+            if (!mCurrentPluginUsed.has_value() || (mCurrentPluginUsed.value().name != event.pluginName))
             {
-                if (pluginInfo.name == event.pluginName)
+                for (auto pluginInfo : mPluginInformations)
                 {
-                    mCurrentPluginUsed.emplace(pluginInfo);
-                    break;
+                    if (pluginInfo.name == event.pluginName)
+                    {
+                        mCurrentPluginUsed.emplace(pluginInfo);
+                        break;
+                    }
                 }
             }
-        }
-    }
-    else
-    {
-        mCurrentPluginUsed.reset();
+        default:
+        break;
     }
 
     switch (event.type)
     {
+        // If received the event below, the audio system is playing.
         case AudioSystemPlayEvent::PLAYING:
             mAudioSystemStatus = PLAYING;
             mStatusMessage = std::string("\uf40a ").append(event.filename);
@@ -890,9 +916,54 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
             mAudioSystemStatus = PAUSED;
             mStatusMessage = std::string("\uf3e4 ").append(event.filename);
         break;
+
+        // If received the event below, the audio system is not playing.
+        case AudioSystemPlayEvent::NO_NEXT_SUBSONG:
+            if (mPlaylist.inUse)
+            {
+                processNextPlaylistItem(world);
+            }
+            else
+            {
+                mCurrentPluginUsed.reset();
+                mAudioSystemStatus = STOPPED;
+                mStatusMessage = mLanguageFile.getc("status.ready");
+            }
+        break;
+        case AudioSystemPlayEvent::NO_PREV_SUBSONG:
+            if (mPlaylist.inUse)
+            {
+                processPrevPlaylistItem(world);
+            }
+            else
+            {
+                mCurrentPluginUsed.reset();
+                mAudioSystemStatus = STOPPED;
+                mStatusMessage = mLanguageFile.getc("status.ready");
+            }
+        break;
+        case AudioSystemPlayEvent::STOPPED_BY_USER:
+                mCurrentPluginUsed.reset();
+                mAudioSystemStatus = STOPPED;
+                mStatusMessage = mLanguageFile.getc("status.ready");
+                resetPlaylist(false);
+        break;
         case AudioSystemPlayEvent::STOPPED:
-            mAudioSystemStatus = STOPPED;
-            mStatusMessage = mLanguageFile.getc("status.ready");
+            if (mPlaylist.inUse && mPlaylist.index < (int) mPlaylist.paths.size()-1)
+            {
+                processPlaylistItemSelection(world, mPlaylist.index+1, false);
+            }
+            else
+            {
+                mCurrentPluginUsed.reset();
+                mAudioSystemStatus = STOPPED;
+                mStatusMessage = mLanguageFile.getc("status.ready");
+                if (mPlaylist.inUse)
+                {
+                    pushNotification(NotificationMessageEvent::INFO, "Playlist finished.");
+                    resetPlaylist(false);
+                }
+            }
         break;
         default:
         break;
@@ -943,10 +1014,20 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
 
     if (addToPlaylist)
     {
-        mPlaylist.paths.push_back(itemPath);
+        if (std::find(mPlaylist.paths.begin(), mPlaylist.paths.end(), itemPath) == mPlaylist.paths.end())
+        {
+            mPlaylist.paths.push_back(itemPath);
+        }
     }
     else
     {
+        // If we were using the playlist, cancel it then send event to the FileSystem to load the requested file
+        // todo: maybe show an alert dialog
+        if (! item.isFolder)
+        {
+            resetPlaylist(false);
+        }
+
         world->emit<FileSystemLoadTaskEvent>
         ({
             .type = item.isFolder
@@ -957,14 +1038,29 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
     }
 }
 
- void UiSystem::processPlaylistSelection(ECS::World* world, int selectedIndex, bool remove)
+ void UiSystem::processPlaylistItemSelection(ECS::World* world, int selectedIndex, bool remove)
  {
      if (remove)
      {
+        // todo: alert dialog ?
+        if (mPlaylist.index == selectedIndex)
+        {
+            // If we delete the current playing index we let the song finish but
+            // the index is reset to -1 (playlist not in use)
+            resetPlaylist(false);
+        }
+        else if (mPlaylist.index > selectedIndex)
+        {
+            // In case we were playing a song after the deleted index
+            // decrease the current playing index to stay in sync with the list selection
+            mPlaylist.index--;
+        }
+
         mPlaylist.paths.erase(mPlaylist.paths.begin()+selectedIndex);
      }
     else
     {
+        mPlaylist.inUse = true;
         mPlaylist.index = selectedIndex;
         world->emit<FileSystemLoadTaskEvent>
         ({
@@ -973,3 +1069,45 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
         });
     }
  }
+
+void UiSystem::resetPlaylist(bool eraseAllPaths)
+{
+    mPlaylist.inUse = false;
+    mPlaylist.index = -1;
+    if (eraseAllPaths)
+    {
+        mPlaylist.paths.clear();
+    };
+}
+
+void UiSystem::processNextPlaylistItem(ECS::World* world)
+{
+    if (mPlaylist.index < (int) mPlaylist.paths.size()-1)
+    {
+        processPlaylistItemSelection(world, mPlaylist.index+1, false);
+    }
+    else
+    {
+        mCurrentPluginUsed.reset();
+        mAudioSystemStatus = STOPPED;
+        mStatusMessage = mLanguageFile.getc("status.ready");
+        resetPlaylist(false);
+        pushNotification(NotificationMessageEvent::INFO, "Playlist finished.");
+    }
+}
+
+void UiSystem::processPrevPlaylistItem(ECS::World* world)
+{
+    if (mPlaylist.index > 0)
+    {
+        processPlaylistItemSelection(world, mPlaylist.index-1, false);
+    }
+    else
+    {
+        mCurrentPluginUsed.reset();
+        mAudioSystemStatus = STOPPED;
+        mStatusMessage = mLanguageFile.getc("status.ready");
+        resetPlaylist(false);
+        pushNotification(NotificationMessageEvent::INFO, "Playlist finished.");
+    }
+}

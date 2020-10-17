@@ -17,6 +17,8 @@
     "UNKNOWN"                           : "INCONNU",
     "ANY"                               : "TOUS",
     "playlist"                          : "Liste de lecture",
+    "add_to_playlist"                   : "Ajouter à la liste de lecture",
+    "file_s"                            : "Fichier(s)",
     "no_file_loaded"                    : "Aucun fichier chargé",
     "mount_points"                      : "Points de montage",
     "mount_points.default_filesystem"   : "Système de fichiers local",

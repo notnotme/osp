@@ -51,7 +51,7 @@ public:
 
 protected:
     Config mConfig;
-    bool beginTable(std::string label, bool scrollable, bool twoColumns = true, float firstColumnWeight = 0.4f);
+    bool beginTable(std::string label, bool scrollable, bool twoColumns = true, float firstColumnWeight = 0.45f);
     void endTable();
     void drawRow(std::string label, std::string value);
 

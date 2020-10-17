@@ -25,9 +25,10 @@ struct AudioSystemPlayEvent
     {
         PLAYING,
         PAUSED,
-        NEXT_SUBSONG,
-        PREV_SUBSONG,
-        STOPPED
+        STOPPED,
+        STOPPED_BY_USER,
+        NO_PREV_SUBSONG,
+        NO_NEXT_SUBSONG
     };
 
     Type type;
