@@ -54,7 +54,6 @@ void FileSystem::configure(ECS::World* world)
         mountPoint->setup();
 
     // Subscribe for events
-    world->subscribe<AudioSystemConfiguredEvent>(this);
     world->subscribe<FileSystemLoadTaskEvent>(this);
     world->subscribe<FileSystemCancelTaskEvent>(this);
 
@@ -67,7 +66,6 @@ void FileSystem::unconfigure(ECS::World* world)
     TRACE(">>>");
 
     // Unubscribe for events
-    world->unsubscribe<AudioSystemConfiguredEvent>(this);
     world->unsubscribe<FileSystemLoadTaskEvent>(this);
     world->unsubscribe<FileSystemCancelTaskEvent>(this);
 
@@ -130,18 +128,6 @@ void FileSystem::listMountPoints(ECS::World* world)
     });
 }
 
-void FileSystem::receive(ECS::World* world, const AudioSystemConfiguredEvent& event)
-{
-    // AudioSystem is configured and tells us what files are supported, keep a copy of that
-    for (auto pluginInfo : event.pluginInformations)
-    {
-        auto pluginExtensions = pluginInfo.supportedExtensions;
-        mSupportedExtensions.insert(mSupportedExtensions.begin(), pluginExtensions.begin(), pluginExtensions.end());
-    }
-
-    TRACE("Received AudioSystemConfiguredEvent: {}", mSupportedExtensions);
-}
-
 void FileSystem::receive(ECS::World* world, const FileSystemLoadTaskEvent& event)
 {
     TRACE("Received FileSystemLoadTaskEvent type {:d}, {:s}", event.type, event.path);
@@ -177,31 +163,6 @@ void FileSystem::receive(ECS::World* world, const FileSystemLoadTaskEvent& event
     }
     else if (event.type == FileSystemLoadTaskEvent::LOAD_FILE)
     {
-        // Requesting a file to be read - check extension supported (convert to lower case)
-        std::string fileExtension = path.extension();
-        std::transform(fileExtension.begin(), fileExtension.end(), fileExtension.begin(), ::tolower);
-
-        bool supported = false;
-        for (auto extension : mSupportedExtensions)
-        {
-            supported = extension == fileExtension;
-            if (supported)
-                break;
-        }
-
-        if (!supported)
-        {
-            // The file is not usable by any audio plugin
-            auto message = fmt::format("{:s} {:s}", mLanguageFile.getc("files.unsupported_file_type"), path.filename().c_str());
-            world->emit<NotificationMessageEvent>
-            ({
-                .type = NotificationMessageEvent::INFO,
-                .message = message
-            });
-            TRACE("{:s}", message);
-            return;
-        }
-
         // Get the file stored in mPathToNavigate
         mWorkerThread = SDL_CreateThread(workerThreadFuncFile, "OSPFST", this);
     }
@@ -251,7 +212,7 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
 
     auto path = std::filesystem::path();
     for (auto elm : fileSystem->mPathToNavigate)
-        path.append(elm);
+        path /= elm;
 
     auto items = std::vector<DirectoryLoadedEvent::Item>();
     try
@@ -366,11 +327,26 @@ int FileSystem::workerThreadFuncFile(void* thiz)
         }
 
     if (selectedMountPoint == nullptr)
-        throw std::runtime_error(fmt::format("No mountpoint available to open {:s}", fileSystem->mPathToNavigate.back()));
+    {
+        auto error = fmt::format("No mountpoint available to open {:s}", fileSystem->mPathToNavigate.back());
+        throw std::runtime_error(error);
+        TRACE("{:s}.", error);
+
+        // Send a notification event if something goes wrong
+        fileSystem->mWorkerThreadState = CANCELING;
+        SDL_LockMutex(fileSystem->mWorkerThreadMutex);
+        fileSystem->mPendingNotificationMessageEvent.emplace(
+        (NotificationMessageEvent) {
+            .type = NotificationMessageEvent::ERROR,
+            .message = error
+        });
+        SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
+        return 0;
+    }
 
     auto path = std::filesystem::path();
     for (auto elm : fileSystem->mPathToNavigate)
-        path.append(elm);
+        path /= elm;
 
     auto fileBuffer = std::vector<uint8_t>();
     try

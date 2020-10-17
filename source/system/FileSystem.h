@@ -29,7 +29,6 @@
 #include "../event/file/FileLoadedEvent.h"
 #include "../event/file/FileSystemBusyEvent.h"
 #include "../event/file/FileSystemCancelTaskEvent.h"
-#include "../event/audio/AudioSystemConfiguredEvent.h"
 #include "../event/app/NotificationMessageEvent.h"
 #include "../tools/ConfigFile.h"
 #include "../tools/LanguageFile.h"
@@ -38,8 +37,7 @@
 class FileSystem :
 public ECS::EntitySystem,
 public ECS::EventSubscriber<FileSystemLoadTaskEvent>,
-public ECS::EventSubscriber<FileSystemCancelTaskEvent>,
-public ECS::EventSubscriber<AudioSystemConfiguredEvent>
+public ECS::EventSubscriber<FileSystemCancelTaskEvent>
 {
 public:
     FileSystem(Config config, LanguageFile languageFile);
@@ -51,7 +49,6 @@ public:
 
     virtual void receive(ECS::World* world, const FileSystemLoadTaskEvent& event) override;
     virtual void receive(ECS::World* world, const FileSystemCancelTaskEvent& event) override;
-    virtual void receive(ECS::World* world, const AudioSystemConfiguredEvent& event) override;
 
 private:
     enum WorkThreadStatus
@@ -69,7 +66,6 @@ private:
 
     std::vector<std::string> mPathToNavigate;
     std::vector<MountPoint*> mMountPoints;
-    std::vector<std::string> mSupportedExtensions;
     std::optional<FileSystemBusyEvent> mPendingFileSystemBusyEvent;
     std::optional<DirectoryLoadedEvent> mPendingDirectoryLoadedEvent;
     std::optional<FileLoadedEvent> mPendingFileLoadedEvent;

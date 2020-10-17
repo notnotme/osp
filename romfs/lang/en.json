@@ -17,6 +17,7 @@
     "UNKNOWN"                           : "UNKNOWN",
     "ANY"                               : "ANY",
     "playlist"                          : "Playlist",
+    "no_file_loaded"                    : "No file loaded",
     "mount_points"                      : "Mount points",
     "mount_points.default_filesystem"   : "Local filesystem",
 

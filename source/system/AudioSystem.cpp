@@ -20,6 +20,7 @@
 #include <vector>
 #include <filesystem>
 #include <fmt/format.h>
+#include <fmt/ranges.h>
 
 #include "audio/OpenmptPlugin.h"
 #include "audio/GmePlugin.h"
@@ -91,11 +92,15 @@ void AudioSystem::configure(ECS::World* world)
     for (auto* plugin : mPlugins)
     {
         plugin->setup(mConfig);
+        auto name = plugin->getName();
+        auto version = plugin->getVersion();
+        auto extensions = plugin->getSupportedExtensions();
+
         pluginInformations.push_back
         ({
-            .name = plugin->getName(),
-            .version = plugin->getVersion(),
-            .supportedExtensions = plugin->getSupportedExtensions(),
+            .name = name,
+            .version = version,
+            .supportedExtensions = extensions,
             .drawSettings =
                 [plugin](ECS::World* world, LanguageFile languageFile, float deltaTime)
                 {
@@ -112,6 +117,8 @@ void AudioSystem::configure(ECS::World* world)
                     plugin->drawMetadata(world, languageFile, deltaTime);
                 }
         });
+
+        TRACE("Plugin {:s} {}", name, extensions);
     }
 
     // Subcribe for events

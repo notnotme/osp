@@ -103,4 +103,9 @@ private:
     std::deque<Notification> mNotifications;
 
     UiSystem(const UiSystem& copy);
+
+    void pushNotification(NotificationMessageEvent::Type type, std::string message);
+    bool isFileSupported(std::string path);
+    void processFileItemSelection(ECS::World* world, DirectoryLoadedEvent::Item item, bool addToPlaylist);
+    void processPlaylistSelection(ECS::World* world, int selectedIndex, bool remove);
 };

@@ -71,7 +71,6 @@ void UiSystem::configure(ECS::World* world)
     io.IniFilename = nullptr;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableSetMousePos;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.FontGlobalScale = 1.0f;
 
 #if defined(__SWITCH__)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
@@ -166,59 +165,56 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
     // ----------------------------------------------------------
     // Main menu
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8, 8));
-    ImGui::BeginMainMenuBar();
-    if (ImGui::BeginMenu(mLanguageFile.getc("application")))
+    if (ImGui::BeginMainMenuBar())
     {
-        ImGui::MenuItem(mLanguageFile.getc("ic_show_workspace"), nullptr, &mShowWorkSpace);
-        ImGui::MenuItem(mLanguageFile.getc("ic_show_settings"), nullptr, &mShowSettingsWindow);
-        ImGui::Separator();
-        if (ImGui::MenuItem(mLanguageFile.getc("ic_quit")))
+        if (ImGui::BeginMenu(mLanguageFile.getc("application")))
         {
-            auto quitEvent = (SDL_Event) {.type = SDL_QUIT};
-            SDL_PushEvent(&quitEvent);
+            ImGui::MenuItem(mLanguageFile.getc("ic_show_workspace"), nullptr, &mShowWorkSpace);
+            ImGui::MenuItem(mLanguageFile.getc("ic_show_settings"), nullptr, &mShowSettingsWindow);
+            ImGui::Separator();
+            if (ImGui::MenuItem(mLanguageFile.getc("ic_quit")))
+            {
+                auto quitEvent = (SDL_Event) {.type = SDL_QUIT};
+                SDL_PushEvent(&quitEvent);
+            }
+            ImGui::EndMenu();
         }
-        ImGui::EndMenu();
-    }
 
-    if (ImGui::BeginMenu(mLanguageFile.getc("help")))
-    {
-        ImGui::MenuItem(mLanguageFile.getc("ic_about"), nullptr, &mShowAboutWindow);
-        ImGui::EndMenu();
-    }
+        if (ImGui::BeginMenu(mLanguageFile.getc("help")))
+        {
+            ImGui::MenuItem(mLanguageFile.getc("ic_about"), nullptr, &mShowAboutWindow);
+            ImGui::EndMenu();
+        }
 
 #ifndef NDEBUG
-    // Menu only shown if DEBUG build is active
-    if (ImGui::BeginMenu("Debug"))
-    {
-        ImGui::MenuItem("\ufd4a ImGui Demo", nullptr, &mShowDemoWindow);
-        ImGui::MenuItem("\ufd4a ImGui Metrics", nullptr, &mShowMetricsWindow);
-        ImGui::Separator();
-        if (ImGui::MenuItem("\ufd4a ERROR notification"))
-            world->emit<NotificationMessageEvent>
-            ({
-                .type = NotificationMessageEvent::ERROR,
-                .message = "This is an error notification"
-            });
-        if (ImGui::MenuItem("\ufd4a INFO notification"))
-            world->emit<NotificationMessageEvent>
-            ({
-                .type = NotificationMessageEvent::INFO,
-                .message = "This is an info notification"
-            });
-        ImGui::EndMenu();
-    }
+        // Menu only shown if DEBUG build is active
+        if (ImGui::BeginMenu("Debug"))
+        {
+            ImGui::MenuItem("\ufd4a ImGui Demo", nullptr, &mShowDemoWindow);
+            ImGui::MenuItem("\ufd4a ImGui Metrics", nullptr, &mShowMetricsWindow);
+            ImGui::Separator();
+            if (ImGui::MenuItem("\ufd4a ERROR notification"))
+                pushNotification(NotificationMessageEvent::ERROR, "This is an error notification");
+            if (ImGui::MenuItem("\ufd4a INFO notification"))
+                pushNotification(NotificationMessageEvent::INFO, "This is an info notification");
+            ImGui::EndMenu();
+        }
 #endif
 
-    auto fpsText = fmt::format("{:.0f} FPS", io.Framerate).c_str();
-    auto textSize = ImGui::CalcTextSize(fpsText);
-    auto textOffsetX = (ImGui::GetWindowContentRegionWidth() - style.FramePadding.x) - textSize.x;
+        auto fpsText = fmt::format("{:.0f} FPS", io.Framerate).c_str();
+        auto textSize = ImGui::CalcTextSize(fpsText);
+        auto textOffsetX = (ImGui::GetWindowContentRegionWidth() - style.FramePadding.x) - textSize.x;
 
-    // Status message & FPS
-    ImGui::Separator(); ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogramHovered], "%s", mStatusMessage.c_str()); ImGui::SameLine(textOffsetX, 0);
-    ImGui::Separator(); ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogramHovered], "%s", fpsText);
-    ImGui::EndMainMenuBar();
+        // Status message & FPS
+        ImGui::Separator(); ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogramHovered], "%s", mStatusMessage.c_str()); ImGui::SameLine(textOffsetX, 0);
+        ImGui::Separator(); ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogramHovered], "%s", fpsText);
+        ImGui::EndMainMenuBar();
+    }
     ImGui::PopStyleVar();
 
+    // ----------------------------------------------------------
+    // ----------------------------------------------------------
+    // Main Window (fullscreen workspace)
     // Reusable variables
     ImVec2 windowPos, windowPivot, windowSize, windowMinSize, windowMaxSize;
     ImGuiWindowFlags windowFlags;
@@ -226,9 +222,6 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
     ImGuiTabItemFlags tabFlags;
     ImGuiTabBarFlags tabBarFlags;
 
-    // ----------------------------------------------------------
-    // ----------------------------------------------------------
-    // Main Window (fullscreen)
     if (mShowWorkSpace)
     {
         // Setup the window to take full space on screen
@@ -273,9 +266,8 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                 for (auto row=clipper.DisplayStart; row<clipper.DisplayEnd; ++row)
                 {
                     auto& item = mCurrentPathItems[row];
-                    auto itemPath =  std::filesystem::path(mCurrentPath) / item.name;
                     auto rowId = item.name.c_str();
-                    auto selected = ImGui::IsPopupOpen(rowId);
+                    auto rowIsSelected = ImGui::IsPopupOpen(rowId);
 
                     // Column 1 - File icon+name
                     ImGui::TableNextColumn();
@@ -285,21 +277,24 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                         ImGui::TextColored(style.Colors[ImGuiCol_PlotLines], "\uf214");
 
                     ImGui::SameLine();
-                    if (ImGui::Selectable(rowId, selected, ImGuiSelectableFlags_SpanAllColumns))
-                        world->emit<FileSystemLoadTaskEvent>
-                        ({
-                            .type = item.isFolder
-                                ? FileSystemLoadTaskEvent::LOAD_DIRECTORY
-                                : FileSystemLoadTaskEvent::LOAD_FILE,
-                            .path = itemPath
-                        });
+                    if (ImGui::Selectable(rowId, rowIsSelected, ImGuiSelectableFlags_SpanAllColumns))
+                    {
+                        if (item.isFolder || isFileSupported(item.name))
+                            processFileItemSelection(world, item, false);
+                        else
+                        {
+                            // The file is not usable by any audio plugin
+                            auto message = fmt::format("{:s} {:s}", mLanguageFile.getc("files.unsupported_file_type"), item.name);
+                            pushNotification(NotificationMessageEvent::Type::INFO, message);
+                            TRACE("{:s}", message);
+                        }
+                    }
 
                     // Context menu (right click)
-                    if (!item.isFolder && ImGui::BeginPopupContextItem(rowId, ImGuiPopupFlags_MouseButtonRight))
+                    if (item.name != ".." && ImGui::BeginPopupContextItem(rowId, ImGuiPopupFlags_MouseButtonRight))
                     {
-                        if (ImGui::MenuItem("\uf416 Add to playlist"))
-                            mPlaylist.paths.push_back(itemPath);
-
+                        if (ImGui::MenuItem("\uf416 Add to playlist", nullptr, false, !item.isFolder && isFileSupported(item.name)))
+                            processFileItemSelection(world, item, true);
                         ImGui::EndPopup();
                     }
 
@@ -328,31 +323,37 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
                 ImGui::SetNextWindowPos(savedWindowPos);
                 ImGui::SetNextWindowSize(savedWindowSize);
-                ImGui::SetNextWindowBgAlpha(0.8f);
-                ImGui::Begin("##filesTableLoadingOverlay", nullptr, windowFlags);
-                ImGui::PopStyleVar();
+                ImGui::SetNextWindowBgAlpha(0.9f);
+                if (!ImGui::Begin("##filesTableLoadingOverlay", nullptr, windowFlags))
+                {
+                    ImGui::PopStyleVar();
+                }
+                else
+                {
+                    ImGui::PopStyleVar();
 
-                // Add a dots loading text
-                auto strLoading = mLanguageFile.get("ic_loading");
-                auto fullStrLoading = std::string(strLoading).append("...");
-                auto textSize = ImGui::CalcTextSize(fullStrLoading.c_str());
+                    // Add a dots loading text
+                    auto strLoading = mLanguageFile.get("ic_loading");
+                    auto fullStrLoading = std::string(strLoading).append("...");
+                    auto textSize = ImGui::CalcTextSize(fullStrLoading.c_str());
 
-                auto numPoints = (int) (ImGui::GetTime() * 3) % 4;
-                for (auto i=0; i<numPoints; ++i)
-                    strLoading.push_back('.');
+                    auto numPoints = (int) (ImGui::GetTime() * 3) % 4;
+                    for (auto i=0; i<numPoints; ++i)
+                        strLoading.push_back('.');
 
-                // Center in the table
-                auto buttonSize = ImVec2(200, textSize.y * 1.5f);
-                auto spaceAvail = ImGui::GetContentRegionAvail();
+                    // Center in the table
+                    auto buttonSize = ImVec2(200, textSize.y * 1.5f);
+                    auto spaceAvail = ImGui::GetContentRegionAvail();
 
-                ImGui::SetCursorPosX((spaceAvail.x/2) - textSize.x/2);
-                ImGui::SetCursorPosY((spaceAvail.y/2) - (textSize.y + buttonSize.y));
-                ImGui::Text("%s", strLoading.c_str());
-                ImGui::NewLine();
-                ImGui::SetCursorPosX(spaceAvail.x/2 - buttonSize.x/2);
-                if (ImGui::Button(mLanguageFile.getc("cancel"), buttonSize))
-                    world->emit<FileSystemCancelTaskEvent>({});
-                ImGui::End();
+                    ImGui::SetCursorPosX((spaceAvail.x/2) - textSize.x/2);
+                    ImGui::SetCursorPosY((spaceAvail.y/2) - (textSize.y + buttonSize.y));
+                    ImGui::Text("%s", strLoading.c_str());
+                    ImGui::NewLine();
+                    ImGui::SetCursorPosX(spaceAvail.x/2 - buttonSize.x/2);
+                    if (ImGui::Button(mLanguageFile.getc("cancel"), buttonSize))
+                        world->emit<FileSystemCancelTaskEvent>({});
+                    ImGui::End();
+                }
             }
         }
 
@@ -423,11 +424,12 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
             }
             else
             {
-                auto textSize = ImGui::CalcTextSize("NO FILE LOADED");
+                auto text = mLanguageFile.getc("no_file_loaded");
+                auto textSize = ImGui::CalcTextSize(text);
                 auto textOffsetX = windowSize.x/2 - textSize.x/2;
                 auto textOffsetY = windowSize.y/2 - textSize.y/2;
                 ImGui::SetCursorPos(ImVec2(textOffsetX, textOffsetY));
-                ImGui::TextUnformatted("NO FILE LOADED");
+                ImGui::TextUnformatted(text);
             }
         }
         ImGui::EndChild();
@@ -435,9 +437,9 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         // ----------------------------------------------------------
         // ----------------------------------------------------------
         // Right panel - Tabs bar
-        auto tabBarFalgs = ImGuiTabBarFlags_None;
+        auto tabBarFlags = ImGuiTabBarFlags_None;
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 6));
-        if (!ImGui::BeginTabBar("##workspaceTabs", tabBarFalgs))
+        if (!ImGui::BeginTabBar("##workspaceTabs", tabBarFlags))
         {
             ImGui::PopStyleVar();
         }
@@ -500,20 +502,13 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                             ImGui::TableNextColumn();
                             auto selectableFlags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap;
                             if (ImGui::Selectable(filename.c_str(), false, selectableFlags))
-                            {
-                                mPlaylist.index = row;
-                                world->emit<FileSystemLoadTaskEvent>
-                                ({
-                                    .type = FileSystemLoadTaskEvent::LOAD_FILE,
-                                    .path = item
-                                });
-                            }
+                                processPlaylistSelection(world, row, false);
 
                             // Column [RIGHT] - Button(s)
                             auto buttonDeleteId = fmt::format("\ufa78##playListRowDelete{:d}", row);
                             ImGui::TableNextColumn();
                             if (ImGui::SmallButton(buttonDeleteId.c_str()))
-                                mPlaylist.paths.erase(mPlaylist.paths.begin()+row);
+                                processPlaylistSelection(world, row, true);
                         }
                     }
                     ImGui::EndTable();
@@ -717,10 +712,10 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
     // Compute the position of the first notification (top-right corner under the menu bar)
     auto positionX = io.DisplaySize.x - (style.WindowPadding.x + style.DisplaySafeAreaPadding.x);
     auto positionY = ImGui::GetCursorPosY() + style.WindowPadding.y + style.DisplaySafeAreaPadding.y;
+    windowPos = ImVec2(positionX, positionY);
     windowMinSize = ImVec2(450, 50);
     windowMaxSize = ImVec2(450, 250);
     windowPivot = ImVec2(1, 0);
-    windowPos = ImVec2(positionX, positionY);
     windowFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove
         | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
 
@@ -743,27 +738,29 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
             ImGui::SetNextWindowBgAlpha(0.95f);
 
             auto notifId = fmt::format("##Notif{:d}", rowId).c_str();
-            ImGui::Begin(notifId, nullptr, windowFlags);
-            if (it->type == NotificationMessageEvent::ERROR)
+            if (ImGui::Begin(notifId, nullptr, windowFlags))
             {
-                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.69f, 0.2f, 0.2f, 1.0f));
-                ImGui::TextWrapped("%s", it->message.c_str());
-                ImGui::PopStyleColor();
-            }
-            else
-            {
-                ImGui::TextWrapped("%s", it->message.c_str());
-            }
-            ImGui::NewLine();
-            auto progressSize = ImVec2(ImGui::GetContentRegionAvailWidth(), 6);
-            ImGui::ProgressBar(it->displayTimeMs / mNotificationDisplayTimeMs, progressSize, "");
+                if (it->type == NotificationMessageEvent::ERROR)
+                {
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.69f, 0.2f, 0.2f, 1.0f));
+                    ImGui::TextWrapped("%s", it->message.c_str());
+                    ImGui::PopStyleColor();
+                }
+                else
+                {
+                    ImGui::TextWrapped("%s", it->message.c_str());
+                }
+                ImGui::NewLine();
+                auto progressSize = ImVec2(ImGui::GetContentRegionAvailWidth(), 6);
+                ImGui::ProgressBar(it->displayTimeMs / mNotificationDisplayTimeMs, progressSize, "");
 
-            // Next notification "y" start
-            windowPos.y += ImGui::GetWindowSize().y + style.WindowPadding.y;
-            ++it;
-            ++rowId;
+                // Next notification "y" start
+                windowPos.y += ImGui::GetWindowSize().y + style.WindowPadding.y;
+                ++it;
+                ++rowId;
 
-            ImGui::End();
+                ImGui::End();
+            }
         }
     }
 
@@ -836,11 +833,64 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
 void UiSystem::receive(ECS::World* world, const NotificationMessageEvent& event)
 {
     TRACE("Received NotificationMessageEvent type {:d} : {:s}.", event.type, event.message);
+    pushNotification(event.type, event.message);
+}
 
+void UiSystem::pushNotification(NotificationMessageEvent::Type type, std::string message)
+{
+    // Add a new notification object into the list
     mNotifications.push_back
     ({
-        .type = event.type,
-        .message = event.message,
+        .type = type,
+        .message = message,
         .displayTimeMs = mNotificationDisplayTimeMs
     });
 }
+
+bool UiSystem::isFileSupported(std::string path)
+{
+    // Check extension supported (convert to lower case beforehand)
+    std::transform(path.begin(), path.end(), path.begin(), ::tolower);
+    auto fileExtension = std::filesystem::path(path).extension();
+
+    for (auto& pluginInfo : mPluginInformations)
+        for (auto extension : pluginInfo.supportedExtensions)
+            if (extension == fileExtension)
+                return true;
+
+    return false;
+}
+
+void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent::Item item, bool addToPlaylist)
+{
+    // Build the item path and send it to the filesystem to be loaded or add it to the playlist
+    auto itemPath =  std::filesystem::path(mCurrentPath) / item.name;
+
+    if (addToPlaylist)
+        mPlaylist.paths.push_back(itemPath);
+    else
+        world->emit<FileSystemLoadTaskEvent>
+        ({
+            .type = item.isFolder
+                ? FileSystemLoadTaskEvent::LOAD_DIRECTORY
+                : FileSystemLoadTaskEvent::LOAD_FILE,
+            .path = itemPath
+        });
+}
+
+ void UiSystem::processPlaylistSelection(ECS::World* world, int selectedIndex, bool remove)
+ {
+     if (remove)
+     {
+        mPlaylist.paths.erase(mPlaylist.paths.begin()+selectedIndex);
+     }
+    else
+    {
+        mPlaylist.index = selectedIndex;
+        world->emit<FileSystemLoadTaskEvent>
+        ({
+            .type = FileSystemLoadTaskEvent::LOAD_FILE,
+            .path = mPlaylist.paths[selectedIndex]
+        });
+    }
+ }
