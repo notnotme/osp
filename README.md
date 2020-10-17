@@ -32,8 +32,7 @@ To be able to compile the project you need the following libraries installed in 
 Currently this code can be build for Nintendo Switch and Linux but you may need to tweak the Makefile.sdl to fit your Linux needs.
 I essentially target the switch and the other build help me for debug purpose.
 
-This source code is bundled with a version of ImGui (1.79 tables branch).
-- [ImGui](https://github.com/ocornut/imgui)
+This source code is bundled with a version of [ImGui](https://github.com/ocornut/imgui) (1.79 tables branch) and [ECS](https://github.com/redxdev/ECS).
 
 And some font:
 - [Atari ST 8x16](https://www.dafont.com/fr/atari-st-8x16-system-font.font)
