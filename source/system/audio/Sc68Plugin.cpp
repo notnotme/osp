@@ -62,13 +62,17 @@ void Sc68Plugin::setup(Config config)
     Plugin::setup(config);
 
     if (sc68_init(nullptr))
+    {
         throw std::runtime_error("sc68_init failed");
+    }
 
     mSC68Config = {0};
     mSC68Config.sampling_rate = 48000;
     mSC68 = sc68_create(&mSC68Config);
     if (mSC68 == nullptr)
+    {
         throw std::runtime_error(sc68_error(mSC68));
+    }
 }
 
 void Sc68Plugin::cleanup()
@@ -89,11 +93,15 @@ void Sc68Plugin::open(const std::vector<uint8_t>& buffer)
     bool alwaysStartFirstTrack = mConfig.get("first_track_always", true);
 
     if (sc68_load_mem(mSC68, buffer.data(), buffer.size()) != 0)
+    {
         throw std::runtime_error(sc68_error(mSC68));
+    }
 
     sc68_cntl(mSC68, SC68_SET_ASID, aSIDifierEnabled ? SC68_ASID_ON : SC68_ASID_OFF);
     if (sc68_play(mSC68, alwaysStartFirstTrack ? 1 : SC68_DEF_TRACK, loop ? SC68_INF_LOOP : SC68_DEF_LOOP) < 0)
+    {
         throw std::runtime_error(sc68_error(mSC68));
+    }
 
     sc68_music_info_t diskInfo;
     sc68_process(mSC68, nullptr, 0);
@@ -115,7 +123,9 @@ int Sc68Plugin::getTrackCount()
 void Sc68Plugin::setSubSong(int subsong)
 {
     if (mSC68 == nullptr)
+    {
         return;
+    }
 
     if (subsong > 0 && subsong <= mTrackCount)
     {
@@ -144,7 +154,9 @@ void Sc68Plugin::close()
 bool Sc68Plugin::decode(uint8_t *stream, size_t len)
 {
     if (mSC68 == nullptr)
+    {
         return false;
+    }
 
     SDL_LockMutex(mMutex);
     auto amount = (int) len / 4;
@@ -152,7 +164,9 @@ bool Sc68Plugin::decode(uint8_t *stream, size_t len)
     SDL_UnlockMutex(mMutex);
 
     if (retCode == SC68_ERROR)
+    {
         throw std::runtime_error(sc68_error(mSC68));
+    }
 
     return !(retCode & SC68_END);
 }
@@ -161,21 +175,29 @@ void Sc68Plugin::drawSettings(ECS::World *world, LanguageFile languageFile, floa
 {
     bool alwaysStartFirstTrack = mConfig.get("first_track_always", true);
     if (ImGui::Checkbox(languageFile.getc("plugin.always_start_first_track"), &alwaysStartFirstTrack))
+    {
         mConfig.set("first_track_always", alwaysStartFirstTrack);
+    }
 
     auto loop = mConfig.get("loop", false);
     if (ImGui::Checkbox(languageFile.getc("plugin.loop_song"), &loop))
+    {
         mConfig.set("loop", loop);
+    }
 
     bool aSIDifierEnabled = mConfig.get("enable_asidifier", false);
     if (ImGui::Checkbox(languageFile.getc("plugin.enable_asidifier"), &aSIDifierEnabled))
+    {
         mConfig.set("enable_asidifier", aSIDifierEnabled);
+    }
 }
 
 void Sc68Plugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile, float deltaTime)
 {
     if (mSC68 == nullptr)
+    {
         return;
+    }
 
     sc68_music_info_t trackInfo;
 
@@ -183,12 +205,13 @@ void Sc68Plugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile, f
     mCurrentTrack = sc68_cntl(mSC68, SC68_GET_TRACK);
     int trackResult = sc68_music_info(mSC68, &trackInfo, mCurrentTrack, 0);
     auto position = sc68_cntl(mSC68, SC68_GET_POS) / 1000;
+    auto duration = trackInfo.trk.time_ms / 1000;
     SDL_UnlockMutex(mMutex);
 
     if (trackResult != 0)
+    {
         return;
-
-    auto duration = trackInfo.trk.time_ms / 1000;
+    }
 
     if (Plugin::beginTable(languageFile.getc("player"), false))
     {
@@ -203,7 +226,9 @@ void Sc68Plugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile, f
 void Sc68Plugin::drawMetadata(ECS::World* world, LanguageFile languageFile, float deltaTime)
 {
     if (mSC68 == nullptr)
+    {
         return;
+    }
 
     sc68_music_info_t diskInfo;
     sc68_music_info_t trackInfo;
@@ -214,7 +239,9 @@ void Sc68Plugin::drawMetadata(ECS::World* world, LanguageFile languageFile, floa
     SDL_UnlockMutex(mMutex);
 
     if (diskResult != 0 || trackResult != 0)
+    {
         return;
+    }
 
     if (Plugin::beginTable(languageFile.getc("metadata"), false))
     {

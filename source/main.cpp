@@ -43,13 +43,17 @@ int main(int argc, char *argv[])
     // 1280x720 = screen size in portable mode
     auto switchIsDocked = false;
     if (R_FAILED(romfsInit()))
+    {
         throw std::runtime_error("romfsInit failed");
+    }
 
     TRACE("SWITCH started romfs module.");
 #endif
 
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMECONTROLLER) < 0)
+    {
         throw std::runtime_error(SDL_GetError());
+    }
 
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, 0);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
@@ -66,7 +70,9 @@ int main(int argc, char *argv[])
 
     auto* window = SDL_CreateWindow("OSP", 0, 0, w, h, windowFlags);
     if (!window)
+    {
         throw std::runtime_error(SDL_GetError());
+    }
 
     TRACE("SDL_Window created.");
 
@@ -76,14 +82,18 @@ int main(int argc, char *argv[])
     SDL_GL_SetSwapInterval(1);
 
     if (gladLoadGL() == 0)
+    {
         throw std::runtime_error("gladLoadGL failed");
+    }
 
     TRACE("OpenGL context created.");
 
 #if defined(__SWITCH__)
     // Critical on platform with only a gamepad
     if (SDL_GameControllerOpen(0) == nullptr)
+    {
         throw std::runtime_error(SDL_GetError());
+    }
 #endif
 
     // Try to load app config from disk
@@ -107,7 +117,9 @@ int main(int argc, char *argv[])
         auto folder = fmt::format("{:s}lang", DATAPATH);
         auto lang = config.get("lang", (int) LanguageFile::Language::ENGLISH);
         if (lang < 0 || lang >= LanguageFile::Language::MAX_LANG)
+        {
             lang = 0;
+        }
 
         languageFile.load(folder, (LanguageFile::Language) lang);
         TRACE("Language file loaded {:s}", languageFile.getFilename());
@@ -204,7 +216,9 @@ int main(int argc, char *argv[])
 
 #if defined(__SWITCH__)
     if (R_FAILED(romfsExit()))
+    {
         throw std::runtime_error("romfsExit failed");
+    }
 
     TRACE("SWITCH stopped romfs module.");
 #endif

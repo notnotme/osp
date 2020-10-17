@@ -42,7 +42,9 @@ void AtlasTexture::setup(std::string filename)
 
     root = json_load_file(filename.c_str(), 0, &error);
     if (root == nullptr)
+    {
         throw std::runtime_error("json_load_file failed");
+    }
 
     // META ----------------------
     meta = json_object_get(root, "meta");
@@ -62,7 +64,9 @@ void AtlasTexture::setup(std::string filename)
 
     value = json_object_get(size, "w");
     if (value != nullptr)
+    {
         catalogWidth = json_integer_value(value);
+    }
     else
     {
         json_decref(root);
@@ -71,7 +75,9 @@ void AtlasTexture::setup(std::string filename)
 
     value = json_object_get(size, "h");
     if (value != nullptr)
+    {
         catalogHeight = json_integer_value(value);
+    }
     else
     {
         json_decref(root);
@@ -80,7 +86,9 @@ void AtlasTexture::setup(std::string filename)
 
     value = json_object_get(meta, "image");
     if (value != nullptr)
+    {
         associatedImage = json_string_value(value);
+    }
     else
     {
         json_decref(root);
@@ -123,13 +131,17 @@ void AtlasTexture::setup(std::string filename)
     // Creating the OpenGL texture to store image data in graphic memory
     glGenTextures(1, &mTextureId);
     if (mTextureId < 0)
+    {
         throw std::runtime_error("Can't create texture for atlas");
+    }
 
     // Load image data into the texture
     auto imageFilename = std::filesystem::path(filename).replace_filename(associatedImage);
     auto* image = IMG_Load(imageFilename.c_str());
     if (image == nullptr)
+    {
         throw std::runtime_error("Unable to load the atlas image");
+    }
 
     glBindTexture(GL_TEXTURE_2D, mTextureId);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
@@ -147,7 +159,9 @@ void AtlasTexture::cleanup()
 
     // Deletet texture from graphic memory
     if (mTextureId >= 0)
+    {
         glDeleteTextures(1, &mTextureId);
+    }
 }
 
 GLuint AtlasTexture::getTextureId() const
@@ -158,7 +172,9 @@ GLuint AtlasTexture::getTextureId() const
 AtlasTexture::AtlasRect AtlasTexture::getAtlasRect(std::string name)
 {
     if (mCatalog.find(name) != mCatalog.end())
+    {
         return mCatalog[name];
+    }
 
     throw std::runtime_error("AtlasRect not found");
 }

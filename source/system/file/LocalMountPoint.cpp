@@ -40,7 +40,9 @@ void LocalMountPoint::cleanup()
 void LocalMountPoint::navigate(std::filesystem::path path, ItemListener itemListener)
 {
     if (!std::filesystem::exists(path) || !std::filesystem::is_directory(path))
+    {
         throw std::runtime_error("Failed to open the requested directory");
+    }
 
     auto iterator = std::filesystem::directory_iterator(path);
     for (auto& p : iterator)
@@ -55,7 +57,9 @@ void LocalMountPoint::navigate(std::filesystem::path path, ItemListener itemList
             {
                 auto doContinue = itemListener(filename, isDirectory, isFile ? p.file_size() : 0);
                 if (!doContinue)
+                {
                     return; // Listener tell us to stop
+                }
             }
         }
     }
@@ -64,7 +68,9 @@ void LocalMountPoint::navigate(std::filesystem::path path, ItemListener itemList
 void LocalMountPoint::getFile(std::filesystem::path path, size_t chunkBufferSize, FileListener fileListener)
 {
     if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path))
+    {
         throw std::runtime_error("Failed to open the requested file");
+    }
 
     std::ifstream ifs(path, std::ios::in | std::ios::binary);
     if (!ifs.good())
@@ -81,11 +87,15 @@ void LocalMountPoint::getFile(std::filesystem::path path, size_t chunkBufferSize
 
         size_t readCount = ifs.gcount();
         if (readCount != chunkBufferSize)
+        {
             readBuffer.resize(readCount);
+        }
 
         auto doContinue = fileListener(readBuffer);
         if (!doContinue)
+        {
             break; // Listener tells us to stop
+        }
     }
     ifs.close();
 }

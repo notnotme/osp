@@ -72,11 +72,15 @@ void GmePlugin::open(const std::vector<uint8_t>& buffer)
 {
     auto header = gme_identify_header(buffer.data());
     if (header[0] == '\0')
+    {
         throw std::runtime_error(gme_wrong_file_type);
+    }
 
     auto error = gme_open_data(buffer.data(), buffer.size(), &mMusicEmu, 48000);
     if (error != nullptr)
+    {
         throw std::runtime_error(error);
+    }
 
     auto enableAccuracy = mConfig.get("enable_accuracy", true);
     auto loadPlaybackLimit = mConfig.get("autoload_playback_limit", true);
@@ -104,7 +108,9 @@ int GmePlugin::getTrackCount()
 void GmePlugin::setSubSong(int subsong)
 {
     if (mMusicEmu == nullptr)
+    {
         return;
+    }
 
     if (subsong > 0 && subsong <= mTrackCount)
     {
@@ -130,13 +136,15 @@ void GmePlugin::close()
 bool GmePlugin::decode(uint8_t* stream, size_t len)
 {
     if (mMusicEmu == nullptr)
+    {
         return false;
+    }
 
     SDL_LockMutex(mMutex);
     auto size = (int) len / 2;
     auto error = gme_play(mMusicEmu, size, (short*) stream);
-
     bool ended = gme_track_ended(mMusicEmu);
+
     if (ended && mCurrentTrack+1 < mTrackCount)
     {
         mCurrentTrack++;
@@ -146,7 +154,9 @@ bool GmePlugin::decode(uint8_t* stream, size_t len)
     SDL_UnlockMutex(mMutex);
 
     if (error != nullptr)
+    {
         throw std::runtime_error(error);
+    }
 
     return !ended;
 }
@@ -155,21 +165,29 @@ void GmePlugin::drawSettings(ECS::World* world, LanguageFile languageFile, float
 {
     auto enableAccuracy = mConfig.get("enable_accuracy", true);
     if (ImGui::Checkbox(languageFile.getc("plugin.enable_accuracy"), &enableAccuracy))
+    {
         mConfig.set("enable_accuracy", enableAccuracy);
+    }
 
     auto loadPlaybackLimit = mConfig.get("autoload_playback_limit", true);
     if (ImGui::Checkbox(languageFile.getc("plugin.autoload_playback_limit"), &loadPlaybackLimit))
+    {
         mConfig.set("autoload_playback_limit", loadPlaybackLimit);
+    }
 
     auto ignoreSilence = mConfig.get("ignore_silence", false);
     if (ImGui::Checkbox(languageFile.getc("plugin.ignore_silence"), &ignoreSilence))
+    {
         mConfig.set("ignore_silence", ignoreSilence);
+    }
 }
 
 void GmePlugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile, float deltaTime)
 {
     if (mMusicEmu == nullptr)
+    {
         return;
+    }
 
     gme_info_t* info;
     SDL_LockMutex(mMutex);
@@ -193,7 +211,9 @@ void GmePlugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile, fl
 void GmePlugin::drawMetadata(ECS::World* world, LanguageFile languageFile, float deltaTime)
 {
     if (mMusicEmu == nullptr)
+    {
         return;
+    }
 
     gme_info_t* info;
     SDL_LockMutex(mMutex);

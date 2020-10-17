@@ -36,50 +36,70 @@ Config::~Config()
 Config Config::getGroupOrCreate(std::string key)
 {
     if (mSetting == nullptr)
+    {
         throw std::runtime_error("Invalid Config object");
+    }
 
     if (!mSetting->exists(key))
+    {
         return Config(&mSetting->add(key, libconfig::Setting::Type::TypeGroup));
-    else
-        return Config(&mSetting->lookup(key));
+    }
+
+    return Config(&mSetting->lookup(key));
 }
 
 int Config::get(std::string key, int defaultValue) const {
     if (mSetting == nullptr)
+    {
         throw std::runtime_error("Invalid Config object");
+    }
 
     if (!mSetting->exists(key))
+    {
         return defaultValue;
+    }
 
     return mSetting->lookup(key);
 }
 
 bool Config::get(std::string key, bool defaultValue) const {
     if (mSetting == nullptr)
+    {
         throw std::runtime_error("Invalid Config object");
+    }
 
     if (!mSetting->exists(key))
+    {
         return defaultValue;
+    }
 
     return mSetting->lookup(key);
 }
 
 std::string Config::get(std::string key, std::string defaultValue) const {
     if (mSetting == nullptr)
+    {
         throw std::runtime_error("Invalid Config object");
+    }
 
     if (!mSetting->exists(key))
+    {
         return defaultValue;
+    }
 
     return mSetting->lookup(key);
 }
 
 void Config::set(std::string key, int value) const {
     if (mSetting == nullptr)
+    {
         throw std::runtime_error("Invalid Config object");
+    }
 
     if (!mSetting->exists(key))
+    {
         mSetting->add(key, libconfig::Setting::Type::TypeInt);
+    }
 
     auto& setting = mSetting->lookup(key);
     setting = value;
@@ -87,10 +107,14 @@ void Config::set(std::string key, int value) const {
 
 void Config::set(std::string key, bool value) const {
     if (mSetting == nullptr)
+    {
         throw std::runtime_error("Invalid Config object");
+    }
 
     if (!mSetting->exists(key))
+    {
         mSetting->add(key, libconfig::Setting::Type::TypeBoolean);
+    }
 
     auto& setting = mSetting->lookup(key);
     setting = value;
@@ -98,10 +122,14 @@ void Config::set(std::string key, bool value) const {
 
 void Config::set(std::string key, std::string value) const {
     if (mSetting == nullptr)
+    {
         throw std::runtime_error("Invalid Config object");
+    }
 
     if (!mSetting->exists(key))
+    {
         mSetting->add(key, libconfig::Setting::Type::TypeString);
+    }
 
     auto& setting = mSetting->lookup(key);
     setting = value;
@@ -129,7 +157,9 @@ Config ConfigFile::getGroupOrCreate(std::string key)
 {
     auto& root = mConfig.getRoot();
     if (!root.exists(key))
+    {
         return Config(&root.add(key, libconfig::Setting::Type::TypeGroup));
-    else
-        return Config(&root.lookup(key));
+    }
+
+    return Config(&root.lookup(key));
 }

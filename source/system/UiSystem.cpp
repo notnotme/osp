@@ -60,10 +60,14 @@ void UiSystem::configure(ECS::World* world)
     auto mouseEmulation = mConfig.get("mouse_emulation", true);
     auto glContext = SDL_GL_GetCurrentContext();
     if (!ImGui_ImplSDL2_InitForOpenGL(mWindow, glContext, mouseEmulation))
+    {
         throw std::runtime_error("ImGui_ImplSDL2_InitForOpenGL failed");
+    }
 
     if (!ImGui_ImplOpenGL3_Init("#version 330 core"))
+    {
         throw std::runtime_error("ImGui_ImplOpenGL3_Init failed");
+    }
 
     // ImGui configuration & style
     auto& io = ImGui::GetIO();
@@ -78,7 +82,9 @@ void UiSystem::configure(ECS::World* world)
 
     auto touchEnabled = mConfig.get("touch_enabled", false);
     if (touchEnabled)
+    {
         io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
+    }
 #endif
 
     auto& style = ImGui::GetStyle();
@@ -194,9 +200,13 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
             ImGui::MenuItem("\ufd4a ImGui Metrics", nullptr, &mShowMetricsWindow);
             ImGui::Separator();
             if (ImGui::MenuItem("\ufd4a ERROR notification"))
+            {
                 pushNotification(NotificationMessageEvent::ERROR, "This is an error notification");
+            }
             if (ImGui::MenuItem("\ufd4a INFO notification"))
+            {
                 pushNotification(NotificationMessageEvent::INFO, "This is an info notification");
+            }
             ImGui::EndMenu();
         }
 #endif
@@ -206,8 +216,13 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         auto textOffsetX = (ImGui::GetWindowContentRegionWidth() - style.FramePadding.x) - textSize.x;
 
         // Status message & FPS
-        ImGui::Separator(); ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogramHovered], "%s", mStatusMessage.c_str()); ImGui::SameLine(textOffsetX, 0);
-        ImGui::Separator(); ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogramHovered], "%s", fpsText);
+        ImGui::Separator();
+        ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogramHovered], "%s", mStatusMessage.c_str());
+
+        ImGui::SameLine(textOffsetX, 0);
+        ImGui::Separator();
+        ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogramHovered], "%s", fpsText);
+
         ImGui::EndMainMenuBar();
     }
     ImGui::PopStyleVar();
@@ -272,15 +287,21 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                     // Column 1 - File icon+name
                     ImGui::TableNextColumn();
                     if (item.isFolder)
+                    {
                         ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogram], item.name == ".." ? "\uf259" : "\uf24b");
+                    }
                     else
+                    {
                         ImGui::TextColored(style.Colors[ImGuiCol_PlotLines], "\uf214");
+                    }
 
                     ImGui::SameLine();
                     if (ImGui::Selectable(rowId, rowIsSelected, ImGuiSelectableFlags_SpanAllColumns))
                     {
                         if (item.isFolder || isFileSupported(item.name))
+                        {
                             processFileItemSelection(world, item, false);
+                        }
                         else
                         {
                             // The file is not usable by any audio plugin
@@ -294,7 +315,9 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                     if (item.name != ".." && ImGui::BeginPopupContextItem(rowId, ImGuiPopupFlags_MouseButtonRight))
                     {
                         if (ImGui::MenuItem("\uf416 Add to playlist", nullptr, false, !item.isFolder && isFileSupported(item.name)))
+                        {
                             processFileItemSelection(world, item, true);
+                        }
                         ImGui::EndPopup();
                     }
 
@@ -339,7 +362,9 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
 
                     auto numPoints = (int) (ImGui::GetTime() * 3) % 4;
                     for (auto i=0; i<numPoints; ++i)
+                    {
                         strLoading.push_back('.');
+                    }
 
                     // Center in the table
                     auto buttonSize = ImVec2(200, textSize.y * 1.5f);
@@ -351,7 +376,9 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                     ImGui::NewLine();
                     ImGui::SetCursorPosX(spaceAvail.x/2 - buttonSize.x/2);
                     if (ImGui::Button(mLanguageFile.getc("cancel"), buttonSize))
+                    {
                         world->emit<FileSystemCancelTaskEvent>({});
+                    }
                     ImGui::End();
                 }
             }
@@ -379,12 +406,14 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         ImGui::NewLine(); ImGui::SameLine(startX);
         ImGui::PushID(ImGui::GetID("playerButtonPlay"));
         if (ImGui::ImageButton((ImTextureID)(intptr_t) textureId, buttonSize, buttonUV, buttonST))
+        {
             switch (mAudioSystemStatus)
             {
                 case PLAYING:   world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::PAUSE}); break;
                 case PAUSED:    world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::PLAY}); break;
                 default: break;
             }
+        }
         ImGui::PopID();
 
         buttonSize = ImVec2(stopSprite.width, stopSprite.height);
@@ -392,7 +421,9 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         buttonST = ImVec2(stopSprite.right, stopSprite.bottom);
         ImGui::SameLine(); ImGui::PushID(ImGui::GetID("playerButtonStop"));
         if (ImGui::ImageButton((ImTextureID)(intptr_t) textureId, buttonSize, buttonUV, buttonST))
+        {
             world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
+        }
         ImGui::PopID();
 
         buttonSize = ImVec2(prevSprite.width, prevSprite.height);
@@ -400,7 +431,9 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         buttonST = ImVec2(prevSprite.right, prevSprite.bottom);
         ImGui::SameLine(); ImGui::PushID(ImGui::GetID("playerButtonPrev"));
         if (ImGui::ImageButton((ImTextureID)(intptr_t) textureId, buttonSize, buttonUV, buttonST))
+        {
             world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::PREV_SUBSONG});
+        }
         ImGui::PopID();
 
         buttonSize = ImVec2(nextSprite.width, nextSprite.height);
@@ -408,7 +441,9 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         buttonST = ImVec2(nextSprite.right, nextSprite.bottom);
         ImGui::SameLine(); ImGui::PushID(ImGui::GetID("playerButtonNext"));
         if (ImGui::ImageButton((ImTextureID)(intptr_t) textureId, buttonSize, buttonUV, buttonST))
+        {
             world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::NEXT_SUBSONG});
+        }
         ImGui::PopID();
 
         // ----------------------------------------------------------
@@ -494,21 +529,29 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                             // Column [LEFT] - icon
                             ImGui::TableNextColumn();
                             if (mPlaylist.index == row)
+                            {
                                 ImGui::TextUnformatted("\ufa12");
+                            }
                             else
+                            {
                                 ImGui::TextDisabled("\ufa13");
+                            }
 
                             // Column [MIDDLE] - name
                             ImGui::TableNextColumn();
                             auto selectableFlags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap;
                             if (ImGui::Selectable(filename.c_str(), false, selectableFlags))
+                            {
                                 processPlaylistSelection(world, row, false);
+                            }
 
                             // Column [RIGHT] - Button(s)
                             auto buttonDeleteId = fmt::format("\ufa78##playListRowDelete{:d}", row);
                             ImGui::TableNextColumn();
                             if (ImGui::SmallButton(buttonDeleteId.c_str()))
+                            {
                                 processPlaylistSelection(world, row, true);
+                            }
                         }
                     }
                     ImGui::EndTable();
@@ -551,7 +594,9 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
     {
         auto windowTitle = mLanguageFile.getc("about");
         if (!ImGui::IsPopupOpen(windowTitle))
+        {
             ImGui::OpenPopup(windowTitle);
+        }
 
         // Center on screen
         windowPos = ImVec2(io.DisplaySize.x/2, io.DisplaySize.y/2);
@@ -588,7 +633,9 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
             ImGui::BulletText("SDL %d.%d.%d", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL);
             ImGui::BulletText("Dear ImGui %s", ImGui::GetVersion());
             for (auto pluginInfo : mPluginInformations)
+            {
                 ImGui::BulletText("%s %s", pluginInfo.name.c_str(), pluginInfo.version.c_str());
+            }
             ImGui::NewLine();
             ImGui::TextUnformatted(mLanguageFile.getc("about.integrated_fonts"));
             ImGui::BulletText("Atari ST 8x16 System");
@@ -605,7 +652,9 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
     {
         auto windowTitle = mLanguageFile.getc("settings");
         if (!ImGui::IsPopupOpen(windowTitle))
+        {
             ImGui::OpenPopup(windowTitle);
+        }
 
         // Center on screen
         windowPos = ImVec2(io.DisplaySize.x/2, io.DisplaySize.y/2);
@@ -658,9 +707,13 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
             {
                 mConfig.set("touch_enabled", touchEnabled);
                 if (touchEnabled)
+                {
                     io.ConfigFlags |= ImGuiConfigFlags_IsTouchScreen;
+                }
                 else
+                {
                     io.ConfigFlags &= ~ImGuiConfigFlags_IsTouchScreen;
+                }
             }
 #endif
             // Display each plugin settings in it's own tab
@@ -694,10 +747,14 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
     // ImGui windows
 #ifndef NDEBUG
     if (mShowDemoWindow)
+    {
         ImGui::ShowDemoWindow(&mShowDemoWindow);
+    }
 
     if (mShowMetricsWindow)
+    {
         ImGui::ShowMetricsWindow(&mShowMetricsWindow);
+    }
 #endif
 
     // ----------------------------------------------------------
@@ -707,7 +764,9 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
     // Let's use a dumb solution to solve the problem: each time we have more than 9, remove the firsts in the stack until we have 9.
     // This take in account the smallest resolution the app is targetting (1280, 720).
     while (mNotifications.size() > 9)
+    {
         mNotifications.pop_front();
+    }
 
     // Compute the position of the first notification (top-right corner under the menu bar)
     auto positionX = io.DisplaySize.x - (style.WindowPadding.x + style.DisplaySafeAreaPadding.x);
@@ -792,7 +851,9 @@ void UiSystem::receive(ECS::World* world, const AudioSystemConfiguredEvent& even
 {
     TRACE("Received AudioSystemConfiguredEvent.");
     for (auto pluginInfo : event.pluginInformations)
+    {
         mPluginInformations.push_back(pluginInfo);
+    }
 }
 
 void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
@@ -801,10 +862,18 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
 
     if (event.type != AudioSystemPlayEvent::STOPPED)
     {
+        // Refresh current information about used plugin in needed
         if (!mCurrentPluginUsed.has_value() || (mCurrentPluginUsed.value().name != event.pluginName))
+        {
             for (auto pluginInfo : mPluginInformations)
+            {
                 if (pluginInfo.name == event.pluginName)
+                {
                     mCurrentPluginUsed.emplace(pluginInfo);
+                    break;
+                }
+            }
+        }
     }
     else
     {
@@ -854,9 +923,15 @@ bool UiSystem::isFileSupported(std::string path)
     auto fileExtension = std::filesystem::path(path).extension();
 
     for (auto& pluginInfo : mPluginInformations)
+    {
         for (auto extension : pluginInfo.supportedExtensions)
+        {
             if (extension == fileExtension)
+            {
                 return true;
+            }
+        }
+    }
 
     return false;
 }
@@ -867,8 +942,11 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
     auto itemPath =  std::filesystem::path(mCurrentPath) / item.name;
 
     if (addToPlaylist)
+    {
         mPlaylist.paths.push_back(itemPath);
+    }
     else
+    {
         world->emit<FileSystemLoadTaskEvent>
         ({
             .type = item.isFolder
@@ -876,6 +954,7 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
                 : FileSystemLoadTaskEvent::LOAD_FILE,
             .path = itemPath
         });
+    }
 }
 
  void UiSystem::processPlaylistSelection(ECS::World* world, int selectedIndex, bool remove)

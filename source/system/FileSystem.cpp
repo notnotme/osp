@@ -51,7 +51,9 @@ void FileSystem::configure(ECS::World* world)
 
     // Initialize all mount point
     for (auto* mountPoint : mMountPoints)
+    {
         mountPoint->setup();
+    }
 
     // Subscribe for events
     world->subscribe<FileSystemLoadTaskEvent>(this);
@@ -114,12 +116,14 @@ void FileSystem::listMountPoints(ECS::World* world)
 {
     auto items = std::vector<DirectoryLoadedEvent::Item>();
     for (auto* mountPoint : mMountPoints)
+    {
         items.push_back
         ({
             .isFolder = true,
             .name = mountPoint->getName(),
             .size = 0
         });
+    }
 
     world->emit<DirectoryLoadedEvent>
     ({
@@ -139,15 +143,19 @@ void FileSystem::receive(ECS::World* world, const FileSystemLoadTaskEvent& event
     mPathToNavigate.clear();
     auto path = std::filesystem::path(event.path);
     for (auto elm : path)
+    {
         mPathToNavigate.push_back(elm);
+    }
 
     // Replace the mount point name by his scheme if present
     for (auto* mountPoint : mMountPoints)
+    {
         if (mPathToNavigate[0] == mountPoint->getName())
         {
             mPathToNavigate[0] = mountPoint->getScheme();
             break;
         }
+    }
 
     if (event.type == FileSystemLoadTaskEvent::LOAD_DIRECTORY)
     {
@@ -178,7 +186,9 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
 {
     TRACE("Directory thread alive.");
     if (SDL_SetThreadPriority(SDL_THREAD_PRIORITY_LOW) != 0)
+    {
         TRACE("Set SDL_THREAD_PRIORITY_LOW failed");
+    }
 
     auto* fileSystem = (FileSystem*) thiz;
 
@@ -194,14 +204,18 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
     // Select the mount point to use
     auto* selectedMountPoint = (MountPoint*) nullptr;
     for (auto* mountPoint : fileSystem->mMountPoints)
+    {
         if (fileSystem->mPathToNavigate[0] == mountPoint->getScheme())
         {
             selectedMountPoint = mountPoint;
             break;
         }
+    }
 
     if (selectedMountPoint == nullptr)
+    {
         throw std::runtime_error(fmt::format("No mountpoint available to open {:s}", fileSystem->mPathToNavigate.back()));
+    }
 
     if (fileSystem->mPathToNavigate.back() == "..")
     {
@@ -212,7 +226,9 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
 
     auto path = std::filesystem::path();
     for (auto elm : fileSystem->mPathToNavigate)
+    {
         path /= elm;
+    }
 
     auto items = std::vector<DirectoryLoadedEvent::Item>();
     try
@@ -253,7 +269,11 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
         std::sort(items.begin(), items.end(),
         [](auto a, auto b)
         {
-            if (a.isFolder != b.isFolder) return a.isFolder;
+            if (a.isFolder != b.isFolder)
+            {
+                return a.isFolder;
+            }
+
             std::transform(a.name.begin(), a.name.end(), a.name.begin(), ::tolower);
             std::transform(b.name.begin(), b.name.end(), b.name.begin(), ::tolower);
             return a.name < b.name;
@@ -304,7 +324,9 @@ int FileSystem::workerThreadFuncFile(void* thiz)
 {
     TRACE("File thread alive.");
     if (SDL_SetThreadPriority(SDL_THREAD_PRIORITY_LOW) != 0)
+    {
         TRACE("Set SDL_THREAD_PRIORITY_LOW failed");
+    }
 
     auto fileSystem = (FileSystem*) thiz;
     fileSystem->mWorkerThreadState = WORKING;
@@ -320,11 +342,13 @@ int FileSystem::workerThreadFuncFile(void* thiz)
     // Select mountpoint to use
     auto* selectedMountPoint = (MountPoint*) nullptr;
     for (auto* mountPoint : fileSystem->mMountPoints)
+    {
         if (fileSystem->mPathToNavigate[0] == mountPoint->getScheme())
         {
             selectedMountPoint = mountPoint;
             break;
         }
+    }
 
     if (selectedMountPoint == nullptr)
     {
@@ -346,7 +370,9 @@ int FileSystem::workerThreadFuncFile(void* thiz)
 
     auto path = std::filesystem::path();
     for (auto elm : fileSystem->mPathToNavigate)
+    {
         path /= elm;
+    }
 
     auto fileBuffer = std::vector<uint8_t>();
     try

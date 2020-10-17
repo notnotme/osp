@@ -62,21 +62,27 @@ void AudioSystem::configure(ECS::World* world)
     // Check if the audio device can handle the requested format (open device allowing format change then close it)
     mAudioDevice = SDL_OpenAudioDevice(nullptr, 0, &wantedAudioSpec, &obtainedAudioSpec, SDL_AUDIO_ALLOW_ANY_CHANGE);
     if (mAudioDevice <= 0)
+    {
         throw std::runtime_error(SDL_GetError());
+    }
 
     // Reopen the device but force our format to be used (SDL will ressample)
     SDL_CloseAudioDevice(mAudioDevice);
     if (wantedAudioSpec.channels != obtainedAudioSpec.channels
         || wantedAudioSpec.freq != obtainedAudioSpec.freq
         || wantedAudioSpec.format != obtainedAudioSpec.format)
-            TRACE("SDL will ressample sound data from {:d} channels {:d}Hz (0x{:X}) to {:d} channels {:d}Hz (0x{:X})",
-                wantedAudioSpec.channels, wantedAudioSpec.freq, wantedAudioSpec.format,
-                obtainedAudioSpec.channels, obtainedAudioSpec.freq, obtainedAudioSpec.format);
+    {
+        TRACE("SDL will ressample sound data from {:d} channels {:d}Hz (0x{:X}) to {:d} channels {:d}Hz (0x{:X})",
+            wantedAudioSpec.channels, wantedAudioSpec.freq, wantedAudioSpec.format,
+            obtainedAudioSpec.channels, obtainedAudioSpec.freq, obtainedAudioSpec.format);
+    }
 
     // Reopen the device but force using our format this time
     mAudioDevice = SDL_OpenAudioDevice(nullptr, 0, &wantedAudioSpec, &obtainedAudioSpec, 0);
     if (mAudioDevice <= 0)
+    {
         throw std::runtime_error(SDL_GetError());
+    }
 
     TRACE("Current driver: {:s} {:d} channels {:d}Hz (0x{:X}), buffer size: {:d}",
         SDL_GetCurrentAudioDriver(), obtainedAudioSpec.channels, obtainedAudioSpec.freq, obtainedAudioSpec.format, obtainedAudioSpec.samples);
@@ -192,7 +198,9 @@ void AudioSystem::stopAudio(ECS::World* world)
     mCurrentFileLoaded = "";
 
     if (world != nullptr)
+    {
         world->emit<AudioSystemPlayEvent>(event);
+    }
     else
     {
         // If World is null place the event in the optional, this was probably called from a thread (audio callback)
@@ -246,12 +254,14 @@ void AudioSystem::receive(ECS::World* world, const FileLoadedEvent& event)
     for (auto* plugin : mPlugins)
     {
         for (auto extension : plugin->getSupportedExtensions())
+        {
             if (extension == fileExtension)
             {
                 TRACE("Selecting {:s} plugin.", plugin->getName());
                 mCurrentPlugin = plugin;
                 break;
             }
+        }
     }
 
     if (mCurrentPlugin == nullptr)
@@ -299,7 +309,9 @@ void AudioSystem::receive(ECS::World* world, const AudioSystemPlayTaskEvent& eve
 {
     TRACE("Received AudioSystemPlayTaskEvent: {:d}.", event.type);
     if (mCurrentPlugin == nullptr || mPlayStatus == NO_FILE)
+    {
         return;
+    }
 
     switch (event.type)
     {
@@ -337,29 +349,43 @@ void AudioSystem::receive(ECS::World* world, const AudioSystemPlayTaskEvent& eve
         break;
         case AudioSystemPlayTaskEvent::PREV_SUBSONG:
             if (mCurrentPlugin->getTrackCount() <= 1)
+            {
                 break;
+            }
 
             SDL_PauseAudioDevice(mAudioDevice, true);
             if (mCurrentPlugin->getCurrentTrack() > 1)
+            {
                 mCurrentPlugin->setSubSong(mCurrentPlugin->getCurrentTrack()-1);
+            }
 
             if (mPlayStatus != PAUSED)
+            {
                 SDL_PauseAudioDevice(mAudioDevice, false);
+            }
         break;
         case AudioSystemPlayTaskEvent::NEXT_SUBSONG:
             if (mCurrentPlugin->getTrackCount() <= 1)
+            {
                 break;
+            }
 
             SDL_PauseAudioDevice(mAudioDevice, true);
             if (mCurrentPlugin->getCurrentTrack() < mCurrentPlugin->getTrackCount())
+            {
                 mCurrentPlugin->setSubSong(mCurrentPlugin->getCurrentTrack()+1);
+            }
 
             if (mPlayStatus != PAUSED)
+            {
                 SDL_PauseAudioDevice(mAudioDevice, false);
+            }
         break;
         case AudioSystemPlayTaskEvent::STOP:
             if (mPlayStatus != NO_FILE)
+            {
                 stopAudio(world);
+            }
         break;
     }
 }

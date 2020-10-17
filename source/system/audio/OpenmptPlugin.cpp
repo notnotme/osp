@@ -54,7 +54,9 @@ std::vector<std::string> OpenmptPlugin::getSupportedExtensions()
     extensionsWithoutDot.reserve(extensionsWithoutDot.size());
 
     for (auto ext : extensionsWithoutDot)
+    {
         extensionsWithDot.push_back(fmt::format(".{:s}", ext));
+    }
 
     return extensionsWithDot;
 }
@@ -91,8 +93,6 @@ int OpenmptPlugin::getTrackCount()
 
 void OpenmptPlugin::setSubSong(int subsong)
 {
-    if (mModule == nullptr)
-        return;
 }
 
 void OpenmptPlugin::close()
@@ -107,13 +107,18 @@ void OpenmptPlugin::close()
 bool OpenmptPlugin::decode(uint8_t* stream, size_t len)
 {
     if (mModule == nullptr)
+    {
         return false;
+    }
 
     SDL_LockMutex(mMutex);
     auto size = (size_t) len / 4;
     auto reads = mModule->read_interleaved_stereo(48000, size, (int16_t*) stream);
-    if (reads != size && mLoopEnabled) // loop
+    if (reads != size && mLoopEnabled)
+    {
+        // loop
         reads = mModule->read_interleaved_stereo(48000, size - reads, (int16_t*) &stream[reads]);
+    }
 
     SDL_UnlockMutex(mMutex);
 
@@ -124,17 +129,23 @@ void OpenmptPlugin::drawSettings(ECS::World* world, LanguageFile languageFile, f
 {
     auto loop = mConfig.get("loop", false);
     if (ImGui::Checkbox(languageFile.getc("plugin.loop_song"), &loop))
+    {
         mConfig.set("loop", loop);
+    }
 
     auto amigaRessampler = mConfig.get("emulate_paula_chip", true);
     if (ImGui::Checkbox(languageFile.getc("plugin.emulate_paula_chip"), &amigaRessampler))
+    {
         mConfig.set("emulate_paula_chip", amigaRessampler);
+    }
 }
 
 void OpenmptPlugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile, float deltaTime)
 {
     if (mModule == nullptr)
+    {
         return;
+    }
 
     SDL_LockMutex(mMutex);
     auto title = mModule->get_metadata("title");
@@ -155,7 +166,9 @@ void OpenmptPlugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile
 void OpenmptPlugin::drawMetadata(ECS::World* world, LanguageFile languageFile, float deltaTime)
 {
     if (mModule == nullptr)
+    {
         return;
+    }
 
     SDL_LockMutex(mMutex);
     auto type = mModule->get_metadata("type");

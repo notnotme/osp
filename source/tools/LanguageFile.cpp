@@ -53,14 +53,18 @@ void LanguageFile::reload(Language language)
     auto filename = getFilename();
     root = json_load_file(filename.c_str(), 0, &error);
     if (root == nullptr)
+    {
         throw std::runtime_error("json_load_file failed");
+    }
 
     const char *key;
     json_t *value;
     json_object_foreach(root, key, value)
     {
         if (value->type != JSON_STRING)
+        {
             continue;
+        }
 
         mCatalog.insert(std::pair<std::string, std::string>(key, json_string_value(value)));
     }
@@ -89,7 +93,9 @@ std::string LanguageFile::getFilename()
 std::string LanguageFile::get(std::string key)
 {
     if (mCatalog.find(key) != mCatalog.end())
+    {
         return mCatalog.at(key);
+    }
 
     return key;
 }
@@ -97,7 +103,9 @@ std::string LanguageFile::get(std::string key)
 const char* LanguageFile::getc(std::string key)
 {
     if (mCatalog.find(key) != mCatalog.end())
+    {
         return mCatalog.at(key).c_str();
+    }
 
     return key.c_str();
 }

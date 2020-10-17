@@ -87,7 +87,9 @@ void SidplayfpPlugin::setup(Config config)
     mBuilder = new ReSIDfpBuilder("OSP");
     mBuilder->create(mPlayer->info().maxsids());
     if (!mBuilder->getStatus())
+    {
         throw std::runtime_error(mBuilder->error());
+    }
 }
 
 void SidplayfpPlugin::cleanup()
@@ -95,16 +97,22 @@ void SidplayfpPlugin::cleanup()
     if (mPlayer != nullptr)
     {
         if (mPlayer->isPlaying())
+        {
             mPlayer->stop();
+        }
 
         delete mPlayer;
     }
 
     if (mBuilder != nullptr)
+    {
         delete mBuilder;
+    }
 
     if (mTune != nullptr)
+    {
         delete mTune;
+    }
 
     Plugin::cleanup();
 }
@@ -125,11 +133,15 @@ void SidplayfpPlugin::open(const std::vector<uint8_t>& buffer)
     cfg.sidEmulation = mBuilder;
 
     if (!mPlayer->config(cfg))
+    {
         throw std::runtime_error(mPlayer->error());
+    }
 
     mTune = new SidTune(buffer.data(), buffer.size());
     if (mTune->getStatus() == false)
+    {
         throw std::runtime_error(mTune->statusString());
+    }
 
     // Load tune into engine
     auto musicInfo = mTune->getInfo();
@@ -138,8 +150,9 @@ void SidplayfpPlugin::open(const std::vector<uint8_t>& buffer)
     mCurrentTrack = alwaysStartFirstTrack ? 1 : 0;
     mTune->selectSong(mCurrentTrack);
     if (!mPlayer->load(mTune))
+    {
         throw std::runtime_error(mPlayer->error());
-
+    }
 }
 
 int SidplayfpPlugin::getCurrentTrack()
@@ -155,7 +168,9 @@ int SidplayfpPlugin::getTrackCount()
 void SidplayfpPlugin::setSubSong(int subsong)
 {
     if (mPlayer == nullptr || mTune == nullptr)
+    {
         return;
+    }
 
     if (subsong > 0 && subsong <= mTrackCount)
     {
@@ -188,7 +203,9 @@ void SidplayfpPlugin::close()
 bool SidplayfpPlugin::decode(uint8_t* stream, size_t len)
 {
     if (mPlayer == nullptr || mTune == nullptr)
+    {
         return false;
+    }
 
     SDL_LockMutex(mMutex);
     auto size = (uint_least32_t) len / 2;
@@ -196,7 +213,9 @@ bool SidplayfpPlugin::decode(uint8_t* stream, size_t len)
     SDL_UnlockMutex(mMutex);
 
     if (played < size && mPlayer->isPlaying())
+    {
         throw std::runtime_error(mPlayer->error());
+    }
 
     return true;
 }
@@ -205,25 +224,35 @@ void SidplayfpPlugin::drawSettings(ECS::World* world, LanguageFile languageFile,
 {
     bool alwaysStartFirstTrack = mConfig.get("first_track_always", true);
     if (ImGui::Checkbox(languageFile.getc("plugin.always_start_first_track"), &alwaysStartFirstTrack))
+    {
         mConfig.set("first_track_always", alwaysStartFirstTrack);
+    }
 
     auto digiBoost = mConfig.get("enable_digiboost", false);
     if (ImGui::Checkbox(languageFile.getc("plugin.enable_digiboost"), &digiBoost))
+    {
         mConfig.set("enable_digiboost", digiBoost);
+    }
 
     auto fastSampling = mConfig.get("enable_fast_sampling", false);
     if (ImGui::Checkbox(languageFile.getc("plugin.enable_fast_sampling"), &fastSampling))
+    {
         mConfig.set("enable_fast_sampling", fastSampling);
+    }
 
     auto samplingMethod = mConfig.get("sampling_method", SidConfig::RESAMPLE_INTERPOLATE);
     if (ImGui::Combo(languageFile.getc("plugin.sampling_method"), &samplingMethod, "Interpolate\0Resample interpolate\0"))
+    {
         mConfig.set("sampling_method", samplingMethod);
+    }
 }
 
 void SidplayfpPlugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile, float deltaTime)
 {
     if (mTune == nullptr)
+    {
         return;
+    }
 
     SDL_LockMutex(mMutex);
     auto musicInfo = mTune->getInfo();
@@ -242,7 +271,9 @@ void SidplayfpPlugin::drawPlayerStats(ECS::World* world, LanguageFile languageFi
 void SidplayfpPlugin::drawMetadata(ECS::World* world, LanguageFile languageFile, float deltaTime)
 {
     if (mTune == nullptr)
+    {
         return;
+    }
 
     SDL_LockMutex(mMutex);
     auto musicInfo = mTune->getInfo();
@@ -292,7 +323,9 @@ void SidplayfpPlugin::drawMetadata(ECS::World* world, LanguageFile languageFile,
             ImGui::PushFont(io.Fonts->Fonts[1]);
             ImGui::TableNextColumn();
             for (unsigned int i=0; i<commentCount; ++i)
+            {
                 ImGui::TextUnformatted("%s\n", musicInfo->commentString(i));
+            }
             ImGui::PopFont();
             Plugin::endTable();
         }
@@ -302,7 +335,9 @@ void SidplayfpPlugin::drawMetadata(ECS::World* world, LanguageFile languageFile,
 std::vector<uint8_t> SidplayfpPlugin::loadRom(const std::string path)
 {
     if (!std::filesystem::exists(path) || !std::filesystem::is_regular_file(path))
+    {
         throw std::runtime_error("Failed to open the requested file");
+    }
 
     std::ifstream ifs(path, std::ios::binary | std::ios::in | std::ios::ate);
     auto romSize = ifs.tellg();

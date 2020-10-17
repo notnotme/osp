@@ -46,13 +46,19 @@ bool Plugin::beginTable(std::string id, bool scrollable, bool twoColumns, float 
         | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_BordersOuterV;
 
     if (scrollable)
+    {
         tableFlags |= ImGuiTableFlags_ScrollY;
+    }
 
     if (!ImGui::BeginTable(id.c_str(), twoColumns ? 2 : 1, tableFlags))
+    {
         return false;
+    }
 
     if (scrollable)
+    {
         ImGui::TableSetupScrollFreeze(0, 1);
+    }
 
     if (twoColumns)
     {
@@ -75,10 +81,15 @@ void Plugin::endTable()
 
 void Plugin::drawRow(std::string label, std::string value)
 {
-    ImGui::TableNextColumn(); ImGui::TextUnformatted(label.c_str());
+    ImGui::TableNextColumn();
+    ImGui::TextUnformatted(label.c_str());
     ImGui::TableNextColumn();
     if (value.length() > 0)
+    {
         ImGui::TextUnformatted(value.c_str());
+    }
     else
+    {
         ImGui::TextDisabled("--");
+    }
 }
