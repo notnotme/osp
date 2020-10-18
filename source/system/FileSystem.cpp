@@ -24,7 +24,7 @@
 #include "file/LocalMountPoint.h"
 #include "../config.h"
 
-#define FILE_CHUNK_SIZE 16384 // How read buffer when opening a file from a mount point
+#define FILE_CHUNK_SIZE 16384 // Size of read buffer when opening a file from a mount point
 
 
 FileSystem::FileSystem(Config config, LanguageFile languageFile) :
@@ -363,7 +363,6 @@ int FileSystem::workerThreadFuncFile(void* thiz)
     if (selectedMountPoint == nullptr)
     {
         auto error = fmt::format("No mountpoint available to open {:s}", fileSystem->mPathToNavigate.back());
-        throw std::runtime_error(error);
         TRACE("{:s}.", error);
 
         // Send a notification event if something goes wrong

@@ -745,7 +745,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                 TRACE("Language file reloaded: {:s}", mLanguageFile.getFilename());
             }
 
-            int appStyle = mConfig.get("style", 0);
+            auto appStyle = mConfig.get("style", 0);
             if (ImGui::Combo(mLanguageFile.getc("settings.style"), &appStyle, "Dark\0Light\0Classic\0"))
             {
                 mConfig.set("style", appStyle);
@@ -757,7 +757,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                 }
             }
 
-            bool alwaysStartFirstTrack = mConfig.get("always_start_first_track", true);
+            auto alwaysStartFirstTrack = mConfig.get("always_start_first_track", true);
             if (ImGui::Checkbox(mLanguageFile.getc("settings.always_start_first_track"), &alwaysStartFirstTrack))
             {
                 mConfig.set("always_start_first_track", alwaysStartFirstTrack);
