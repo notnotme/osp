@@ -39,6 +39,7 @@ mWindow(window),
 mConfig(config),
 mLanguageFile(languageFile),
 mAudioSystemStatus(STOPPED),
+mPlaylist({.index = -1, .inUse = false, .loop = false}),
 mShowWorkSpace(true),
 mShowDemoWindow(false),
 mShowMetricsWindow(false),
@@ -126,6 +127,8 @@ void UiSystem::configure(ECS::World* world)
 
     // Playlist have no selection
     mPlaylist.index = -1;
+    mPlaylist.loop = false;
+    mPlaylist.inUse = false;
 
     // Subscribe for events
     world->subscribe<SDL_Event>(this);
@@ -558,6 +561,11 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                 {
                     resetPlaylist(true);
                 }
+                ImGui::SameLine();
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
+                ImGui::Checkbox(mLanguageFile.getc("loop"), &mPlaylist.loop);
+                ImGui::PopStyleVar();
+
                 ImGui::SameLine(textOffsetX, 0);
                 ImGui::TextUnformatted(itemCountStr);
                 ImGui::Spacing();
@@ -991,9 +999,9 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
         break;
         case AudioSystemPlayEvent::STOPPED:
             mAudioSystemStatus = STOPPED;
-            if (mPlaylist.inUse && mPlaylist.index < (int) mPlaylist.paths.size()-1)
+            if (mPlaylist.inUse)
             {
-                processPlaylistItemSelection(world, mPlaylist.index+1, false, true);
+                processNextPlaylistItem(world);
             }
             else
             {
@@ -1128,6 +1136,10 @@ void UiSystem::processNextPlaylistItem(ECS::World* world)
     {
         processPlaylistItemSelection(world, mPlaylist.index+1, false, true);
     }
+    else if (mPlaylist.loop)
+    {
+        processPlaylistItemSelection(world, 0, false, true);
+    }
     else
     {
         world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
@@ -1141,6 +1153,10 @@ void UiSystem::processPrevPlaylistItem(ECS::World* world)
     if (mPlaylist.index > 0)
     {
         processPlaylistItemSelection(world, mPlaylist.index-1, false, true);
+    }
+    else if (mPlaylist.loop)
+    {
+        processPlaylistItemSelection(world, mPlaylist.paths.size()-1, false, true);
     }
     else
     {

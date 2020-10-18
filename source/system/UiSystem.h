@@ -82,6 +82,7 @@ private:
         std::vector<std::string> paths;
         int index;
         bool inUse;
+        bool loop;
     };
 
     enum AudioSystemStatus
