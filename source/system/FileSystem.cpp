@@ -104,10 +104,10 @@ void FileSystem::tick(ECS::World* world, float deltaTime)
         mPendingDirectoryLoadedEvent.reset();
     }
 
-    if (mPendingNotificationMessageEvent.has_value())
+    if (mPendingFileSystemErrorEvent.has_value())
     {
-        world->emit(mPendingNotificationMessageEvent.value());
-        mPendingNotificationMessageEvent.reset();
+        world->emit(mPendingFileSystemErrorEvent.value());
+        mPendingFileSystemErrorEvent.reset();
     }
     SDL_UnlockMutex(mWorkerThreadMutex);
 }
@@ -214,7 +214,18 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
 
     if (selectedMountPoint == nullptr)
     {
-        throw std::runtime_error(fmt::format("No mountpoint available to open {:s}", fileSystem->mPathToNavigate.back()));
+        SDL_LockMutex(fileSystem->mWorkerThreadMutex);
+        fileSystem->mPendingFileSystemErrorEvent.emplace(
+        (FileSystemErrorEvent) {
+            .message = fmt::format("No mountpoint available to open {:s}", fileSystem->mPathToNavigate.back())
+        });
+
+        fileSystem->mPendingFileSystemBusyEvent.emplace(
+        (FileSystemBusyEvent) {
+            .isLoading = true
+        });
+        SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
+        return 0;
     }
 
     if (fileSystem->mPathToNavigate.back() == "..")
@@ -255,9 +266,8 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
         // Send a notification event if something goes wrong
         fileSystem->mWorkerThreadState = CANCELING;
         SDL_LockMutex(fileSystem->mWorkerThreadMutex);
-        fileSystem->mPendingNotificationMessageEvent.emplace(
-        (NotificationMessageEvent) {
-            .type = NotificationMessageEvent::ERROR,
+        fileSystem->mPendingFileSystemErrorEvent.emplace(
+        (FileSystemErrorEvent) {
             .message = error
         });
         SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
@@ -359,9 +369,8 @@ int FileSystem::workerThreadFuncFile(void* thiz)
         // Send a notification event if something goes wrong
         fileSystem->mWorkerThreadState = CANCELING;
         SDL_LockMutex(fileSystem->mWorkerThreadMutex);
-        fileSystem->mPendingNotificationMessageEvent.emplace(
-        (NotificationMessageEvent) {
-            .type = NotificationMessageEvent::ERROR,
+        fileSystem->mPendingFileSystemErrorEvent.emplace(
+        (FileSystemErrorEvent) {
             .message = error
         });
         SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
@@ -395,9 +404,8 @@ int FileSystem::workerThreadFuncFile(void* thiz)
 
         // Send a notification event if something goes wrong
         SDL_LockMutex(fileSystem->mWorkerThreadMutex);
-        fileSystem->mPendingNotificationMessageEvent.emplace(
-        (NotificationMessageEvent) {
-            .type = NotificationMessageEvent::ERROR,
+        fileSystem->mPendingFileSystemErrorEvent.emplace(
+        (FileSystemErrorEvent) {
             .message = error
         });
         SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);

@@ -49,11 +49,13 @@ public:
     virtual void drawPlayerStats(ECS::World* world, LanguageFile languageFile, float deltaTime) = 0;
     virtual void drawMetadata(ECS::World* world, LanguageFile languageFile, float deltaTime) = 0;
 
+    // Helpers
+    static bool beginTable(std::string label, bool scrollable, bool twoColumns = true, float firstColumnWeight = 0.45f);
+    static void endTable();
+    static void drawRow(std::string label, std::string value);
+
 protected:
     Config mConfig;
-    bool beginTable(std::string label, bool scrollable, bool twoColumns = true, float firstColumnWeight = 0.45f);
-    void endTable();
-    void drawRow(std::string label, std::string value);
 
 private:
     Plugin(const Plugin& copy);

@@ -24,16 +24,16 @@
 #include <ECS.h>
 
 #include "audio/Plugin.h"
-#include "../event/file/FileLoadedEvent.h"
+#include "../event/audio/AudioSystemLoadFileEvent.h"
 #include "../event/audio/AudioSystemPlayTaskEvent.h"
 #include "../event/audio/AudioSystemPlayEvent.h"
-#include "../event/app/NotificationMessageEvent.h"
+#include "../event/audio/AudioSystemErrorEvent.h"
 #include "../tools/ConfigFile.h"
 
 
 class AudioSystem :
 public ECS::EntitySystem,
-public ECS::EventSubscriber<FileLoadedEvent>,
+public ECS::EventSubscriber<AudioSystemLoadFileEvent>,
 public ECS::EventSubscriber<AudioSystemPlayTaskEvent>
 {
 public:
@@ -44,7 +44,7 @@ public:
     virtual void unconfigure(ECS::World* world) override;
     virtual void tick(ECS::World* world, float deltaTime) override;
 
-    virtual void receive(ECS::World* world, const FileLoadedEvent& event) override;
+    virtual void receive(ECS::World* world, const AudioSystemLoadFileEvent& event) override;
     virtual void receive(ECS::World* world, const AudioSystemPlayTaskEvent& event) override;
 
 private:
@@ -63,7 +63,7 @@ private:
 
     std::string mCurrentFileLoaded;
     std::vector<Plugin*> mPlugins;
-    std::optional<NotificationMessageEvent> mPendingNotificationMessageEvent;
+    std::optional<AudioSystemErrorEvent> mPendingAudioSystemErrorEvent;
     std::optional<AudioSystemPlayEvent> mPendingAudioSystemPlayEvent;
 
     AudioSystem(const AudioSystem& copy);

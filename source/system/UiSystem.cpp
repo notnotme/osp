@@ -26,9 +26,11 @@
 #include <imgui/imgui_impl_sdl.h>
 #include <imgui/imgui_impl_opengl3.h>
 
+#include "audio/Plugin.h"
 #include "../event/file/FileSystemLoadTaskEvent.h"
 #include "../event/file/FileSystemCancelTaskEvent.h"
 #include "../event/audio/AudioSystemPlayTaskEvent.h"
+#include "../event/audio/AudioSystemLoadFileEvent.h"
 #include "../config.h"
 
 UiSystem::UiSystem(Config config, LanguageFile languageFile, SDL_Window* window) :
@@ -127,11 +129,13 @@ void UiSystem::configure(ECS::World* world)
 
     // Subscribe for events
     world->subscribe<SDL_Event>(this);
-    world->subscribe<NotificationMessageEvent>(this);
-    world->subscribe<DirectoryLoadedEvent>(this);
     world->subscribe<FileSystemBusyEvent>(this);
+    world->subscribe<FileSystemErrorEvent>(this);
+    world->subscribe<FileLoadedEvent>(this);
+    world->subscribe<DirectoryLoadedEvent>(this);
     world->subscribe<AudioSystemConfiguredEvent>(this);
     world->subscribe<AudioSystemPlayEvent>(this);
+    world->subscribe<AudioSystemErrorEvent>(this);
 
     mStatusMessage = mLanguageFile.get("status.ready");
 }
@@ -142,11 +146,13 @@ void UiSystem::unconfigure(ECS::World* world)
 
     // Unsubscribe for events
     world->unsubscribe<SDL_Event>(this);
-    world->unsubscribe<NotificationMessageEvent>(this);
-    world->unsubscribe<DirectoryLoadedEvent>(this);
     world->unsubscribe<FileSystemBusyEvent>(this);
+    world->unsubscribe<FileSystemErrorEvent>(this);
+    world->unsubscribe<FileLoadedEvent>(this);
+    world->unsubscribe<DirectoryLoadedEvent>(this);
     world->unsubscribe<AudioSystemConfiguredEvent>(this);
     world->unsubscribe<AudioSystemPlayEvent>(this);
+    world->unsubscribe<AudioSystemErrorEvent>(this);
 
     // Release the texture atlas resources
     mIconAtlas.cleanup();
@@ -202,11 +208,11 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
             ImGui::Separator();
             if (ImGui::MenuItem("\ufd4a ERROR notification"))
             {
-                pushNotification(NotificationMessageEvent::ERROR, "This is an error notification");
+                pushNotification(Notification::ERROR, "This is an error notification");
             }
             if (ImGui::MenuItem("\ufd4a INFO notification"))
             {
-                pushNotification(NotificationMessageEvent::INFO, "This is an info notification");
+                pushNotification(Notification::INFO, "This is an info notification");
             }
             ImGui::EndMenu();
         }
@@ -307,7 +313,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                         {
                             // The file is not usable by any audio plugin
                             auto message = fmt::format("{:s} {:s}", mLanguageFile.getc("files.unsupported_file_type"), item.name);
-                            pushNotification(NotificationMessageEvent::Type::INFO, message);
+                            pushNotification(Notification::Type::INFO, message);
                             TRACE("{:s}", message);
                         }
                     }
@@ -341,7 +347,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
 
             if (mFileSystemLoading)
             {
-                // If the FileSYstem is doing some work, show an overlay on top of the table
+                // If the FileSystem is doing some work, show an overlay on top of the table
                 // with animated text and a cancel button
                 windowFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings
                     | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
@@ -436,7 +442,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         if (ImGui::ImageButton((ImTextureID)(intptr_t) textureId, buttonSize, buttonUV, buttonST))
         {
             world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
-            resetPlaylist(false);
+            mCurrentPluginUsed.reset();
         }
         ImGui::PopID();
 
@@ -468,18 +474,41 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         ImGui::Spacing();
         if (ImGui::BeginChild("##playerWrapper", windowSize, false, windowFlags))
         {
-            if (mCurrentPluginUsed.has_value())
+            if (mAudioSystemStatus != STOPPED)
             {
                 mCurrentPluginUsed.value().drawPlayerStats(world, mLanguageFile, deltaTime);
             }
             else
             {
-                auto text = mLanguageFile.getc("no_file_loaded");
-                auto textSize = ImGui::CalcTextSize(text);
-                auto textOffsetX = windowSize.x/2 - textSize.x/2;
-                auto textOffsetY = windowSize.y/2 - textSize.y/2;
-                ImGui::SetCursorPos(ImVec2(textOffsetX, textOffsetY));
-                ImGui::TextUnformatted(text);
+                // Draw dummy array instead of player stats
+                auto savedWindowPos = ImGui::GetWindowPos();
+                auto savedWindowSize = ImGui::GetWindowSize();
+                if (Plugin::beginTable(mLanguageFile.getc("player"), false))
+                {
+                    Plugin::drawRow(mLanguageFile.getc("player.title"),      "");
+                    Plugin::drawRow(mLanguageFile.getc("player.track"),      "");
+                    Plugin::drawRow(mLanguageFile.getc("player.duration"),   "");
+                    Plugin::drawRow(mLanguageFile.getc("player.position"),   "");
+                    Plugin::endTable();
+                }
+
+                // Add an overlay on top if it
+                windowFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings
+                    | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
+                ImGui::SetNextWindowPos(savedWindowPos);
+                ImGui::SetNextWindowSize(savedWindowSize);
+                ImGui::SetNextWindowBgAlpha(0.5f);
+                if (!ImGui::Begin("##playerStatsOverlay", nullptr, windowFlags))
+                {
+                    ImGui::PopStyleVar();
+                }
+                else
+                {
+                    ImGui::PopStyleVar();
+                    ImGui::End();
+                }
             }
         }
         ImGui::EndChild();
@@ -586,7 +615,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
 
             // ----------------------------------------------------------
             // ----------------------------------------------------------
-            // Tabs bar - Current file information
+            // Tabs bar - Current file information (metadata)
             if (mCurrentPluginUsed.has_value())
             {
                 tabFlags = ImGuiTabItemFlags_NoTooltip;
@@ -825,7 +854,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
             auto notifId = fmt::format("##notif{:d}", rowId).c_str();
             if (ImGui::Begin(notifId, nullptr, windowFlags))
             {
-                if (it->type == NotificationMessageEvent::ERROR)
+                if (it->type == Notification::ERROR)
                 {
                     auto red = ImVec4(0.88f, 0.3f, 0.3f, 1.0f);
                     ImGui::PushStyleColor(ImGuiCol_Text, red);
@@ -867,6 +896,31 @@ void UiSystem::receive(ECS::World* world, const DirectoryLoadedEvent& event)
     mCurrentPathItems.insert(mCurrentPathItems.end(), event.items.begin(), event.items.end());
 }
 
+void UiSystem::receive(ECS::World* world, const FileLoadedEvent& event)
+{
+    if (mLoadFileSetPlaylistIndex == -1)
+    {
+        resetPlaylist(false);
+    }
+    else
+    {
+        mPlaylist.inUse = true;
+        mPlaylist.index = mLoadFileSetPlaylistIndex;
+    }
+
+    auto forceStart = (mAudioSystemStatus == PAUSED) && !mLoadFileSetForceStart
+        ? AudioSystemLoadFileEvent::LOAD_AND_PAUSE
+        : AudioSystemLoadFileEvent::LOAD_AND_PLAY;
+
+    world->emit<AudioSystemLoadFileEvent>
+    ({
+        .type = forceStart,
+        .path = event.path,
+        .buffer = event.buffer,
+        .startTrack = -1 // todo config
+    });
+}
+
 void UiSystem::receive(ECS::World* world, const FileSystemBusyEvent& event)
 {
     TRACE("Received FileSystemBusyEvent: {:d}.", (int) event.isLoading);
@@ -885,19 +939,15 @@ void UiSystem::receive(ECS::World* world, const AudioSystemConfiguredEvent& even
 void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
 {
     TRACE("Received AudioSystemPlayEvent: {:d}", event.type);
-    if (event.type != AudioSystemPlayEvent::STOPPED_BY_USER
-        && event.type != AudioSystemPlayEvent::STOPPED)
+    if (!mCurrentPluginUsed.has_value() || (mCurrentPluginUsed.value().name != event.pluginName))
     {
-        if (!mCurrentPluginUsed.has_value() || (mCurrentPluginUsed.value().name != event.pluginName))
+        // Refresh current information about used plugin in needed
+        for (auto pluginInfo : mPluginInformations)
         {
-            // Refresh current information about used plugin in needed
-            for (auto pluginInfo : mPluginInformations)
+            if (pluginInfo.name == event.pluginName)
             {
-                if (pluginInfo.name == event.pluginName)
-                {
-                    mCurrentPluginUsed.emplace(pluginInfo);
-                    break;
-                }
+                mCurrentPluginUsed.emplace(pluginInfo);
+                break;
             }
         }
     }
@@ -920,7 +970,7 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
             else
             {
                 world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
-                resetPlaylist(false);
+                mCurrentPluginUsed.reset();
             }
         break;
         case AudioSystemPlayEvent::NO_PREV_SUBSONG:
@@ -931,27 +981,27 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
             else
             {
                 world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
-                resetPlaylist(false);
+                mCurrentPluginUsed.reset();
             }
         break;
         case AudioSystemPlayEvent::STOPPED_BY_USER:
-                mCurrentPluginUsed.reset();
                 mAudioSystemStatus = STOPPED;
                 mStatusMessage = mLanguageFile.getc("status.ready");
+                resetPlaylist(false);
         break;
         case AudioSystemPlayEvent::STOPPED:
+            mAudioSystemStatus = STOPPED;
             if (mPlaylist.inUse && mPlaylist.index < (int) mPlaylist.paths.size()-1)
             {
                 processPlaylistItemSelection(world, mPlaylist.index+1, false, true);
             }
             else
             {
-                mCurrentPluginUsed.reset();
-                mAudioSystemStatus = STOPPED;
                 mStatusMessage = mLanguageFile.getc("status.ready");
+                mCurrentPluginUsed.reset();
                 if (mPlaylist.inUse)
                 {
-                    pushNotification(NotificationMessageEvent::INFO, "Playlist finished.");
+                    pushNotification(Notification::INFO, "Playlist finished.");
                     resetPlaylist(false);
                 }
             }
@@ -961,13 +1011,19 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
     }
 }
 
-void UiSystem::receive(ECS::World* world, const NotificationMessageEvent& event)
+void UiSystem::receive(ECS::World* world, const FileSystemErrorEvent& event)
 {
-    TRACE("Received NotificationMessageEvent type {:d} : {:s}.", event.type, event.message);
-    pushNotification(event.type, event.message);
+    TRACE("Received FileSystemErrorEvent type : {:s}.", event.message);
+    pushNotification(Notification::ERROR, event.message);
 }
 
-void UiSystem::pushNotification(NotificationMessageEvent::Type type, std::string message)
+void UiSystem::receive(ECS::World* world, const AudioSystemErrorEvent& event)
+{
+    TRACE("Received AudioSystemErrorEvent type : {:s}.", event.message);
+    pushNotification(Notification::ERROR, event.message);
+}
+
+void UiSystem::pushNotification(Notification::Type type, std::string message)
 {
     // Add a new notification object into the list
     mNotifications.push_back
@@ -1012,14 +1068,8 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
     }
     else
     {
-        // If we were using the playlist, cancel it then send event to the FileSystem to load the requested file
-        // todo: maybe show an alert dialog
-        if (! item.isFolder)
-        {
-            world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
-            resetPlaylist(false);
-        }
-
+        mLoadFileSetForceStart = true;
+        mLoadFileSetPlaylistIndex = -1;
         world->emit<FileSystemLoadTaskEvent>
         ({
             .type = item.isFolder
@@ -1052,13 +1102,8 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
      }
     else
     {
-        if (!stayPaused)
-        {
-            world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
-        }
-
-        mPlaylist.inUse = true;
-        mPlaylist.index = selectedIndex;
+        mLoadFileSetForceStart = !stayPaused;
+        mLoadFileSetPlaylistIndex = selectedIndex;
         world->emit<FileSystemLoadTaskEvent>
         ({
             .type = FileSystemLoadTaskEvent::LOAD_FILE,
@@ -1086,8 +1131,8 @@ void UiSystem::processNextPlaylistItem(ECS::World* world)
     else
     {
         world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
-        resetPlaylist(false);
-        pushNotification(NotificationMessageEvent::INFO, "Playlist finished.");
+        mCurrentPluginUsed.reset();
+        pushNotification(Notification::INFO, "Playlist finished.");
     }
 }
 
@@ -1100,7 +1145,7 @@ void UiSystem::processPrevPlaylistItem(ECS::World* world)
     else
     {
         world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
-        resetPlaylist(false);
-        pushNotification(NotificationMessageEvent::INFO, "Playlist finished.");
+        mCurrentPluginUsed.reset();
+        pushNotification(Notification::INFO, "Playlist finished.");
     }
 }

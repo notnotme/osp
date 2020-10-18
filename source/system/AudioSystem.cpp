@@ -128,7 +128,7 @@ void AudioSystem::configure(ECS::World* world)
     }
 
     // Subcribe for events
-    world->subscribe<FileLoadedEvent>(this);
+    world->subscribe<AudioSystemLoadFileEvent>(this);
     world->subscribe<AudioSystemPlayTaskEvent>(this);
 
     // Tells everyone we are configured
@@ -140,7 +140,7 @@ void AudioSystem::unconfigure(ECS::World* world)
     TRACE(">>>");
 
      // Unubscribe for events
-    world->unsubscribe<FileLoadedEvent>(this);
+    world->unsubscribe<AudioSystemLoadFileEvent>(this);
     world->unsubscribe<AudioSystemPlayTaskEvent>(this);
 
     // Release SDL resources used for audio
@@ -164,10 +164,10 @@ void AudioSystem::tick(ECS::World* world, float deltaTime)
 {
     // Check for pending event probably sent by the audio calback
     SDL_LockMutex(mMutex);
-    if (mPendingNotificationMessageEvent.has_value())
+    if (mPendingAudioSystemErrorEvent.has_value())
     {
-        world->emit(mPendingNotificationMessageEvent.value());
-        mPendingNotificationMessageEvent.reset();
+        world->emit(mPendingAudioSystemErrorEvent.value());
+        mPendingAudioSystemErrorEvent.reset();
     }
     if (mPendingAudioSystemPlayEvent.has_value())
     {
@@ -239,21 +239,19 @@ void AudioSystem::audioCallback(void* thiz, uint8_t* stream, int len)
         audioSystem->stopAudio(nullptr, true, true);
 
         SDL_LockMutex(audioSystem->mMutex);
-        audioSystem->mPendingNotificationMessageEvent.emplace(
-        (NotificationMessageEvent) {
-            .type = NotificationMessageEvent::ERROR,
+        audioSystem->mPendingAudioSystemErrorEvent.emplace(
+        (AudioSystemErrorEvent) {
             .message = std::string("AudioSystem error: ").append(error)
         });
         SDL_UnlockMutex(audioSystem->mMutex);
     }
 }
 
-void AudioSystem::receive(ECS::World* world, const FileLoadedEvent& event)
+void AudioSystem::receive(ECS::World* world, const AudioSystemLoadFileEvent& event)
 {
-    TRACE("Received FileLoadedEvent: {:s} ({:d} Kb).", event.path, (uint32_t) event.buffer.size() / 1024);
+    TRACE("Received AudioSystemLoadFileEvent: {:d} {:s} ({:d} Kb), track: {:d}.", event.type, event.path, (uint32_t) event.buffer.size() / 1024, event.startTrack);
 
     // Stop playback but keep trace of what we were doing
-    auto previousPlayState = mPlayStatus;
     if (mPlayStatus != NO_FILE)
     {
         stopAudio(world, false, false);
@@ -291,9 +289,8 @@ void AudioSystem::receive(ECS::World* world, const FileLoadedEvent& event)
         // Something bad happened, tells everyone and close the plugin that was in use
         stopAudio(world, true, true);
 
-        world->emit<NotificationMessageEvent>
+        world->emit<AudioSystemErrorEvent>
         ({
-            .type = NotificationMessageEvent::ERROR,
             .message = fmt::format("AudioSystem error: {:s}", e.what())
         });
 
@@ -302,7 +299,7 @@ void AudioSystem::receive(ECS::World* world, const FileLoadedEvent& event)
 
     // Start playing right now and tells everyone
     mCurrentFileLoaded = event.path;
-    TRACE("File loaded...");
+    TRACE("File loaded.");
 
     auto audioEvent =
     (AudioSystemPlayEvent) {
@@ -312,19 +309,20 @@ void AudioSystem::receive(ECS::World* world, const FileLoadedEvent& event)
         .trackCount = mCurrentPlugin->getTrackCount()
     };
 
-    switch (previousPlayState)
+    switch (event.type)
     {
-        case NO_FILE:
-        case PLAYING:
+        case AudioSystemLoadFileEvent::LOAD_AND_PLAY:
             // If before receiveing this event we were already playing or if no file was loaded
             mPlayStatus = PLAYING;
             audioEvent.type = AudioSystemPlayEvent::PLAYING;
             SDL_PauseAudioDevice(mAudioDevice, false);
+            TRACE("Playback started...");
             break;
-        case PAUSED:
+        case AudioSystemLoadFileEvent::LOAD_AND_PAUSE:
             // If we were paused, stay paused.
             mPlayStatus = PAUSED;
             audioEvent.type = AudioSystemPlayEvent::PAUSED;
+            TRACE("Playback paused...");
         break;
     }
 

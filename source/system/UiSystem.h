@@ -24,11 +24,13 @@
 #include <SDL2/SDL.h>
 #include <ECS.h>
 
-#include "../event/app/NotificationMessageEvent.h"
 #include "../event/file/DirectoryLoadedEvent.h"
+#include "../event/file/FileLoadedEvent.h"
 #include "../event/file/FileSystemBusyEvent.h"
+#include "../event/file/FileSystemErrorEvent.h"
 #include "../event/audio/AudioSystemConfiguredEvent.h"
 #include "../event/audio/AudioSystemPlayEvent.h"
+#include "../event/audio/AudioSystemErrorEvent.h"
 #include "../tools/AtlasTexture.h"
 #include "../tools/ConfigFile.h"
 #include "../tools/LanguageFile.h"
@@ -38,10 +40,12 @@ class UiSystem :
 public ECS::EntitySystem,
 public ECS::EventSubscriber<SDL_Event>,
 public ECS::EventSubscriber<FileSystemBusyEvent>,
+public ECS::EventSubscriber<FileSystemErrorEvent>,
 public ECS::EventSubscriber<DirectoryLoadedEvent>,
-public ECS::EventSubscriber<NotificationMessageEvent>,
+public ECS::EventSubscriber<FileLoadedEvent>,
 public ECS::EventSubscriber<AudioSystemConfiguredEvent>,
-public ECS::EventSubscriber<AudioSystemPlayEvent>
+public ECS::EventSubscriber<AudioSystemPlayEvent>,
+public ECS::EventSubscriber<AudioSystemErrorEvent>
 {
 public:
     UiSystem(Config config, LanguageFile languageFile, SDL_Window* window);
@@ -52,16 +56,23 @@ public:
     virtual void tick(ECS::World* world, float deltaTime) override;
 
     virtual void receive(ECS::World* world, const SDL_Event& event) override;
-    virtual void receive(ECS::World* world, const NotificationMessageEvent& event) override;
-    virtual void receive(ECS::World* world, const DirectoryLoadedEvent& event) override;
     virtual void receive(ECS::World* world, const FileSystemBusyEvent& event) override;
+    virtual void receive(ECS::World* world, const FileSystemErrorEvent& event) override;
+    virtual void receive(ECS::World* world, const DirectoryLoadedEvent& event) override;
+    virtual void receive(ECS::World* world, const FileLoadedEvent& event) override;
     virtual void receive(ECS::World* world, const AudioSystemConfiguredEvent& event) override;
     virtual void receive(ECS::World* world, const AudioSystemPlayEvent& event) override;
+    virtual void receive(ECS::World* world, const AudioSystemErrorEvent& event) override;
 
 private:
     struct Notification
     {
-        NotificationMessageEvent::Type type;
+        enum Type
+        {
+            INFO, ERROR
+        };
+
+        Type type;
         std::string message;
         float displayTimeMs;
     };
@@ -87,6 +98,9 @@ private:
     AudioSystemStatus mAudioSystemStatus;
     Playlist mPlaylist;
 
+    bool mLoadFileSetForceStart;
+    int mLoadFileSetPlaylistIndex;
+
     bool mShowWorkSpace;
     bool mShowDemoWindow;
     bool mShowMetricsWindow;
@@ -104,7 +118,7 @@ private:
 
     UiSystem(const UiSystem& copy);
 
-    void pushNotification(NotificationMessageEvent::Type type, std::string message);
+    void pushNotification(Notification::Type type, std::string message);
     bool isFileSupported(std::string path);
     void processFileItemSelection(ECS::World* world, DirectoryLoadedEvent::Item item, bool addToPlaylist);
     void processPlaylistItemSelection(ECS::World* world, int selectedIndex, bool remove, bool stayPaused);

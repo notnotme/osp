@@ -256,6 +256,8 @@ void SidplayfpPlugin::drawPlayerStats(ECS::World* world, LanguageFile languageFi
     {
         Plugin::drawRow(languageFile.getc("player.title"),    title);
         Plugin::drawRow(languageFile.getc("player.track"),    fmt::format("{:d}/{:d}", mCurrentTrack, mTrackCount));
+        Plugin::drawRow(languageFile.getc("player.duration"),   "N/A");
+        Plugin::drawRow(languageFile.getc("player.position"),   "N/A");
         Plugin::endTable();
     }
 }

@@ -29,7 +29,7 @@
 #include "../event/file/FileLoadedEvent.h"
 #include "../event/file/FileSystemBusyEvent.h"
 #include "../event/file/FileSystemCancelTaskEvent.h"
-#include "../event/app/NotificationMessageEvent.h"
+#include "../event/file/FileSystemErrorEvent.h"
 #include "../tools/ConfigFile.h"
 #include "../tools/LanguageFile.h"
 
@@ -69,7 +69,7 @@ private:
     std::optional<FileSystemBusyEvent> mPendingFileSystemBusyEvent;
     std::optional<DirectoryLoadedEvent> mPendingDirectoryLoadedEvent;
     std::optional<FileLoadedEvent> mPendingFileLoadedEvent;
-    std::optional<NotificationMessageEvent> mPendingNotificationMessageEvent;
+    std::optional<FileSystemErrorEvent> mPendingFileSystemErrorEvent;
 
     FileSystem(const FileSystem& copy);
 
