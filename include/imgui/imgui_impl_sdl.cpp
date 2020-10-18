@@ -164,7 +164,7 @@ bool ImGui_ImplSDL2_ProcessEvent(const SDL_Event* event)
 
             if (!io.MouseDrawCursor)
                 io.MousePos = ImVec2(-FLT_MAX, -FLT_MAX);
-                
+
             return true;
         }
     case SDL_JOYAXISMOTION:
@@ -362,8 +362,6 @@ static void ImGui_ImplSDL2_UpdateGamepads()
 {
     ImGuiIO& io = ImGui::GetIO();
     memset(io.NavInputs, 0, sizeof(io.NavInputs));
-    if ((io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) == 0 && !g_EmulateMouseWithGamepad)
-        return;
 
     // Get gamepad
     SDL_GameController* game_controller = SDL_GameControllerOpen(0);
@@ -373,8 +371,10 @@ static void ImGui_ImplSDL2_UpdateGamepads()
         return;
     }
 
+    io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
+
     // Update gamepad inputs
-    if (!g_EmulateMouseWithGamepad)
+    if (!g_EmulateMouseWithGamepad && (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad) != 0)
     {
         #define MAP_BUTTON(NAV_NO, BUTTON_NO)       { io.NavInputs[NAV_NO] = (SDL_GameControllerGetButton(game_controller, BUTTON_NO) != 0) ? 1.0f : 0.0f; }
         #define MAP_ANALOG(NAV_NO, AXIS_NO, V0, V1) { float vn = (float)(SDL_GameControllerGetAxis(game_controller, AXIS_NO) - V0) / (float)(V1 - V0); if (vn > 1.0f) vn = 1.0f; if (vn > 0.0f && io.NavInputs[NAV_NO] < vn) io.NavInputs[NAV_NO] = vn; }
@@ -399,7 +399,7 @@ static void ImGui_ImplSDL2_UpdateGamepads()
         #undef MAP_BUTTON
         #undef MAP_ANALOG
     }
-    else
+    else if (g_EmulateMouseWithGamepad)
     {
         float mouse_speed;
         bool l_down = SDL_GameControllerGetButton(game_controller, SDL_CONTROLLER_BUTTON_LEFTSHOULDER) != 0 ? true : false;
@@ -417,27 +417,25 @@ static void ImGui_ImplSDL2_UpdateGamepads()
 
         if (joy_l_x < -1024) io.MousePos.x -= (abs(joy_l_x) * 0.00025f) * mouse_speed;
         else if (joy_l_x > 1024)  io.MousePos.x += (joy_l_x * 0.00025f) * mouse_speed;
-        
+
         if (joy_l_y > -1024) io.MousePos.y += (joy_l_y * 0.00025f) * mouse_speed;
         else if (joy_l_y < 1024)  io.MousePos.y -= (abs(joy_l_y) * 0.00025f) * mouse_speed;
-        
+
         if (mouse_wheel > -1024) io.MouseWheel -= (mouse_wheel * 0.00001f) * mouse_speed;
         if (mouse_wheel < 1024)  io.MouseWheel += (abs(mouse_wheel) * 0.00001f) * mouse_speed;
 
         if (io.MousePos.x < 0) io.MousePos.x = 0;
         else if (io.MousePos.x > io.DisplaySize.x) io.MousePos.x = io.DisplaySize.x;
-        
+
         if (io.MousePos.y < 0) io.MousePos.y = 0;
         else if (io.MousePos.y > io.DisplaySize.y) io.MousePos.y = io.DisplaySize.y;
 
         if (!g_ScreenTouched)
             io.MouseDown[0] = a_down;
-        
+
         io.MouseDown[1] = y_down;
         io.MouseDown[2] = b_down;
     }
-
-    io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
 }
 
 void ImGui_ImplSDL2_NewFrame(SDL_Window* window)
@@ -466,6 +464,5 @@ void ImGui_ImplSDL2_NewFrame(SDL_Window* window)
     ImGui_ImplSDL2_UpdateMouseCursor();
 
     // Update game controllers (if enabled and available)
-    if (io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad)
-        ImGui_ImplSDL2_UpdateGamepads();
+    ImGui_ImplSDL2_UpdateGamepads();
 }

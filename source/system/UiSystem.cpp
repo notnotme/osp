@@ -59,7 +59,7 @@ void UiSystem::configure(ECS::World* world)
     // Set up ImGui
     ImGui::CreateContext();
 
-    auto mouseEmulation = mConfig.get("mouse_emulation", true);
+    auto mouseEmulation = mConfig.get("mouse_emulation", DEFAULT_MOUSE_EMULATION);
     auto glContext = SDL_GL_GetCurrentContext();
     if (!ImGui_ImplSDL2_InitForOpenGL(mWindow, glContext, mouseEmulation))
     {
@@ -79,9 +79,7 @@ void UiSystem::configure(ECS::World* world)
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
 
 #if defined(__SWITCH__)
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
-    io.MouseDrawCursor = true;
-
+    io.MouseDrawCursor = mouseEmulation;
     auto touchEnabled = mConfig.get("touch_enabled", false);
     if (touchEnabled)
     {
@@ -351,7 +349,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0);
                 ImGui::SetNextWindowPos(savedWindowPos);
                 ImGui::SetNextWindowSize(savedWindowSize);
-                ImGui::SetNextWindowBgAlpha(0.9f);
+                ImGui::SetNextWindowBgAlpha(0.5f);
                 if (!ImGui::Begin("##filesTableLoadingOverlay", nullptr, windowFlags))
                 {
                     ImGui::PopStyleVar();
@@ -725,6 +723,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
             if (ImGui::Checkbox(mLanguageFile.getc("settings.mouse_emulation"), &mouseEmulation))
             {
                 mConfig.set("mouse_emulation", mouseEmulation);
+                io.MouseDrawCursor = mouseEmulation;
                 ImGui_ImplSDL2_SetMouseEmulationWithGamepad(mouseEmulation);
             }
 
@@ -822,12 +821,13 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
             ImGui::SetNextWindowSizeConstraints(windowMinSize, windowMaxSize);
             ImGui::SetNextWindowBgAlpha(0.95f);
 
-            auto notifId = fmt::format("##Notif{:d}", rowId).c_str();
+            auto notifId = fmt::format("##notif{:d}", rowId).c_str();
             if (ImGui::Begin(notifId, nullptr, windowFlags))
             {
                 if (it->type == NotificationMessageEvent::ERROR)
                 {
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.69f, 0.2f, 0.2f, 1.0f));
+                    auto red = ImVec4(0.88f, 0.3f, 0.3f, 1.0f);
+                    ImGui::PushStyleColor(ImGuiCol_Text, red);
                     ImGui::TextWrapped("%s", it->message.c_str());
                     ImGui::PopStyleColor();
                 }
@@ -861,7 +861,6 @@ void UiSystem::receive(ECS::World* world, const SDL_Event& event)
 void UiSystem::receive(ECS::World* world, const DirectoryLoadedEvent& event)
 {
     TRACE("Received DirectoryLoadedEvent: \"{:s}\" ({:d} items).", event.path, event.items.size());
-
     mCurrentPath = event.path;
     mCurrentPathItems.clear();
     mCurrentPathItems.insert(mCurrentPathItems.end(), event.items.begin(), event.items.end());
@@ -885,13 +884,13 @@ void UiSystem::receive(ECS::World* world, const AudioSystemConfiguredEvent& even
 void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
 {
     TRACE("Received AudioSystemPlayEvent: {:d}", event.type);
-
     switch (event.type)
     {
+        // If received the event below, the audio system is playing.
         case AudioSystemPlayEvent::PLAYING:
-            // Refresh current information about used plugin in needed
             if (!mCurrentPluginUsed.has_value() || (mCurrentPluginUsed.value().name != event.pluginName))
             {
+                // Refresh current information about used plugin in needed
                 for (auto pluginInfo : mPluginInformations)
                 {
                     if (pluginInfo.name == event.pluginName)
@@ -901,14 +900,7 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
                     }
                 }
             }
-        default:
-        break;
-    }
 
-    switch (event.type)
-    {
-        // If received the event below, the audio system is playing.
-        case AudioSystemPlayEvent::PLAYING:
             mAudioSystemStatus = PLAYING;
             mStatusMessage = std::string("\uf40a ").append(event.filename);
         break;
@@ -1051,7 +1043,7 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
         }
         else if (mPlaylist.index > selectedIndex)
         {
-            // In case we were playing a song after the deleted index
+            // In case we were playing agit status song after the deleted index
             // decrease the current playing index to stay in sync with the list selection
             mPlaylist.index--;
         }

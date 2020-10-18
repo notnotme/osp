@@ -20,8 +20,10 @@
 
 #if defined(__SWITCH__)
 #define DATAPATH "romfs:/"
+#define DEFAULT_MOUSE_EMULATION true
 #else
 #define DATAPATH "romfs/"
+#define DEFAULT_MOUSE_EMULATION false
 #endif
 
 // Default data access path for LocalFileSystem.

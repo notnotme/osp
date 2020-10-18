@@ -352,7 +352,8 @@ void AudioSystem::receive(ECS::World* world, const AudioSystemPlayTaskEvent& eve
             }
         break;
         case AudioSystemPlayTaskEvent::PREV_SUBSONG:
-            if (mCurrentPlugin->getTrackCount() <= 1)
+            if (mCurrentPlugin->getTrackCount() <= 1
+                || mCurrentPlugin->getCurrentTrack() <= 1)
             {
                 SDL_LockMutex(mMutex);
                 world->emit<AudioSystemPlayEvent>
@@ -380,7 +381,8 @@ void AudioSystem::receive(ECS::World* world, const AudioSystemPlayTaskEvent& eve
             }
         break;
         case AudioSystemPlayTaskEvent::NEXT_SUBSONG:
-            if (mCurrentPlugin->getTrackCount() <= 1)
+            if (mCurrentPlugin->getTrackCount() <= 1
+                || mCurrentPlugin->getCurrentTrack() >= mCurrentPlugin->getTrackCount())
             {
                 SDL_LockMutex(mMutex);
                 world->emit<AudioSystemPlayEvent>
