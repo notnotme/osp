@@ -436,6 +436,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         if (ImGui::ImageButton((ImTextureID)(intptr_t) textureId, buttonSize, buttonUV, buttonST))
         {
             world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
+            resetPlaylist(false);
         }
         ImGui::PopID();
 
@@ -566,7 +567,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                             auto selectableFlags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap;
                             if (ImGui::Selectable(filename.c_str(), mPlaylist.index == row, selectableFlags))
                             {
-                                processPlaylistItemSelection(world, row, false);
+                                processPlaylistItemSelection(world, row, false, false);
                             }
 
                             // Column [RIGHT] - Button(s)
@@ -574,7 +575,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                             ImGui::TableNextColumn();
                             if (ImGui::SmallButton(buttonDeleteId.c_str()))
                             {
-                                processPlaylistItemSelection(world, row, true);
+                                processPlaylistItemSelection(world, row, true, false);
                             }
                         }
                     }
@@ -884,23 +885,26 @@ void UiSystem::receive(ECS::World* world, const AudioSystemConfiguredEvent& even
 void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
 {
     TRACE("Received AudioSystemPlayEvent: {:d}", event.type);
-    switch (event.type)
+    if (event.type != AudioSystemPlayEvent::STOPPED_BY_USER
+        && event.type != AudioSystemPlayEvent::STOPPED)
     {
-        // If received the event below, the audio system is playing.
-        case AudioSystemPlayEvent::PLAYING:
-            if (!mCurrentPluginUsed.has_value() || (mCurrentPluginUsed.value().name != event.pluginName))
+        if (!mCurrentPluginUsed.has_value() || (mCurrentPluginUsed.value().name != event.pluginName))
+        {
+            // Refresh current information about used plugin in needed
+            for (auto pluginInfo : mPluginInformations)
             {
-                // Refresh current information about used plugin in needed
-                for (auto pluginInfo : mPluginInformations)
+                if (pluginInfo.name == event.pluginName)
                 {
-                    if (pluginInfo.name == event.pluginName)
-                    {
-                        mCurrentPluginUsed.emplace(pluginInfo);
-                        break;
-                    }
+                    mCurrentPluginUsed.emplace(pluginInfo);
+                    break;
                 }
             }
+        }
+    }
 
+    switch (event.type)
+    {
+        case AudioSystemPlayEvent::PLAYING:
             mAudioSystemStatus = PLAYING;
             mStatusMessage = std::string("\uf40a ").append(event.filename);
         break;
@@ -908,8 +912,6 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
             mAudioSystemStatus = PAUSED;
             mStatusMessage = std::string("\uf3e4 ").append(event.filename);
         break;
-
-        // If received the event below, the audio system is not playing.
         case AudioSystemPlayEvent::NO_NEXT_SUBSONG:
             if (mPlaylist.inUse)
             {
@@ -918,6 +920,7 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
             else
             {
                 world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
+                resetPlaylist(false);
             }
         break;
         case AudioSystemPlayEvent::NO_PREV_SUBSONG:
@@ -928,18 +931,18 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
             else
             {
                 world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
+                resetPlaylist(false);
             }
         break;
         case AudioSystemPlayEvent::STOPPED_BY_USER:
                 mCurrentPluginUsed.reset();
                 mAudioSystemStatus = STOPPED;
                 mStatusMessage = mLanguageFile.getc("status.ready");
-                resetPlaylist(false);
         break;
         case AudioSystemPlayEvent::STOPPED:
             if (mPlaylist.inUse && mPlaylist.index < (int) mPlaylist.paths.size()-1)
             {
-                processPlaylistItemSelection(world, mPlaylist.index+1, false);
+                processPlaylistItemSelection(world, mPlaylist.index+1, false, true);
             }
             else
             {
@@ -1013,6 +1016,7 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
         // todo: maybe show an alert dialog
         if (! item.isFolder)
         {
+            world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
             resetPlaylist(false);
         }
 
@@ -1026,7 +1030,7 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
     }
 }
 
- void UiSystem::processPlaylistItemSelection(ECS::World* world, int selectedIndex, bool remove)
+ void UiSystem::processPlaylistItemSelection(ECS::World* world, int selectedIndex, bool remove, bool stayPaused)
  {
      if (remove)
      {
@@ -1048,6 +1052,11 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
      }
     else
     {
+        if (!stayPaused)
+        {
+            world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
+        }
+
         mPlaylist.inUse = true;
         mPlaylist.index = selectedIndex;
         world->emit<FileSystemLoadTaskEvent>
@@ -1072,11 +1081,12 @@ void UiSystem::processNextPlaylistItem(ECS::World* world)
 {
     if (mPlaylist.index < (int) mPlaylist.paths.size()-1)
     {
-        processPlaylistItemSelection(world, mPlaylist.index+1, false);
+        processPlaylistItemSelection(world, mPlaylist.index+1, false, true);
     }
     else
     {
         world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
+        resetPlaylist(false);
         pushNotification(NotificationMessageEvent::INFO, "Playlist finished.");
     }
 }
@@ -1085,11 +1095,12 @@ void UiSystem::processPrevPlaylistItem(ECS::World* world)
 {
     if (mPlaylist.index > 0)
     {
-        processPlaylistItemSelection(world, mPlaylist.index-1, false);
+        processPlaylistItemSelection(world, mPlaylist.index-1, false, true);
     }
     else
     {
         world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
+        resetPlaylist(false);
         pushNotification(NotificationMessageEvent::INFO, "Playlist finished.");
     }
 }
