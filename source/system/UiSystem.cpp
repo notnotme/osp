@@ -917,9 +917,7 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
             }
             else
             {
-                mCurrentPluginUsed.reset();
-                mAudioSystemStatus = STOPPED;
-                mStatusMessage = mLanguageFile.getc("status.ready");
+                world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
             }
         break;
         case AudioSystemPlayEvent::NO_PREV_SUBSONG:
@@ -929,9 +927,7 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
             }
             else
             {
-                mCurrentPluginUsed.reset();
-                mAudioSystemStatus = STOPPED;
-                mStatusMessage = mLanguageFile.getc("status.ready");
+                world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
             }
         break;
         case AudioSystemPlayEvent::STOPPED_BY_USER:
@@ -1080,10 +1076,7 @@ void UiSystem::processNextPlaylistItem(ECS::World* world)
     }
     else
     {
-        mCurrentPluginUsed.reset();
-        mAudioSystemStatus = STOPPED;
-        mStatusMessage = mLanguageFile.getc("status.ready");
-        resetPlaylist(false);
+        world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
         pushNotification(NotificationMessageEvent::INFO, "Playlist finished.");
     }
 }
@@ -1096,10 +1089,7 @@ void UiSystem::processPrevPlaylistItem(ECS::World* world)
     }
     else
     {
-        mCurrentPluginUsed.reset();
-        mAudioSystemStatus = STOPPED;
-        mStatusMessage = mLanguageFile.getc("status.ready");
-        resetPlaylist(false);
+        world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
         pushNotification(NotificationMessageEvent::INFO, "Playlist finished.");
     }
 }
