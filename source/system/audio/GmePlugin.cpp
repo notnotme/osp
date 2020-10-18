@@ -110,7 +110,16 @@ void GmePlugin::setSubSong(int subsong)
         return;
     }
 
-    if (subsong > 0 && subsong <= mTrackCount)
+    if (subsong < 0)
+    {
+        mCurrentTrack = mTrackCount-1;
+        gme_start_track(mMusicEmu, mCurrentTrack);
+    }
+    else if (subsong == 0)
+    {
+        // No default subsong
+    }
+    else if (subsong <= mTrackCount)
     {
         mCurrentTrack = subsong-1;
         gme_start_track(mMusicEmu, mCurrentTrack);

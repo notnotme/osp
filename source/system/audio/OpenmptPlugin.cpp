@@ -90,6 +90,8 @@ int OpenmptPlugin::getTrackCount()
 
 void OpenmptPlugin::setSubSong(int subsong)
 {
+    // The only .mod I have crash the player when changing subsong.
+    // Not yet implemented.
 }
 
 void OpenmptPlugin::close()

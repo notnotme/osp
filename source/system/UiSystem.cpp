@@ -756,6 +756,13 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                     case 2: ImGui::StyleColorsClassic();    break;
                 }
             }
+
+            bool alwaysStartFirstTrack = mConfig.get("always_start_first_track", true);
+            if (ImGui::Checkbox(mLanguageFile.getc("settings.always_start_first_track"), &alwaysStartFirstTrack))
+            {
+                mConfig.set("always_start_first_track", alwaysStartFirstTrack);
+            }
+
 #if defined(__SWITCH__)
             bool mouseEmulation = mConfig.get("mouse_emulation", true);
             if (ImGui::Checkbox(mLanguageFile.getc("settings.mouse_emulation"), &mouseEmulation))
@@ -906,17 +913,22 @@ void UiSystem::receive(ECS::World* world, const DirectoryLoadedEvent& event)
 
 void UiSystem::receive(ECS::World* world, const FileLoadedEvent& event)
 {
-    if (mLoadFileSetPlaylistIndex == -1)
+    if (mLoadFileParams.playlistIndex == -1)
     {
         resetPlaylist(false);
     }
     else
     {
         mPlaylist.inUse = true;
-        mPlaylist.index = mLoadFileSetPlaylistIndex;
+        mPlaylist.index = mLoadFileParams.playlistIndex;
     }
 
-    auto forceStart = (mAudioSystemStatus == PAUSED) && !mLoadFileSetForceStart
+    // If we want to start the first track according to the settings,
+    // This affect how browsing playlist happen. When navigating back, we select the last song.
+    auto alwaysStartFirstTrack = mConfig.get("always_start_first_track", true);
+    auto startLastSubSong = mLoadFileParams.isGoingBack && alwaysStartFirstTrack;
+
+    auto forceStart = (mAudioSystemStatus == PAUSED) && !mLoadFileParams.forceStart
         ? AudioSystemLoadFileEvent::LOAD_AND_PAUSE
         : AudioSystemLoadFileEvent::LOAD_AND_PLAY;
 
@@ -925,7 +937,7 @@ void UiSystem::receive(ECS::World* world, const FileLoadedEvent& event)
         .type = forceStart,
         .path = event.path,
         .buffer = event.buffer,
-        .startTrack = -1 // todo config
+        .startTrack = startLastSubSong ? -1 : alwaysStartFirstTrack ? 1 : 0
     });
 }
 
@@ -1076,8 +1088,9 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
     }
     else
     {
-        mLoadFileSetForceStart = true;
-        mLoadFileSetPlaylistIndex = -1;
+        mLoadFileParams.forceStart = true;
+        mLoadFileParams.playlistIndex = -1;
+        mLoadFileParams.isGoingBack = false;
         world->emit<FileSystemLoadTaskEvent>
         ({
             .type = item.isFolder
@@ -1110,8 +1123,28 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
      }
     else
     {
-        mLoadFileSetForceStart = !stayPaused;
-        mLoadFileSetPlaylistIndex = selectedIndex;
+        mLoadFileParams.forceStart = !stayPaused;
+        mLoadFileParams.playlistIndex = selectedIndex;
+
+        // if stayPaused is true it mean the user requested the change
+       if (stayPaused)
+        {
+            // If we going back play last subsong when file event received.
+            if (!mPlaylist.inUse || mPlaylist.index == -1 || selectedIndex > mPlaylist.index)
+            {
+                mLoadFileParams.isGoingBack = false;
+
+            }
+            else
+            {
+                mLoadFileParams.isGoingBack = true;
+            }
+        }
+        else
+        {
+            mLoadFileParams.isGoingBack = false;
+        }
+
         world->emit<FileSystemLoadTaskEvent>
         ({
             .type = FileSystemLoadTaskEvent::LOAD_FILE,

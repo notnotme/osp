@@ -85,6 +85,13 @@ private:
         bool loop;
     };
 
+    struct LoadFileParams
+    {
+        bool forceStart;
+        bool isGoingBack;
+        int playlistIndex;
+    };
+
     enum AudioSystemStatus
     {
         PLAYING,
@@ -98,9 +105,7 @@ private:
     AtlasTexture mIconAtlas;
     AudioSystemStatus mAudioSystemStatus;
     Playlist mPlaylist;
-
-    bool mLoadFileSetForceStart;
-    int mLoadFileSetPlaylistIndex;
+    LoadFileParams mLoadFileParams;
 
     bool mShowWorkSpace;
     bool mShowDemoWindow;

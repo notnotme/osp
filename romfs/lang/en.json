@@ -31,6 +31,7 @@
     "settings.touch_enabled"            : "Touch enabled",
     "settings.style"                    : "Style",
     "settings.lang"                     : "Language",
+    "settings.always_start_first_track" : "Always start at the first track",
 
     "files.unsupported_file_type"       : "Unsupported file type:",
 
@@ -66,7 +67,6 @@
     "metadata.sid_compatibility"        : "Compatibility",
     "metadata.clock_speed"              : "Clock speed",
 
-    "plugin.always_start_first_track"   : "Always start at the first track",
     "plugin.loop_song"                  : "Loop song instead of stop",
     "plugin.enable_accuracy"            : "Enable accuracy",
     "plugin.autoload_playback_limit"    : "Autoload playback limit",

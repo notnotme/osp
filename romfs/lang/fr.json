@@ -31,6 +31,7 @@
     "settings.touch_enabled"            : "Activer l'ecran tactile",
     "settings.style"                    : "Style",
     "settings.lang"                     : "Langage",
+    "settings.always_start_first_track" : "Toujours démarrer la première piste",
 
     "files.unsupported_file_type"       : "Type de fichier non pris en charge:",
 
@@ -66,7 +67,6 @@
     "metadata.sid_compatibility"        : "Compatibilité",
     "metadata.clock_speed"              : "Vitesse d'horloge",
 
-    "plugin.always_start_first_track"   : "Toujours démarrer la première piste",
     "plugin.loop_song"                  : "Redémarre la musique sans s'arrêter",
     "plugin.enable_accuracy"            : "Lecture précise",
     "plugin.autoload_playback_limit"    : "Charger automatiquement les limites",

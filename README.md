@@ -36,9 +36,7 @@ This source code is bundled with a version of [ImGui](https://github.com/ocornut
 
 ### Todos:
 - Playlist
-    - Add a loop checkbox
     - Add an entry to the explorer popup menu to add a folder in the playlist
-- Start to last subsong when navigating back the playlist: If previous file as 10 subsong in it, start at 10.
 
 ### Some ideas:
 - Implement the ability to browse modland ftp

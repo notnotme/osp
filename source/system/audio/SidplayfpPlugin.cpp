@@ -120,7 +120,6 @@ void SidplayfpPlugin::open(const std::vector<uint8_t>& buffer)
     auto digiBoost = mConfig.get("enable_digiboost", false);
     auto fastSampling = mConfig.get("enable_fast_sampling", false);
     auto samplingMethod = mConfig.get("sampling_method", SidConfig::RESAMPLE_INTERPOLATE);
-    bool alwaysStartFirstTrack = mConfig.get("first_track_always", true);
 
     SidConfig cfg;
     cfg.frequency = 48000;
@@ -145,7 +144,7 @@ void SidplayfpPlugin::open(const std::vector<uint8_t>& buffer)
     auto musicInfo = mTune->getInfo();
     mTrackCount = musicInfo->songs();
 
-    mCurrentTrack = alwaysStartFirstTrack ? 1 : 0;
+    mCurrentTrack = 0;
     mTune->selectSong(mCurrentTrack);
     if (!mPlayer->load(mTune))
     {
@@ -170,7 +169,19 @@ void SidplayfpPlugin::setSubSong(int subsong)
         return;
     }
 
-    if (subsong > 0 && subsong <= mTrackCount)
+    if (subsong < 0)
+    {
+        mPlayer->load(nullptr);
+        mTune->selectSong(mTrackCount);
+        mPlayer->load(mTune);
+    }
+    else if (subsong == 0)
+    {
+        mPlayer->load(nullptr);
+        mTune->selectSong(0);
+        mPlayer->load(mTune);
+    }
+    else if (subsong <= mTrackCount)
     {
         mPlayer->load(nullptr);
         mTune->selectSong(subsong);
@@ -216,12 +227,6 @@ bool SidplayfpPlugin::decode(uint8_t* stream, size_t len)
 
 void SidplayfpPlugin::drawSettings(ECS::World* world, LanguageFile languageFile, float deltaTime)
 {
-    bool alwaysStartFirstTrack = mConfig.get("first_track_always", true);
-    if (ImGui::Checkbox(languageFile.getc("plugin.always_start_first_track"), &alwaysStartFirstTrack))
-    {
-        mConfig.set("first_track_always", alwaysStartFirstTrack);
-    }
-
     auto digiBoost = mConfig.get("enable_digiboost", false);
     if (ImGui::Checkbox(languageFile.getc("plugin.enable_digiboost"), &digiBoost))
     {

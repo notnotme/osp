@@ -283,6 +283,7 @@ void AudioSystem::receive(ECS::World* world, const AudioSystemLoadFileEvent& eve
     try
     {
         mCurrentPlugin->open(event.buffer);
+        mCurrentPlugin->setSubSong(event.startTrack);
     }
     catch(const std::exception& e)
     {

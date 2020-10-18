@@ -88,7 +88,6 @@ void Sc68Plugin::open(const std::vector<uint8_t>& buffer)
 {
     auto aSIDifierEnabled = mConfig.get("enable_asidifier", false);
     auto loop = mConfig.get("loop", false);
-    bool alwaysStartFirstTrack = mConfig.get("first_track_always", true);
 
     if (sc68_load_mem(mSC68, buffer.data(), buffer.size()) != 0)
     {
@@ -96,7 +95,7 @@ void Sc68Plugin::open(const std::vector<uint8_t>& buffer)
     }
 
     sc68_cntl(mSC68, SC68_SET_ASID, aSIDifierEnabled ? SC68_ASID_ON : SC68_ASID_OFF);
-    if (sc68_play(mSC68, alwaysStartFirstTrack ? 1 : SC68_DEF_TRACK, loop ? SC68_INF_LOOP : SC68_DEF_LOOP) < 0)
+    if (sc68_play(mSC68, SC68_DEF_TRACK, loop ? SC68_INF_LOOP : SC68_DEF_LOOP) < 0)
     {
         throw std::runtime_error(sc68_error(mSC68));
     }
@@ -125,13 +124,29 @@ void Sc68Plugin::setSubSong(int subsong)
         return;
     }
 
-    if (subsong > 0 && subsong <= mTrackCount)
+    if (subsong < 0)
     {
-        mCurrentTrack = subsong;
+        auto loop = mConfig.get("loop", false);
+        sc68_stop(mSC68);
+        sc68_play(mSC68, mTrackCount, loop ? SC68_INF_LOOP : SC68_DEF_LOOP);
+        sc68_process(mSC68, nullptr, 0);
+        mCurrentTrack = sc68_cntl(mSC68, SC68_GET_TRACK);
+    }
+    else if (subsong == 0)
+    {
+        auto loop = mConfig.get("loop", false);
+        sc68_stop(mSC68);
+        sc68_play(mSC68, SC68_DEF_TRACK, loop ? SC68_INF_LOOP : SC68_DEF_LOOP);
+        sc68_process(mSC68, nullptr, 0);
+        mCurrentTrack = sc68_cntl(mSC68, SC68_GET_TRACK);
+    }
+    else if (subsong <= mTrackCount)
+    {
         auto loop = mConfig.get("loop", false);
         sc68_stop(mSC68);
         sc68_play(mSC68, subsong, loop ? SC68_INF_LOOP : SC68_DEF_LOOP);
         sc68_process(mSC68, nullptr, 0);
+        mCurrentTrack = sc68_cntl(mSC68, SC68_GET_TRACK);
     }
 }
 
@@ -167,12 +182,6 @@ bool Sc68Plugin::decode(uint8_t *stream, size_t len)
 
 void Sc68Plugin::drawSettings(ECS::World *world, LanguageFile languageFile, float deltaTime)
 {
-    bool alwaysStartFirstTrack = mConfig.get("first_track_always", true);
-    if (ImGui::Checkbox(languageFile.getc("plugin.always_start_first_track"), &alwaysStartFirstTrack))
-    {
-        mConfig.set("first_track_always", alwaysStartFirstTrack);
-    }
-
     auto loop = mConfig.get("loop", false);
     if (ImGui::Checkbox(languageFile.getc("plugin.loop_song"), &loop))
     {
