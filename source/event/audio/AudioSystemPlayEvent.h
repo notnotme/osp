@@ -34,4 +34,6 @@ struct AudioSystemPlayEvent
     Type type;
     std::string pluginName;
     std::string filename;
+    int trackNumber;
+    int trackCount;
 };
