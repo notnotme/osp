@@ -19,7 +19,6 @@
 #include <vector>
 #include <string>
 
-#include <SDL2/SDL.h>
 #include <gme/gme.h>
 #include <ECS.h>
 
@@ -55,7 +54,6 @@ public:
 
 private:
     Music_Emu* mMusicEmu;
-    SDL_mutex* mMutex;
     int mCurrentTrack;
     int mTrackCount;
 

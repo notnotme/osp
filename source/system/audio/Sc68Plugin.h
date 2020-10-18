@@ -19,7 +19,6 @@
 #include <vector>
 #include <string>
 
-#include <SDL2/SDL.h>
 #include <sc68/sc68.h>
 #include <ECS.h>
 
@@ -56,7 +55,6 @@ public:
 private:
     sc68_create_t mSC68Config;
     sc68_t* mSC68;
-    SDL_mutex* mMutex;
     int mCurrentTrack;
     int mTrackCount;
 

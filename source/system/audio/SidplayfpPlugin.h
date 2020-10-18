@@ -19,7 +19,6 @@
 #include <vector>
 #include <string>
 
-#include <SDL2/SDL.h>
 #include <sidplayfp/sidplayfp.h>
 #include <sidplayfp/sidbuilder.h>
 #include <sidplayfp/SidTune.h>
@@ -63,7 +62,6 @@ private:
     sidplayfp* mPlayer;
     sidbuilder* mBuilder;
     SidTune* mTune;
-    SDL_mutex* mMutex;
     int mCurrentTrack;
     int mTrackCount;
 

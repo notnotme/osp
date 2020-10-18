@@ -19,7 +19,6 @@
 #include <vector>
 #include <string>
 
-#include <SDL2/SDL.h>
 #include <libopenmpt/libopenmpt.hpp>
 #include <ECS.h>
 
@@ -55,7 +54,6 @@ public:
 
 private:
     openmpt::module* mModule;
-    SDL_mutex* mMutex;
     bool mLoopEnabled;
 
 

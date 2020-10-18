@@ -37,7 +37,6 @@ Plugin(),
 mPlayer(nullptr),
 mBuilder(nullptr),
 mTune(nullptr),
-mMutex(SDL_CreateMutex()),
 mCurrentTrack(0),
 mTrackCount(0)
 {
@@ -45,7 +44,6 @@ mTrackCount(0)
 
 SidplayfpPlugin::~SidplayfpPlugin()
 {
-    SDL_DestroyMutex(mMutex);
 }
 
 std::string SidplayfpPlugin::getName()
@@ -174,11 +172,9 @@ void SidplayfpPlugin::setSubSong(int subsong)
 
     if (subsong > 0 && subsong <= mTrackCount)
     {
-        SDL_LockMutex(mMutex);
         mPlayer->load(nullptr);
         mTune->selectSong(subsong);
         mPlayer->load(mTune);
-        SDL_UnlockMutex(mMutex);
     }
 }
 
@@ -207,10 +203,8 @@ bool SidplayfpPlugin::decode(uint8_t* stream, size_t len)
         return false;
     }
 
-    SDL_LockMutex(mMutex);
     auto size = (uint_least32_t) len / 2;
     auto played = mPlayer->play((short*) stream, size);
-    SDL_UnlockMutex(mMutex);
 
     if (played < size && mPlayer->isPlaying())
     {
@@ -254,11 +248,9 @@ void SidplayfpPlugin::drawPlayerStats(ECS::World* world, LanguageFile languageFi
         return;
     }
 
-    SDL_LockMutex(mMutex);
     auto musicInfo = mTune->getInfo();
     auto title = musicInfo->infoString(0);
     mCurrentTrack = musicInfo->currentSong(); // Never change while playing ?
-    SDL_UnlockMutex(mMutex);
 
     if (Plugin::beginTable(languageFile.getc("player"), false))
     {
@@ -275,14 +267,12 @@ void SidplayfpPlugin::drawMetadata(ECS::World* world, LanguageFile languageFile,
         return;
     }
 
-    SDL_LockMutex(mMutex);
     auto musicInfo = mTune->getInfo();
     auto author = musicInfo->infoString(1);
     auto copyright =  musicInfo->infoString(2);
     auto sidModel = musicInfo->sidModel(0);
     auto clockSpeed = musicInfo->clockSpeed();
     auto compatibility = musicInfo->compatibility();
-    SDL_UnlockMutex(mMutex);
 
     if (Plugin::beginTable(languageFile.getc("metadata"), false))
     {

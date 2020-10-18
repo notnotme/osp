@@ -28,7 +28,6 @@
 Sc68Plugin::Sc68Plugin() :
 Plugin(),
 mSC68(nullptr),
-mMutex(SDL_CreateMutex()),
 mCurrentTrack(0),
 mTrackCount(0)
 {
@@ -36,7 +35,6 @@ mTrackCount(0)
 
 Sc68Plugin::~Sc68Plugin()
 {
-    SDL_DestroyMutex(mMutex);
 }
 
 std::string Sc68Plugin::getName()
@@ -129,13 +127,11 @@ void Sc68Plugin::setSubSong(int subsong)
 
     if (subsong > 0 && subsong <= mTrackCount)
     {
-        SDL_LockMutex(mMutex);
         mCurrentTrack = subsong;
         auto loop = mConfig.get("loop", false);
         sc68_stop(mSC68);
         sc68_play(mSC68, subsong, loop ? SC68_INF_LOOP : SC68_DEF_LOOP);
         sc68_process(mSC68, nullptr, 0);
-        SDL_UnlockMutex(mMutex);
     }
 }
 
@@ -158,10 +154,8 @@ bool Sc68Plugin::decode(uint8_t *stream, size_t len)
         return false;
     }
 
-    SDL_LockMutex(mMutex);
     auto amount = (int) len / 4;
     auto retCode = sc68_process(mSC68, stream, &amount);
-    SDL_UnlockMutex(mMutex);
 
     if (retCode == SC68_ERROR)
     {
@@ -201,12 +195,10 @@ void Sc68Plugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile, f
 
     sc68_music_info_t trackInfo;
 
-    SDL_LockMutex(mMutex);
     mCurrentTrack = sc68_cntl(mSC68, SC68_GET_TRACK);
     int trackResult = sc68_music_info(mSC68, &trackInfo, mCurrentTrack, 0);
     auto position = sc68_cntl(mSC68, SC68_GET_POS) / 1000;
     auto duration = trackInfo.trk.time_ms / 1000;
-    SDL_UnlockMutex(mMutex);
 
     if (trackResult != 0)
     {
@@ -233,10 +225,8 @@ void Sc68Plugin::drawMetadata(ECS::World* world, LanguageFile languageFile, floa
     sc68_music_info_t diskInfo;
     sc68_music_info_t trackInfo;
 
-    SDL_LockMutex(mMutex);
     int diskResult = sc68_music_info(mSC68, &diskInfo, -1, 0);
     int trackResult = sc68_music_info(mSC68, &trackInfo, mCurrentTrack, 0);
-    SDL_UnlockMutex(mMutex);
 
     if (diskResult != 0 || trackResult != 0)
     {

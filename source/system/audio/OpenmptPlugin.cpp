@@ -23,15 +23,12 @@
 
 OpenmptPlugin::OpenmptPlugin() :
 Plugin(),
-mModule(nullptr),
-mMutex(SDL_CreateMutex())
-
+mModule(nullptr)
 {
 }
 
 OpenmptPlugin::~OpenmptPlugin()
 {
-    SDL_DestroyMutex(mMutex);
 }
 
 std::string OpenmptPlugin::getName()
@@ -111,7 +108,6 @@ bool OpenmptPlugin::decode(uint8_t* stream, size_t len)
         return false;
     }
 
-    SDL_LockMutex(mMutex);
     auto size = (size_t) len / 4;
     auto reads = mModule->read_interleaved_stereo(48000, size, (int16_t*) stream);
     if (reads != size && mLoopEnabled)
@@ -119,8 +115,6 @@ bool OpenmptPlugin::decode(uint8_t* stream, size_t len)
         // loop
         reads = mModule->read_interleaved_stereo(48000, size - reads, (int16_t*) &stream[reads]);
     }
-
-    SDL_UnlockMutex(mMutex);
 
     return reads > 0 || mLoopEnabled;
 }
@@ -147,11 +141,9 @@ void OpenmptPlugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile
         return;
     }
 
-    SDL_LockMutex(mMutex);
     auto title = mModule->get_metadata("title");
     auto duration = (int) mModule->get_duration_seconds();
     auto position = (int) mModule->get_position_seconds();
-    SDL_UnlockMutex(mMutex);
 
     if (Plugin::beginTable(languageFile.getc("player"), false))
     {
@@ -170,7 +162,6 @@ void OpenmptPlugin::drawMetadata(ECS::World* world, LanguageFile languageFile, f
         return;
     }
 
-    SDL_LockMutex(mMutex);
     auto type = mModule->get_metadata("type");
     auto type_long = mModule->get_metadata("type_long");
     auto original_type = mModule->get_metadata("type");
@@ -179,7 +170,6 @@ void OpenmptPlugin::drawMetadata(ECS::World* world, LanguageFile languageFile, f
     auto tracker = mModule->get_metadata("tracker");
     auto date = mModule->get_metadata("date");
     auto msg = mModule->get_metadata("message");
-    SDL_UnlockMutex(mMutex);
 
     if (Plugin::beginTable(languageFile.getc("metadata"),  false))
     {

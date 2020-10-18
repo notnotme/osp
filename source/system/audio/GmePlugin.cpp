@@ -28,7 +28,6 @@
 GmePlugin::GmePlugin() :
 Plugin(),
 mMusicEmu(nullptr),
-mMutex(SDL_CreateMutex()),
 mCurrentTrack(0),
 mTrackCount(0)
 {
@@ -36,7 +35,6 @@ mTrackCount(0)
 
 GmePlugin::~GmePlugin()
 {
-    SDL_DestroyMutex(mMutex);
 }
 
 std::string GmePlugin::getName()
@@ -114,10 +112,8 @@ void GmePlugin::setSubSong(int subsong)
 
     if (subsong > 0 && subsong <= mTrackCount)
     {
-        SDL_LockMutex(mMutex);
         mCurrentTrack = subsong-1;
         gme_start_track(mMusicEmu, mCurrentTrack);
-        SDL_UnlockMutex(mMutex);
     }
 }
 
@@ -140,7 +136,6 @@ bool GmePlugin::decode(uint8_t* stream, size_t len)
         return false;
     }
 
-    SDL_LockMutex(mMutex);
     auto size = (int) len / 2;
     auto error = gme_play(mMusicEmu, size, (short*) stream);
     bool ended = gme_track_ended(mMusicEmu);
@@ -151,7 +146,6 @@ bool GmePlugin::decode(uint8_t* stream, size_t len)
         gme_start_track(mMusicEmu, mCurrentTrack);
         ended = false;
     }
-    SDL_UnlockMutex(mMutex);
 
     if (error != nullptr)
     {
@@ -190,11 +184,9 @@ void GmePlugin::drawPlayerStats(ECS::World* world, LanguageFile languageFile, fl
     }
 
     gme_info_t* info;
-    SDL_LockMutex(mMutex);
     gme_track_info(mMusicEmu, &info, mCurrentTrack);
     auto position = (gme_tell_samples(mMusicEmu) / 48000) / 2;
     auto duration = (info->length > 0 ? info->length : info->play_length) / 1000;
-    SDL_UnlockMutex(mMutex);
 
     if (Plugin::beginTable(languageFile.getc("player"), false))
     {
@@ -216,9 +208,7 @@ void GmePlugin::drawMetadata(ECS::World* world, LanguageFile languageFile, float
     }
 
     gme_info_t* info;
-    SDL_LockMutex(mMutex);
     gme_track_info(mMusicEmu, &info, mCurrentTrack);
-    SDL_UnlockMutex(mMutex);
 
     if (Plugin::beginTable(languageFile.getc("metadata"), false))
     {
