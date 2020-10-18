@@ -14,17 +14,17 @@ snd, sndh, sc68, sid, psid, rsid, mus, ay, gbs, gym, hes, kss, nsf, nsfe, sap, s
     - L shoulder: Speed down mouse and scroll (keep button down)
     - R shoulder: Speed up mouse and scroll (keep button down)
 
-- Mouse emulation with gamepad is enabled by default, you can disable it in the settings window.
-
 - Touch controls can be enabled/disabled (it work as a "mouse right click", no more)
 
 - Nintendo switch usb mouse support (please disable manually mouse emulation in this case)
+
+- Obviously, don't try to disable mouse emulation AND touch controls if you do not have an USB mouse compatible with your Switch hehe.
 
 ### Build
 
 To be able to compile the project you need the following libraries installed in your system:
 
-- libsdl2, libsdl2-image, libjansson, libfmt, libconfig++ wich can be found is your package manager usually.
+- libsdl2, libsdl2-image, libjansson, libfmt, libconfig++ wich can be found is usually your package manager.
 - [libgme](https://github.com/ShiftMediaProject/game-music-emu), [libsidplayfp](https://sourceforge.net/projects/sidplay-residfp/), [libsc68](https://sourceforge.net/projects/sc68/) and [libopenmpt](https://lib.openmpt.org/libopenmpt/) wich can be optained by following the links above in case they are not available on your system.
 - [Glad loader](https://glad.dav1d.de/) installed with 3.3 Core capabilities (your video card must support OpenGL 3.3 Core)
 
@@ -32,26 +32,15 @@ To be able to compile the project you need the following libraries installed in 
 Currently this code can be build for Nintendo Switch and Linux but you may need to tweak the Makefile.sdl to fit your Linux needs.
 I essentially target the switch and the other build help me for debug purpose.
 
-This source code is bundled with a version of [ImGui](https://github.com/ocornut/imgui) (1.79 tables branch) and [ECS](https://github.com/redxdev/ECS).
+This source code is bundled with a version of [ImGui](https://github.com/ocornut/imgui) (1.79 tables branch) and [ECS](https://github.com/redxdev/ECS) and some fonts ([Atari ST 8x16](https://www.dafont.com/fr/atari-st-8x16-system-font.font), [Material Design Icons](https://materialdesignicons.com/), and [Roboto](https://fonts.google.com/specimen/Roboto))
 
-And some font:
-- [Atari ST 8x16](https://www.dafont.com/fr/atari-st-8x16-system-font.font)
-- [Material Design Icons](https://materialdesignicons.com/)
-- [Roboto](https://fonts.google.com/specimen/Roboto)
+### Todos:
+- Playlist
+    - Add a loop checkbox
+    - Add an entry to the explorer popup menu to add a folder in the playlist
+- Start to last subsong when navigating back the playlist: If previous file as 10 subsong in it, start at 10.
 
-Todos:
-- Move the metadata into a tab
-- Create a playlist tab
-    - Add a popup menu to the explorer items with some options
-        - Add to playlist
-        - Add folder to playlist
-    - Put the playlist into a tab with some options
-        - Play sequentially
-        - Play randomly
-        - Remove one/some/all entries
-        - Loop playlist
-
-Some ideas:
+### Some ideas:
 - Implement the ability to browse modland ftp
 - Create some custom controls using the ImGui framework
 - Vu meter around the player controls (left and right)
