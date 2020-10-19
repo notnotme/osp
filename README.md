@@ -48,3 +48,10 @@ This source code is bundled with a version of [ImGui](https://github.com/ocornut
 - When the worspace is not visible, add options to show something (minigames, song information, shaders...)
 - Battery save mode (black screen, stop refreshing or do it at low fps ?)
 - Add a better touch support
+
+
+### Screenshots
+
+<img src="./raw_assets/capture.png" width="640"/>
+<img src="./raw_assets/capture1.png" width="640"/>
+<img src="./raw_assets/capture2.png" width="640"/>
