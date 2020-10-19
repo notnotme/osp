@@ -480,7 +480,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         ImGui::Spacing();
         if (ImGui::BeginChild("##playerWrapper", windowSize, false, windowFlags))
         {
-            if (mAudioSystemStatus != STOPPED)
+            if (mCurrentPluginUsed.has_value())
             {
                 mCurrentPluginUsed.value().drawPlayerStats(world, mLanguageFile, deltaTime);
             }
@@ -608,7 +608,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                             auto selectableFlags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap;
                             if (ImGui::Selectable(filename.c_str(), mPlaylist.index == row, selectableFlags))
                             {
-                                processPlaylistItemSelection(world, row, false, false);
+                                processPlaylistItemSelection(world, row, true, false);
                             }
 
                             // Column [RIGHT] - Button(s)
@@ -616,7 +616,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                             ImGui::TableNextColumn();
                             if (ImGui::SmallButton(buttonDeleteId.c_str()))
                             {
-                                processPlaylistItemSelection(world, row, true, false);
+                                removeItemFromPlaylist(row);
                             }
                         }
                     }
@@ -1071,11 +1071,6 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
             {
                 mStatusMessage = mLanguageFile.getc("status.ready");
                 mCurrentPluginUsed.reset();
-                if (mPlaylist.inUse)
-                {
-                    pushNotification(Notification::INFO, "Playlist finished.");
-                    resetPlaylist(false);
-                }
             }
         break;
 
@@ -1154,65 +1149,18 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
     }
 }
 
- void UiSystem::processPlaylistItemSelection(ECS::World* world, int selectedIndex, bool remove, bool stayPaused)
+ void UiSystem::processPlaylistItemSelection(ECS::World* world, int selectedIndex, bool userRequest, bool goingBackward)
  {
-     if (remove)
-     {
-        // todo: alert dialog ?
-        if (mPlaylist.index == selectedIndex)
-        {
-            // If we delete the current playing index we let the song finish but
-            // the index is reset to -1 (playlist not in use)
-            resetPlaylist(false);
-        }
-        else if (mPlaylist.index > selectedIndex)
-        {
-            // In case we were playing agit status song after the deleted index
-            // decrease the current playing index to stay in sync with the list selection
-            mPlaylist.index--;
-        }
-
-        mPlaylist.paths.erase(mPlaylist.paths.begin()+selectedIndex);
-     }
-    else
-    {
-        mLoadFileParams.forceStart = !stayPaused;
-        mLoadFileParams.playlistIndex = selectedIndex;
-
-        // if stayPaused is true it mean the user requested the change
-       if (stayPaused)
-        {
-            // If we going back play last subsong when file event received.
-            auto playListSize = (int) mPlaylist.paths.size();
-            if (!mPlaylist.inUse || mPlaylist.index == -1)
-            {
-                mLoadFileParams.isGoingBack = false;
-
-            }
-            else if (selectedIndex == 0 &&  mPlaylist.index == playListSize-1)
-            {
-                mLoadFileParams.isGoingBack = false;
-            }
-            else if (selectedIndex == playListSize-1 &&  mPlaylist.index == 0)
-            {
-                mLoadFileParams.isGoingBack = true;
-            }
-            else
-            {
-                mLoadFileParams.isGoingBack = selectedIndex < mPlaylist.index;
-            }
-        }
-        else
-        {
-            mLoadFileParams.isGoingBack = false;
-        }
-
-        world->emit<FileSystemLoadTaskEvent>
-        ({
-            .type = FileSystemLoadTaskEvent::LOAD_FILE,
-            .path = mPlaylist.paths[selectedIndex]
-        });
-    }
+    // When the user request the file to be played we force it to start.
+    // Otherwise we just load it (when paused and browsing the playlist).
+    mLoadFileParams.forceStart = userRequest;
+    mLoadFileParams.playlistIndex = selectedIndex;
+    mLoadFileParams.isGoingBack = goingBackward;
+    world->emit<FileSystemLoadTaskEvent>
+    ({
+        .type = FileSystemLoadTaskEvent::LOAD_FILE,
+        .path = mPlaylist.paths[selectedIndex]
+    });
  }
 
 void UiSystem::resetPlaylist(bool eraseAllPaths)
@@ -1225,20 +1173,46 @@ void UiSystem::resetPlaylist(bool eraseAllPaths)
     };
 }
 
+void UiSystem::removeItemFromPlaylist(int index)
+{
+    // todo: alert dialog ?
+    if (mPlaylist.index == index)
+    {
+        // If we delete the current playing index we let the song finish but
+        // the index is reset to -1 (playlist not in use)
+        resetPlaylist(false);
+    }
+    else if (mPlaylist.index > index)
+    {
+        // In case we were playing agit status song after the deleted index
+        // decrease the current playing index to stay in sync with the list selection
+        mPlaylist.index--;
+    }
+
+    mPlaylist.paths.erase(mPlaylist.paths.begin()+index);
+}
+
 void UiSystem::processNextPlaylistItem(ECS::World* world)
 {
     if (mPlaylist.index < (int) mPlaylist.paths.size()-1)
     {
-        processPlaylistItemSelection(world, mPlaylist.index+1, false, true);
+        processPlaylistItemSelection(world, mPlaylist.index+1, true, false);
     }
     else if (mPlaylist.loop)
     {
-        processPlaylistItemSelection(world, 0, false, true);
+        processPlaylistItemSelection(world, 0, true, false);
     }
     else
     {
-        world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
         pushNotification(Notification::INFO, "Playlist finished.");
+
+        // We we explicitely requested the next song and none are found, sending STOP to the AudioSystem will do nothing
+        // because it is already stopped.
+        // We set the status message and reset current plugin now
+        mStatusMessage = mLanguageFile.getc("status.ready");
+        mCurrentPluginUsed.reset();
+        resetPlaylist(false);
+        world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
     }
 }
 
@@ -1246,15 +1220,22 @@ void UiSystem::processPrevPlaylistItem(ECS::World* world)
 {
     if (mPlaylist.index > 0)
     {
-        processPlaylistItemSelection(world, mPlaylist.index-1, false, true);
+        processPlaylistItemSelection(world, mPlaylist.index-1, true, true);
     }
     else if (mPlaylist.loop)
     {
-        processPlaylistItemSelection(world, mPlaylist.paths.size()-1, false, true);
+        processPlaylistItemSelection(world, mPlaylist.paths.size()-1, true, true);
     }
     else
     {
-        world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
         pushNotification(Notification::INFO, "Playlist finished.");
+
+        // We we explicitely requested the previous song and none are found, sending STOP to the AudioSystem will do nothing
+        // because it is already stopped.
+        // We set the status message and reset current plugin now
+        mStatusMessage = mLanguageFile.getc("status.ready");
+        mCurrentPluginUsed.reset();
+        resetPlaylist(false);
+        world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
     }
 }
