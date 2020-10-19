@@ -42,6 +42,7 @@ TARGET		:= $(notdir $(CURDIR))
 APP_TITLE	:= Old School Player
 APP_AUTHOR	:= romain337
 BUILD		:= build
+APP_VERSION	:= $(GIT_VERSION)
 INCLUDES	:= include
 ROMFS		:= romfs
 #DATA		:= data
