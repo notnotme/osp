@@ -286,21 +286,21 @@ void SidplayfpPlugin::drawMetadata(ECS::World* world, LanguageFile languageFile,
         Plugin::drawRow(languageFile.getc("metadata.author"),               author);
         Plugin::drawRow(languageFile.getc("metadata.copyright"),            copyright);
 
-        ImGui::TableNextColumn(); ImGui::Text(languageFile.getc("metadata.sid_model"));
+        ImGui::TableNextColumn(); ImGui::Text("%s", languageFile.getc("metadata.sid_model"));
         ImGui::TableNextColumn();
         if (sidModel == SidTuneInfo::SIDMODEL_6581)         ImGui::Text("6581");
         else if (sidModel == SidTuneInfo::SIDMODEL_8580)    ImGui::Text("8580");
         else if (sidModel == SidTuneInfo::SIDMODEL_ANY)     ImGui::Text("%s", languageFile.getc("ANY"));
         else if (sidModel == SidTuneInfo::SIDMODEL_UNKNOWN) ImGui::Text("%s", languageFile.getc("UNKNOWN"));
 
-        ImGui::TableNextColumn(); ImGui::Text(languageFile.getc("metadata.clock_speed"));
+        ImGui::TableNextColumn(); ImGui::Text("%s", languageFile.getc("metadata.clock_speed"));
         ImGui::TableNextColumn();
         if (clockSpeed == SidTuneInfo::CLOCK_NTSC)          ImGui::Text("NTSC");
         else if (clockSpeed == SidTuneInfo::CLOCK_PAL)      ImGui::Text("PAL");
         else if (clockSpeed == SidTuneInfo::CLOCK_ANY)      ImGui::Text("%s", languageFile.getc("ANY"));
         else if (clockSpeed == SidTuneInfo::CLOCK_UNKNOWN)  ImGui::Text("%s", languageFile.getc("UNKNOWN"));
 
-        ImGui::TableNextColumn(); ImGui::Text(languageFile.getc("metadata.sid_compatibility"));
+        ImGui::TableNextColumn(); ImGui::Text("%s", languageFile.getc("metadata.sid_compatibility"));
         ImGui::TableNextColumn();
         if (compatibility == SidTuneInfo::COMPATIBILITY_BASIC)      ImGui::Text("BASIC");
         else if (compatibility == SidTuneInfo::COMPATIBILITY_C64)   ImGui::Text("C64");

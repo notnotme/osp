@@ -82,11 +82,11 @@ void Plugin::endTable()
 void Plugin::drawRow(std::string label, std::string value)
 {
     ImGui::TableNextColumn();
-    ImGui::Text(label.c_str());
+    ImGui::Text("%s", label.c_str());
     ImGui::TableNextColumn();
     if (value.length() > 0)
     {
-        ImGui::Text(value.c_str());
+        ImGui::Text("%s", value.c_str());
     }
     else
     {
