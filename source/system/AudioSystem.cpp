@@ -318,7 +318,8 @@ void AudioSystem::receive(ECS::World* world, const AudioSystemLoadFileEvent& eve
             audioEvent.type = AudioSystemPlayEvent::PLAYING;
             SDL_PauseAudioDevice(mAudioDevice, false);
             TRACE("Playback started...");
-            break;
+        break;
+
         case AudioSystemLoadFileEvent::LOAD_AND_PAUSE:
             // If we were paused, stay paused.
             mPlayStatus = PAUSED;
@@ -355,6 +356,7 @@ void AudioSystem::receive(ECS::World* world, const AudioSystemPlayTaskEvent& eve
                 });
             }
         break;
+
         case AudioSystemPlayTaskEvent::PAUSE:
             if (mPlayStatus == PLAYING)
             {
@@ -370,6 +372,7 @@ void AudioSystem::receive(ECS::World* world, const AudioSystemPlayTaskEvent& eve
                 });
             }
         break;
+
         case AudioSystemPlayTaskEvent::PREV_SUBSONG:
             if (mCurrentPlugin->getTrackCount() <= 1
                 || mCurrentPlugin->getCurrentTrack() <= 1)
@@ -404,6 +407,7 @@ void AudioSystem::receive(ECS::World* world, const AudioSystemPlayTaskEvent& eve
                 });
             }
         break;
+
         case AudioSystemPlayTaskEvent::NEXT_SUBSONG:
             if (mCurrentPlugin->getTrackCount() <= 1
                 || mCurrentPlugin->getCurrentTrack() >= mCurrentPlugin->getTrackCount())
@@ -438,6 +442,7 @@ void AudioSystem::receive(ECS::World* world, const AudioSystemPlayTaskEvent& eve
                 });
             }
         break;
+
         case AudioSystemPlayTaskEvent::STOP:
             if (mPlayStatus != NO_FILE)
             {

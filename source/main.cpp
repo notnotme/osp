@@ -152,6 +152,7 @@ int main(int argc, char *argv[])
                 case SDL_QUIT:
                     done = true;
                 break;
+
                 case SDL_CONTROLLERBUTTONDOWN:
                     if (event.cbutton.which == 0)
                     {
@@ -162,6 +163,7 @@ int main(int argc, char *argv[])
                             SDL_PushEvent(&quitEvent);
                         }
                     }
+
                 default:
                     world->emit<SDL_Event>(event);
             }
@@ -179,6 +181,7 @@ int main(int argc, char *argv[])
                     switchIsDocked = false;
                 }
             break;
+
             case AppletOperationMode_Docked:
                 if (switchIsDocked == false)
                 {

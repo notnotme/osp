@@ -268,7 +268,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         // ----------------------------------------------------------
         // Left panel: file browser
         auto currentPath = mCurrentPath.empty() ? mLanguageFile.getc("mount_points") : mCurrentPath;
-        ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogram], "\uf24b"); ImGui::SameLine(); ImGui::Text(currentPath.c_str());
+        ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogram], "\uf24b"); ImGui::SameLine(); ImGui::Text("%s", currentPath.c_str());
         ImGui::Spacing();
 
         // Show current entries in mCurrentPath using a table
@@ -338,7 +338,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                     if (!item.isFolder)
                     {
                         auto fileSizeStr = fmt::format("{:d} Kb ", (uint32_t) (item.size / 1024));
-                        ImGui::Text(fileSizeStr.c_str());
+                        ImGui::Text("%s", fileSizeStr.c_str());
                     }
                     else
                     {
@@ -427,13 +427,16 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                         .type = AudioSystemPlayTaskEvent::PAUSE
                     });
                 break;
+
                 case PAUSED:
                     world->emit<AudioSystemPlayTaskEvent>
                     ({
                         .type = AudioSystemPlayTaskEvent::PLAY
                     });
                 break;
-                default: break;
+
+                default:
+                break;
             }
         }
         ImGui::PopID();
@@ -568,7 +571,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                 auto textOffsetX = (ImGui::GetContentRegionAvailWidth() + style.FramePadding.x * 2) - textSize.x;
 
                 ImGui::SameLine(textOffsetX, 0);
-                ImGui::Text(itemCountStr);
+                ImGui::Text("%s", itemCountStr);
                 ImGui::Spacing();
 
                 // Show current entries
@@ -688,22 +691,65 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
             ImGui::Image((ImTextureID)(intptr_t) mIconAtlas.getTextureId(), logoSize, logoUV, logoST);
             ImGui::Spacing();
             ImGui::TextWrapped("%s", mLanguageFile.getc("about.introduction"));
-            ImGui::NewLine();
-            ImGui::Text("Version: " GIT_VERSION " (" GIT_COMMIT ")");
-            ImGui::Text("Build date: " BUILD_DATE);
-            ImGui::NewLine();
-            ImGui::Text(mLanguageFile.getc("about.make_use_of"));
-            ImGui::BulletText("SDL %d.%d.%d", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL);
-            ImGui::BulletText("Dear ImGui %s", ImGui::GetVersion());
-            for (auto pluginInfo : mPluginInformations)
+
+            auto tableFlags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_BordersOuterV;
+            ImGui::Spacing();
+            if (ImGui::BeginTable("##programVersion", 2, tableFlags))
             {
-                ImGui::BulletText("%s %s", pluginInfo.name.c_str(), pluginInfo.version.c_str());
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_None, 0.33f);
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_None);
+                ImGui::TableNextColumn();
+                ImGui::Text("Version");
+                ImGui::TableNextColumn();
+                ImGui::Text(GIT_VERSION " (" GIT_COMMIT ")");
+                ImGui::TableNextColumn();
+                ImGui::Text("Build date");
+                ImGui::TableNextColumn();
+                ImGui::Text(BUILD_DATE);
+                ImGui::EndTable();
             }
-            ImGui::NewLine();
-            ImGui::Text(mLanguageFile.getc("about.integrated_fonts"));
-            ImGui::BulletText("Atari ST 8x16 System");
-            ImGui::BulletText("Roboto");
-            ImGui::BulletText("Material Icons");
+
+            tableFlags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_BordersOuterV;
+            ImGui::Spacing();
+            ImGui::Text("%s", mLanguageFile.getc("about.make_use_of"));
+            if (ImGui::BeginTable("##programLibs", 2, tableFlags))
+            {
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_None, 0.33f);
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_None);
+
+                ImGui::TableNextColumn();
+                ImGui::Text("SDL");
+                ImGui::TableNextColumn();
+                ImGui::Text("%d.%d.%d", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL);
+
+                ImGui::TableNextColumn();
+                ImGui::Text("Dear ImGui");
+                ImGui::TableNextColumn();
+                ImGui::Text("%s", ImGui::GetVersion());
+                for (auto pluginInfo : mPluginInformations)
+                {
+                    ImGui::TableNextColumn();
+                    ImGui::Text("%s", pluginInfo.name.c_str());
+                    ImGui::TableNextColumn();
+                    ImGui::Text("%s", pluginInfo.version.c_str());
+                }
+                ImGui::EndTable();
+            }
+
+            tableFlags = ImGuiTableFlags_RowBg | ImGuiTableFlags_BordersOuterH | ImGuiTableFlags_BordersOuterV;
+            ImGui::Spacing();
+            ImGui::Text("%s", mLanguageFile.getc("about.integrated_fonts"));
+            if (ImGui::BeginTable("##programFonts", 1, tableFlags))
+            {
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_None);
+                ImGui::TableNextColumn();
+                ImGui::Text("Atari ST 8x16 System");
+                ImGui::TableNextColumn();
+                ImGui::Text("Roboto");
+                ImGui::TableNextColumn();
+                ImGui::Text("Material Icons");
+                ImGui::EndTable();
+            }
             ImGui::EndPopup();
         }
     }
@@ -752,6 +798,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                 mConfig.set("style", appStyle);
                 switch (appStyle)
                 {
+                    default:
                     case 0: ImGui::StyleColorsDark();       break;
                     case 1: ImGui::StyleColorsLight();      break;
                     case 2: ImGui::StyleColorsClassic();    break;
@@ -979,10 +1026,12 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
             mAudioSystemStatus = PLAYING;
             mStatusMessage = std::string("\uf40a ").append(event.filename);
         break;
+
         case AudioSystemPlayEvent::PAUSED:
             mAudioSystemStatus = PAUSED;
             mStatusMessage = std::string("\uf3e4 ").append(event.filename);
         break;
+
         case AudioSystemPlayEvent::NO_NEXT_SUBSONG:
             if (mPlaylist.inUse)
             {
@@ -993,6 +1042,7 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
                 world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
             }
         break;
+
         case AudioSystemPlayEvent::NO_PREV_SUBSONG:
             if (mPlaylist.inUse)
             {
@@ -1003,12 +1053,14 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
                 world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
             }
         break;
+
         case AudioSystemPlayEvent::STOPPED_BY_USER:
                 mAudioSystemStatus = STOPPED;
                 mStatusMessage = mLanguageFile.getc("status.ready");
                 resetPlaylist(false);
                 mCurrentPluginUsed.reset();
         break;
+
         case AudioSystemPlayEvent::STOPPED:
             mAudioSystemStatus = STOPPED;
             if (mPlaylist.inUse)
@@ -1026,6 +1078,7 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
                 }
             }
         break;
+
         default:
         break;
     }

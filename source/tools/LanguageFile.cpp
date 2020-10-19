@@ -81,10 +81,10 @@ std::string LanguageFile::getFilename()
         default:
         case ENGLISH:
             langStr = "en";
-            break;
+        break;
         case FRENCH:
             langStr = "fr";
-            break;
+        break;
     }
 
     return fmt::format("{:s}/{:s}.json", mFolder, langStr);
