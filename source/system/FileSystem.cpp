@@ -31,9 +31,12 @@ FileSystem::FileSystem(Config config, LanguageFile languageFile) :
 ECS::EntitySystem(),
 mConfig(config),
 mLanguageFile(languageFile),
-mWorkerThreadState(IDLE),
-mWorkerThread(nullptr),
-mWorkerThreadMutex(SDL_CreateMutex())
+mWorkerThreadMutex(SDL_CreateMutex()),
+mThreadParams
+({
+    {.thread = nullptr, .status = IDLE, .path = {}},
+    {.thread = nullptr, .status = IDLE, .path = {}}
+})
 {
 }
 
@@ -72,7 +75,8 @@ void FileSystem::unconfigure(ECS::World* world)
     world->unsubscribe<FileSystemCancelTaskEvent>(this);
 
     // If we are working stop right now
-    cancelWorkerThread();
+    cancelFileThread();
+    cancelDirectoryThread();
 
     // Release any resources used by MountPoints
     for (auto* mountPoint : mMountPoints)
@@ -86,10 +90,22 @@ void FileSystem::tick(ECS::World* world, float deltaTime)
 {
     // Check for pending event probably fired by one of the worker thread
     SDL_LockMutex(mWorkerThreadMutex);
-    if (mPendingFileSystemBusyEvent.has_value())
+    if (!mPendingFileSystemBusyEvent.empty())
     {
-        world->emit(mPendingFileSystemBusyEvent.value());
-        mPendingFileSystemBusyEvent.reset();
+        for (auto event : mPendingFileSystemBusyEvent)
+        {
+            world->emit(event);
+        }
+        mPendingFileSystemBusyEvent.clear();
+    }
+
+    if (!mPendingFileSystemErrorEvent.empty())
+    {
+        for (auto event : mPendingFileSystemErrorEvent)
+        {
+            world->emit(event);
+        }
+        mPendingFileSystemErrorEvent.clear();
     }
 
     if (mPendingFileLoadedEvent.has_value())
@@ -102,12 +118,6 @@ void FileSystem::tick(ECS::World* world, float deltaTime)
     {
         world->emit(mPendingDirectoryLoadedEvent.value());
         mPendingDirectoryLoadedEvent.reset();
-    }
-
-    if (mPendingFileSystemErrorEvent.has_value())
-    {
-        world->emit(mPendingFileSystemErrorEvent.value());
-        mPendingFileSystemErrorEvent.reset();
     }
     SDL_UnlockMutex(mWorkerThreadMutex);
 }
@@ -137,22 +147,33 @@ void FileSystem::receive(ECS::World* world, const FileSystemLoadTaskEvent& event
     TRACE("Received FileSystemLoadTaskEvent type {:d}, {:s}", event.type, event.path);
 
     // Cancel any work
-    cancelWorkerThread();
+    ThreadParams* target;
+    switch (event.type)
+    {
+        case FileSystemLoadTaskEvent::LOAD_DIRECTORY:
+            cancelDirectoryThread();
+            target = &mThreadParams[DIRECTORY];
+        break;
+        case FileSystemLoadTaskEvent::LOAD_FILE:
+            cancelFileThread();
+            target = &mThreadParams[FILE];
+        break;
+    }
 
     // Build path to navigate
-    mPathToNavigate.clear();
+    target->path.clear();
     auto path = std::filesystem::path(event.path);
     for (auto elm : path)
     {
-        mPathToNavigate.push_back(elm);
+        target->path.push_back(elm);
     }
 
     // Replace the mount point name by his scheme if present
     for (auto* mountPoint : mMountPoints)
     {
-        if (mPathToNavigate[0] == mountPoint->getName())
+        if (target->path[0] == mountPoint->getName())
         {
-            mPathToNavigate[0] = mountPoint->getScheme();
+            target->path[0] = mountPoint->getScheme();
             break;
         }
     }
@@ -160,26 +181,34 @@ void FileSystem::receive(ECS::World* world, const FileSystemLoadTaskEvent& event
     if (event.type == FileSystemLoadTaskEvent::LOAD_DIRECTORY)
     {
         // Catch if we request the mount point listing
-        if (mPathToNavigate.size() == 2 && mPathToNavigate[1] == "..")
+        if (target->path.size() == 2 && target->path[1] == "..")
         {
             listMountPoints(world);
             return;
         }
 
-        // Navigate to mPathToNavigate
-        mWorkerThread = SDL_CreateThread(workerThreadFuncDirectory, "OSPFST", this);
+        // Navigate to path
+        target->thread = SDL_CreateThread(workerThreadFuncDirectory, "OSPFILE", this);
     }
     else if (event.type == FileSystemLoadTaskEvent::LOAD_FILE)
     {
-        // Get the file stored in mPathToNavigate
-        mWorkerThread = SDL_CreateThread(workerThreadFuncFile, "OSPFST", this);
+        // Get the file stored in path
+       target->thread = SDL_CreateThread(workerThreadFuncFile, "OSPDIR", this);
     }
 }
 
 void FileSystem::receive(ECS::World* world, const FileSystemCancelTaskEvent& event)
 {
     TRACE("Received FileSystemCancelTaskEvent.");
-    cancelWorkerThread();
+    switch (event.type)
+    {
+        case FileSystemCancelTaskEvent::LOAD_FILE:
+            cancelFileThread();
+        break;
+        case FileSystemCancelTaskEvent::LOAD_DIRECTORY:
+            cancelDirectoryThread();
+        break;
+    }
 }
 
 int FileSystem::workerThreadFuncDirectory(void* thiz)
@@ -191,13 +220,15 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
     }
 
     auto* fileSystem = (FileSystem*) thiz;
+    auto* threadParams = &fileSystem->mThreadParams[DIRECTORY];
 
     // Tells everyone we are working
-    fileSystem->mWorkerThreadState = WORKING;
+    threadParams->status = WORKING;
     SDL_LockMutex(fileSystem->mWorkerThreadMutex);
-    fileSystem->mPendingFileSystemBusyEvent.emplace(
+    fileSystem->mPendingFileSystemBusyEvent.push_back(
     (FileSystemBusyEvent) {
-        .isLoading = true
+        .isLoading = true,
+        .type = FileSystemBusyEvent::DIRECTORY
     });
     SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
 
@@ -205,7 +236,7 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
     auto* selectedMountPoint = (MountPoint*) nullptr;
     for (auto* mountPoint : fileSystem->mMountPoints)
     {
-        if (fileSystem->mPathToNavigate[0] == mountPoint->getScheme())
+        if (threadParams->path[0] == mountPoint->getScheme())
         {
             selectedMountPoint = mountPoint;
             break;
@@ -215,28 +246,29 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
     if (selectedMountPoint == nullptr)
     {
         SDL_LockMutex(fileSystem->mWorkerThreadMutex);
-        fileSystem->mPendingFileSystemErrorEvent.emplace(
+        fileSystem->mPendingFileSystemErrorEvent.push_back(
         (FileSystemErrorEvent) {
-            .message = fmt::format("No mountpoint available to open {:s}", fileSystem->mPathToNavigate.back())
+            .message = fmt::format("No mountpoint available to open {:s}", threadParams->path.back())
         });
 
-        fileSystem->mPendingFileSystemBusyEvent.emplace(
+        fileSystem->mPendingFileSystemBusyEvent.push_back(
         (FileSystemBusyEvent) {
-            .isLoading = true
+            .isLoading = true,
+            .type = FileSystemBusyEvent::DIRECTORY
         });
         SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
         return 0;
     }
 
-    if (fileSystem->mPathToNavigate.back() == "..")
+    if (threadParams->path.back() == "..")
     {
         // We want to go up
-        fileSystem->mPathToNavigate.pop_back();
-        fileSystem->mPathToNavigate.pop_back();
+        threadParams->path.pop_back();
+        threadParams->path.pop_back();
     }
 
     auto path = std::filesystem::path();
-    for (auto elm : fileSystem->mPathToNavigate)
+    for (auto elm : threadParams->path)
     {
         path /= elm;
     }
@@ -254,7 +286,7 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
                     .name = name,
                     .size = size
                 });
-                return fileSystem->mWorkerThreadState != CANCELING;
+                return threadParams->status != CANCELING;
             });
     }
     catch(const std::exception& e)
@@ -264,9 +296,9 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
         TRACE("{:s}.", error);
 
         // Send a notification event if something goes wrong
-        fileSystem->mWorkerThreadState = CANCELING;
+        threadParams->status = CANCELING;
         SDL_LockMutex(fileSystem->mWorkerThreadMutex);
-        fileSystem->mPendingFileSystemErrorEvent.emplace(
+        fileSystem->mPendingFileSystemErrorEvent.push_back(
         (FileSystemErrorEvent) {
             .message = error
         });
@@ -274,7 +306,7 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
     }
 
     // If not cancelled sort by folder and filename asc then add back navigation
-    if (fileSystem->mWorkerThreadState != CANCELING)
+    if (threadParams->status != CANCELING)
     {
         std::sort(items.begin(), items.end(),
         [](auto a, auto b)
@@ -297,7 +329,7 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
         });
     }
 
-    if (fileSystem->mWorkerThreadState != CANCELING)
+    if (threadParams->status != CANCELING)
     {
         // Tells to everyone what was in the directory and we stopped working
         SDL_LockMutex(fileSystem->mWorkerThreadMutex);
@@ -307,9 +339,10 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
             .items = items
         });
 
-        fileSystem->mPendingFileSystemBusyEvent.emplace(
+        fileSystem->mPendingFileSystemBusyEvent.push_back(
         (FileSystemBusyEvent) {
-            .isLoading = false
+            .isLoading = false,
+            .type = FileSystemBusyEvent::DIRECTORY
         });
         SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
     }
@@ -317,16 +350,17 @@ int FileSystem::workerThreadFuncDirectory(void* thiz)
     {
         // Tells to everyone that we are finished working
         SDL_LockMutex(fileSystem->mWorkerThreadMutex);
-        fileSystem->mPendingFileSystemBusyEvent.emplace(
+        fileSystem->mPendingFileSystemBusyEvent.push_back(
         (FileSystemBusyEvent) {
-            .isLoading = false
+            .isLoading = false,
+            .type = FileSystemBusyEvent::DIRECTORY
         });
 
         // Restore old path
         SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
     }
 
-    fileSystem->mWorkerThreadState = IDLE;
+    threadParams->status = IDLE;
     return 0;
 }
 
@@ -339,13 +373,15 @@ int FileSystem::workerThreadFuncFile(void* thiz)
     }
 
     auto fileSystem = (FileSystem*) thiz;
-    fileSystem->mWorkerThreadState = WORKING;
+    auto* threadParams = &fileSystem->mThreadParams[FILE];
 
     // Tells everyone we are working
+    threadParams->status = WORKING;
     SDL_LockMutex(fileSystem->mWorkerThreadMutex);
-    fileSystem->mPendingFileSystemBusyEvent.emplace(
+    fileSystem->mPendingFileSystemBusyEvent.push_back(
     (FileSystemBusyEvent) {
-        .isLoading = true
+        .isLoading = true,
+        .type = FileSystemBusyEvent::FILE
     });
     SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
 
@@ -353,7 +389,7 @@ int FileSystem::workerThreadFuncFile(void* thiz)
     auto* selectedMountPoint = (MountPoint*) nullptr;
     for (auto* mountPoint : fileSystem->mMountPoints)
     {
-        if (fileSystem->mPathToNavigate[0] == mountPoint->getScheme())
+        if (threadParams->path[0] == mountPoint->getScheme())
         {
             selectedMountPoint = mountPoint;
             break;
@@ -362,13 +398,13 @@ int FileSystem::workerThreadFuncFile(void* thiz)
 
     if (selectedMountPoint == nullptr)
     {
-        auto error = fmt::format("No mountpoint available to open {:s}", fileSystem->mPathToNavigate.back());
+        auto error = fmt::format("No mountpoint available to open {:s}", threadParams->path.back());
         TRACE("{:s}.", error);
 
         // Send a notification event if something goes wrong
-        fileSystem->mWorkerThreadState = CANCELING;
+        threadParams->status = CANCELING;
         SDL_LockMutex(fileSystem->mWorkerThreadMutex);
-        fileSystem->mPendingFileSystemErrorEvent.emplace(
+        fileSystem->mPendingFileSystemErrorEvent.push_back(
         (FileSystemErrorEvent) {
             .message = error
         });
@@ -377,7 +413,7 @@ int FileSystem::workerThreadFuncFile(void* thiz)
     }
 
     auto path = std::filesystem::path();
-    for (auto elm : fileSystem->mPathToNavigate)
+    for (auto elm : threadParams->path)
     {
         path /= elm;
     }
@@ -391,7 +427,7 @@ int FileSystem::workerThreadFuncFile(void* thiz)
             [&](const std::vector<uint8_t>& chunkBuffer)
             {
                 fileBuffer.insert(fileBuffer.end(), chunkBuffer.begin(), chunkBuffer.end());
-                return fileSystem->mWorkerThreadState != CANCELING;
+                return threadParams->status != CANCELING;
             });
     }
     catch(const std::exception& e)
@@ -399,18 +435,18 @@ int FileSystem::workerThreadFuncFile(void* thiz)
         auto error = e.what();
 
         TRACE("{:s}.", error);
-        fileSystem->mWorkerThreadState = CANCELING;
+        threadParams->status = CANCELING;
 
         // Send a notification event if something goes wrong
         SDL_LockMutex(fileSystem->mWorkerThreadMutex);
-        fileSystem->mPendingFileSystemErrorEvent.emplace(
+        fileSystem->mPendingFileSystemErrorEvent.push_back(
         (FileSystemErrorEvent) {
             .message = error
         });
         SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
     }
 
-    if (fileSystem->mWorkerThreadState != CANCELING)
+    if (threadParams->status != CANCELING)
     {
         // If not canceled tells to everyone that a file was read and we are now not working
         SDL_LockMutex(fileSystem->mWorkerThreadMutex);
@@ -420,9 +456,10 @@ int FileSystem::workerThreadFuncFile(void* thiz)
             .buffer = fileBuffer
         });
 
-        fileSystem->mPendingFileSystemBusyEvent.emplace(
+        fileSystem->mPendingFileSystemBusyEvent.push_back(
         (FileSystemBusyEvent) {
-            .isLoading = false
+            .isLoading = false,
+            .type = FileSystemBusyEvent::FILE
         });
         SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
     }
@@ -430,24 +467,36 @@ int FileSystem::workerThreadFuncFile(void* thiz)
     {
         // If  canceled tells to everyone we are now not working
         SDL_LockMutex(fileSystem->mWorkerThreadMutex);
-        fileSystem->mPendingFileSystemBusyEvent.emplace(
+        fileSystem->mPendingFileSystemBusyEvent.push_back(
         (FileSystemBusyEvent) {
-            .isLoading = false
+            .isLoading = false,
+            .type = FileSystemBusyEvent::FILE
         });
         SDL_UnlockMutex(fileSystem->mWorkerThreadMutex);
     }
 
-    fileSystem->mWorkerThreadState = IDLE;
+    threadParams->status = IDLE;
     return 0;
 }
 
-void FileSystem::cancelWorkerThread()
+void FileSystem::cancelFileThread()
 {
-    if (mWorkerThread != nullptr)
+    if (mThreadParams[FILE].thread != nullptr)
     {
-        mWorkerThreadState = CANCELING;
-        SDL_WaitThread(mWorkerThread, nullptr);
-        TRACE("Waiting worker thread to finish...");
-        mWorkerThread = nullptr;
+        mThreadParams[FILE].status = CANCELING;
+        SDL_WaitThread(mThreadParams[FILE].thread, nullptr);
+        TRACE("Waiting file worker thread to finish...");
+        mThreadParams[FILE].thread = nullptr;
+    }
+}
+
+void FileSystem::cancelDirectoryThread()
+{
+    if (mThreadParams[DIRECTORY].thread != nullptr)
+    {
+        mThreadParams[DIRECTORY].status = CANCELING;
+        SDL_WaitThread(mThreadParams[DIRECTORY].thread, nullptr);
+        TRACE("Waiting directory worker thread to finish...");
+        mThreadParams[DIRECTORY].thread = nullptr;
     }
 }

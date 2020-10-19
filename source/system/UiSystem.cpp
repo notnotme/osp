@@ -39,13 +39,17 @@ mWindow(window),
 mConfig(config),
 mLanguageFile(languageFile),
 mAudioSystemStatus(STOPPED),
-mPlaylist({.index = -1, .inUse = false, .loop = false}),
+mPlaylist
+({
+    .index = -1, .inUse = false, .loop = false
+}),
 mShowWorkSpace(true),
 mShowDemoWindow(false),
 mShowMetricsWindow(false),
 mShowSettingsWindow(false),
 mShowAboutWindow(false),
-mFileSystemLoading(false),
+mIsLoadingDirectory(false),
+mIsLoadingFile(false),
 mNotificationDisplayTimeMs(5000)
 {
 }
@@ -316,7 +320,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                         {
                             // The file is not usable by any audio plugin
                             auto message = fmt::format("{:s} {:s}", mLanguageFile.getc("files.unsupported_file_type"), item.name);
-                            pushNotification(Notification::Type::INFO, message);
+                            pushNotification(Notification::INFO, message);
                             TRACE("{:s}", message);
                         }
                     }
@@ -348,7 +352,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
             }
             ImGui::EndTable();
 
-            if (mFileSystemLoading)
+            if (mIsLoadingDirectory)
             {
                 // If the FileSystem is doing some work, show an overlay on top of the table
                 // with animated text and a cancel button
@@ -389,7 +393,10 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                     ImGui::SetCursorPosX(spaceAvail.x/2 - buttonSize.x/2);
                     if (ImGui::Button(mLanguageFile.getc("cancel"), buttonSize))
                     {
-                        world->emit<FileSystemCancelTaskEvent>({});
+                        world->emit<FileSystemCancelTaskEvent>
+                        ({
+                            .type = FileSystemCancelTaskEvent::LOAD_DIRECTORY
+                        });
                     }
                     ImGui::End();
                 }
@@ -513,6 +520,12 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                 else
                 {
                     ImGui::PopStyleVar();
+
+                    if (mIsLoadingFile)
+                    {
+                        // TODO
+                    }
+
                     ImGui::End();
                 }
             }
@@ -992,7 +1005,15 @@ void UiSystem::receive(ECS::World* world, const FileLoadedEvent& event)
 void UiSystem::receive(ECS::World* world, const FileSystemBusyEvent& event)
 {
     TRACE("Received FileSystemBusyEvent: {:d}.", (int) event.isLoading);
-    mFileSystemLoading = event.isLoading;
+    switch (event.type)
+    {
+        case FileSystemBusyEvent::FILE:
+            mIsLoadingFile = event.isLoading;
+            break;
+        case FileSystemBusyEvent::DIRECTORY:
+            mIsLoadingDirectory = event.isLoading;
+            break;
+    }
 }
 
 void UiSystem::receive(ECS::World* world, const AudioSystemConfiguredEvent& event)

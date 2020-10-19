@@ -58,22 +58,34 @@ private:
         CANCELING
     };
 
+    enum Thread
+    {
+        FILE,
+        DIRECTORY
+    };
+
+    struct ThreadParams
+    {
+        SDL_Thread* thread;
+        WorkThreadStatus status;
+        std::vector<std::string> path;
+    };
+
     Config mConfig;
     LanguageFile mLanguageFile;
-    WorkThreadStatus mWorkerThreadState;
-    SDL_Thread* mWorkerThread;
     SDL_mutex* mWorkerThreadMutex;
+    ThreadParams mThreadParams[2];
 
-    std::vector<std::string> mPathToNavigate;
     std::vector<MountPoint*> mMountPoints;
-    std::optional<FileSystemBusyEvent> mPendingFileSystemBusyEvent;
+    std::vector<FileSystemBusyEvent> mPendingFileSystemBusyEvent;
+    std::vector<FileSystemErrorEvent> mPendingFileSystemErrorEvent;
     std::optional<DirectoryLoadedEvent> mPendingDirectoryLoadedEvent;
     std::optional<FileLoadedEvent> mPendingFileLoadedEvent;
-    std::optional<FileSystemErrorEvent> mPendingFileSystemErrorEvent;
 
     FileSystem(const FileSystem& copy);
 
-    void cancelWorkerThread();
+    void cancelFileThread();
+    void cancelDirectoryThread();
     void listMountPoints(ECS::World* world);
     static int workerThreadFuncDirectory(void* thiz);
     static int workerThreadFuncFile(void* thiz);

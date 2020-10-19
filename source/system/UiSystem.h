@@ -112,7 +112,8 @@ private:
     bool mShowMetricsWindow;
     bool mShowSettingsWindow;
     bool mShowAboutWindow;
-    bool mFileSystemLoading;
+    bool mIsLoadingDirectory;
+    bool mIsLoadingFile;
     float mNotificationDisplayTimeMs;
 
     std::string mStatusMessage;
