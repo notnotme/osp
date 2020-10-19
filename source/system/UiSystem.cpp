@@ -990,7 +990,6 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
             else
             {
                 world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
-                mCurrentPluginUsed.reset();
             }
         break;
         case AudioSystemPlayEvent::NO_PREV_SUBSONG:
@@ -1001,13 +1000,13 @@ void UiSystem::receive(ECS::World* world, const AudioSystemPlayEvent& event)
             else
             {
                 world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
-                mCurrentPluginUsed.reset();
             }
         break;
         case AudioSystemPlayEvent::STOPPED_BY_USER:
                 mAudioSystemStatus = STOPPED;
                 mStatusMessage = mLanguageFile.getc("status.ready");
                 resetPlaylist(false);
+                mCurrentPluginUsed.reset();
         break;
         case AudioSystemPlayEvent::STOPPED:
             mAudioSystemStatus = STOPPED;
@@ -1130,14 +1129,23 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
        if (stayPaused)
         {
             // If we going back play last subsong when file event received.
-            if (!mPlaylist.inUse || mPlaylist.index == -1 || selectedIndex > mPlaylist.index)
+            auto playListSize = (int) mPlaylist.paths.size();
+            if (!mPlaylist.inUse || mPlaylist.index == -1)
             {
                 mLoadFileParams.isGoingBack = false;
 
             }
-            else
+            else if (selectedIndex == 0 &&  mPlaylist.index == playListSize-1)
+            {
+                mLoadFileParams.isGoingBack = false;
+            }
+            else if (selectedIndex == playListSize-1 &&  mPlaylist.index == 0)
             {
                 mLoadFileParams.isGoingBack = true;
+            }
+            else
+            {
+                mLoadFileParams.isGoingBack = selectedIndex < mPlaylist.index;
             }
         }
         else
@@ -1176,7 +1184,6 @@ void UiSystem::processNextPlaylistItem(ECS::World* world)
     else
     {
         world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
-        mCurrentPluginUsed.reset();
         pushNotification(Notification::INFO, "Playlist finished.");
     }
 }
@@ -1194,7 +1201,6 @@ void UiSystem::processPrevPlaylistItem(ECS::World* world)
     else
     {
         world->emit<AudioSystemPlayTaskEvent>({.type = AudioSystemPlayTaskEvent::STOP});
-        mCurrentPluginUsed.reset();
         pushNotification(Notification::INFO, "Playlist finished.");
     }
 }
