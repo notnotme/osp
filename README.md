@@ -1,5 +1,5 @@
 # OSP - Old School Player
-Yet another chiptune player.
+Yet another chiptune player but for your Nintendo Switch.
 
 ### Supported formats:
 
@@ -36,8 +36,6 @@ I essentially target the switch and the other build help me for debug purpose.
 This source code is bundled with a version of [ImGui](https://github.com/ocornut/imgui) (1.79 tables branch) and [ECS](https://github.com/redxdev/ECS) and some fonts ([Atari ST 8x16](https://www.dafont.com/fr/atari-st-8x16-system-font.font), [Material Design Icons](https://materialdesignicons.com/), and [Roboto](https://fonts.google.com/specimen/Roboto))
 
 ### Todos:
-- FileSystem
-    - Use more than one thread. Maybe one for files and one for directories.
 - Playlist
     - Add an entry to the explorer popup menu to add a folder in the playlist
 
