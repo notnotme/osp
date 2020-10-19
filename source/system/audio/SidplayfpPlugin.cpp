@@ -286,26 +286,26 @@ void SidplayfpPlugin::drawMetadata(ECS::World* world, LanguageFile languageFile,
         Plugin::drawRow(languageFile.getc("metadata.author"),               author);
         Plugin::drawRow(languageFile.getc("metadata.copyright"),            copyright);
 
-        ImGui::TableNextColumn(); ImGui::TextUnformatted(languageFile.getc("metadata.sid_model"));
+        ImGui::TableNextColumn(); ImGui::Text(languageFile.getc("metadata.sid_model"));
         ImGui::TableNextColumn();
-        if (sidModel == SidTuneInfo::SIDMODEL_6581)         ImGui::TextUnformatted("6581");
-        else if (sidModel == SidTuneInfo::SIDMODEL_8580)    ImGui::TextUnformatted("8580");
+        if (sidModel == SidTuneInfo::SIDMODEL_6581)         ImGui::Text("6581");
+        else if (sidModel == SidTuneInfo::SIDMODEL_8580)    ImGui::Text("8580");
         else if (sidModel == SidTuneInfo::SIDMODEL_ANY)     ImGui::Text("%s", languageFile.getc("ANY"));
         else if (sidModel == SidTuneInfo::SIDMODEL_UNKNOWN) ImGui::Text("%s", languageFile.getc("UNKNOWN"));
 
-        ImGui::TableNextColumn(); ImGui::TextUnformatted(languageFile.getc("metadata.clock_speed"));
+        ImGui::TableNextColumn(); ImGui::Text(languageFile.getc("metadata.clock_speed"));
         ImGui::TableNextColumn();
-        if (clockSpeed == SidTuneInfo::CLOCK_NTSC)          ImGui::TextUnformatted("NTSC");
-        else if (clockSpeed == SidTuneInfo::CLOCK_PAL)      ImGui::TextUnformatted("PAL");
+        if (clockSpeed == SidTuneInfo::CLOCK_NTSC)          ImGui::Text("NTSC");
+        else if (clockSpeed == SidTuneInfo::CLOCK_PAL)      ImGui::Text("PAL");
         else if (clockSpeed == SidTuneInfo::CLOCK_ANY)      ImGui::Text("%s", languageFile.getc("ANY"));
         else if (clockSpeed == SidTuneInfo::CLOCK_UNKNOWN)  ImGui::Text("%s", languageFile.getc("UNKNOWN"));
 
-        ImGui::TableNextColumn(); ImGui::TextUnformatted(languageFile.getc("metadata.sid_compatibility"));
+        ImGui::TableNextColumn(); ImGui::Text(languageFile.getc("metadata.sid_compatibility"));
         ImGui::TableNextColumn();
-        if (compatibility == SidTuneInfo::COMPATIBILITY_BASIC)      ImGui::TextUnformatted("BASIC");
-        else if (compatibility == SidTuneInfo::COMPATIBILITY_C64)   ImGui::TextUnformatted("C64");
-        else if (compatibility == SidTuneInfo::COMPATIBILITY_PSID)  ImGui::TextUnformatted("PSID");
-        else if (compatibility == SidTuneInfo::COMPATIBILITY_R64)   ImGui::TextUnformatted("R64");
+        if (compatibility == SidTuneInfo::COMPATIBILITY_BASIC)      ImGui::Text("BASIC");
+        else if (compatibility == SidTuneInfo::COMPATIBILITY_C64)   ImGui::Text("C64");
+        else if (compatibility == SidTuneInfo::COMPATIBILITY_PSID)  ImGui::Text("PSID");
+        else if (compatibility == SidTuneInfo::COMPATIBILITY_R64)   ImGui::Text("R64");
 
         Plugin::endTable();
     }
@@ -321,7 +321,7 @@ void SidplayfpPlugin::drawMetadata(ECS::World* world, LanguageFile languageFile,
             ImGui::TableNextColumn();
             for (unsigned int i=0; i<commentCount; ++i)
             {
-                ImGui::TextUnformatted("%s\n", musicInfo->commentString(i));
+                ImGui::Text("%s\n", musicInfo->commentString(i));
             }
             ImGui::PopFont();
             Plugin::endTable();

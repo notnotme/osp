@@ -268,7 +268,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
         // ----------------------------------------------------------
         // Left panel: file browser
         auto currentPath = mCurrentPath.empty() ? mLanguageFile.getc("mount_points") : mCurrentPath;
-        ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogram], "\uf24b"); ImGui::SameLine(); ImGui::TextUnformatted(currentPath.c_str());
+        ImGui::TextColored(style.Colors[ImGuiCol_PlotHistogram], "\uf24b"); ImGui::SameLine(); ImGui::Text(currentPath.c_str());
         ImGui::Spacing();
 
         // Show current entries in mCurrentPath using a table
@@ -338,7 +338,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                     if (!item.isFolder)
                     {
                         auto fileSizeStr = fmt::format("{:d} Kb ", (uint32_t) (item.size / 1024));
-                        ImGui::TextUnformatted(fileSizeStr.c_str());
+                        ImGui::Text(fileSizeStr.c_str());
                     }
                     else
                     {
@@ -542,11 +542,6 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
             {
                 ImGui::PopStyleVar();
                 // Summary / buttons
-                auto itemsCount = mPlaylist.paths.size();
-                auto fileStr = mLanguageFile.getc("file_s");
-                auto itemCountStr = fmt::format("{:d} {:s}", itemsCount, fileStr).c_str();
-                auto textSize = ImGui::CalcTextSize(itemCountStr);
-                auto textOffsetX = (ImGui::GetContentRegionAvailWidth() + style.FramePadding.x * 2) - textSize.x;
                 ImGui::Spacing();
                 if (ImGui::SmallButton("\uf49f"))
                 {
@@ -566,8 +561,14 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                 ImGui::Checkbox(mLanguageFile.getc("loop"), &mPlaylist.loop);
                 ImGui::PopStyleVar();
 
+                auto itemsCount = mPlaylist.paths.size();
+                auto fileStr = mLanguageFile.getc("file_s");
+                auto itemCountStr = fmt::format("{:d} {:s}", itemsCount, fileStr).c_str();
+                auto textSize = ImGui::CalcTextSize(itemCountStr);
+                auto textOffsetX = (ImGui::GetContentRegionAvailWidth() + style.FramePadding.x * 2) - textSize.x;
+
                 ImGui::SameLine(textOffsetX, 0);
-                ImGui::TextUnformatted(itemCountStr);
+                ImGui::Text(itemCountStr);
                 ImGui::Spacing();
 
                 // Show current entries
@@ -592,11 +593,11 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                             ImGui::TableNextColumn();
                             if (mPlaylist.inUse && mPlaylist.index == row)
                             {
-                                ImGui::TextUnformatted("\ufa12");
+                                ImGui::Text("\ufa12");
                             }
                             else
                             {
-                                ImGui::TextDisabled("\ufa13");
+                                ImGui::Text("\ufa13");
                             }
 
                             // Column [MIDDLE] - name
@@ -688,10 +689,10 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
             ImGui::Spacing();
             ImGui::TextWrapped("%s", mLanguageFile.getc("about.introduction"));
             ImGui::NewLine();
-            ImGui::TextUnformatted("Version: " GIT_VERSION " (" GIT_COMMIT ")");
-            ImGui::TextUnformatted("Build date: " BUILD_DATE);
+            ImGui::Text("Version: " GIT_VERSION " (" GIT_COMMIT ")");
+            ImGui::Text("Build date: " BUILD_DATE);
             ImGui::NewLine();
-            ImGui::TextUnformatted(mLanguageFile.getc("about.make_use_of"));
+            ImGui::Text(mLanguageFile.getc("about.make_use_of"));
             ImGui::BulletText("SDL %d.%d.%d", SDL_MAJOR_VERSION, SDL_MINOR_VERSION, SDL_PATCHLEVEL);
             ImGui::BulletText("Dear ImGui %s", ImGui::GetVersion());
             for (auto pluginInfo : mPluginInformations)
@@ -699,7 +700,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                 ImGui::BulletText("%s %s", pluginInfo.name.c_str(), pluginInfo.version.c_str());
             }
             ImGui::NewLine();
-            ImGui::TextUnformatted(mLanguageFile.getc("about.integrated_fonts"));
+            ImGui::Text(mLanguageFile.getc("about.integrated_fonts"));
             ImGui::BulletText("Atari ST 8x16 System");
             ImGui::BulletText("Roboto");
             ImGui::BulletText("Material Icons");
