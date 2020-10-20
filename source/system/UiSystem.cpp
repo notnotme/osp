@@ -43,6 +43,10 @@ mPlaylist
 ({
     .index = -1, .inUse = false, .loop = false
 }),
+mLoadDirectoryParams
+({
+    .addToPlaylist = false
+}),
 mShowWorkSpace(true),
 mShowDemoWindow(false),
 mShowMetricsWindow(false),
@@ -326,11 +330,12 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                     }
 
                     // Context menu (right click)
-                    if (item.name != ".." && ImGui::BeginPopupContextItem(rowId, ImGuiPopupFlags_MouseButtonRight))
+                    auto disabled = item.name == ".." || mCurrentPathItems.size() == 1;
+                    if (!disabled && ImGui::BeginPopupContextItem(rowId, ImGuiPopupFlags_MouseButtonRight))
                     {
                         auto textAddToPlaylist =  mLanguageFile.getc("add_to_playlist");
                         auto menuItemId = fmt::format("\uf416 {:s}", textAddToPlaylist);
-                        if (ImGui::MenuItem(menuItemId.c_str(), nullptr, false, !item.isFolder && isFileSupported(item.name)))
+                        if (ImGui::MenuItem(menuItemId.c_str(), nullptr, false, item.isFolder || isFileSupported(item.name)))
                         {
                             processFileItemSelection(world, item, true);
                         }
@@ -967,9 +972,34 @@ void UiSystem::receive(ECS::World* world, const SDL_Event& event)
 void UiSystem::receive(ECS::World* world, const DirectoryLoadedEvent& event)
 {
     TRACE("Received DirectoryLoadedEvent: \"{:s}\" ({:d} items).", event.path, event.items.size());
-    mCurrentPath = event.path;
-    mCurrentPathItems.clear();
-    mCurrentPathItems.insert(mCurrentPathItems.end(), event.items.begin(), event.items.end());
+    if (mLoadDirectoryParams.addToPlaylist)
+    {
+        int itemsAdded = 0;
+        for (auto& item : event.items)
+        {
+            auto path = std::filesystem::path(event.path);
+            path /=  item.name;
+
+            if (std::find(mPlaylist.paths.begin(), mPlaylist.paths.end(), path) == mPlaylist.paths.end())
+            {
+                if (!item.isFolder && isFileSupported(path))
+                {
+
+                    mPlaylist.paths.push_back(path);
+                    itemsAdded++;
+                }
+            }
+        }
+
+        auto itemsAddedStr = fmt::format("{:d} item(s) added to the playlist", itemsAdded);
+        pushNotification(Notification::INFO, itemsAddedStr);
+    }
+    else
+    {
+        mCurrentPath = event.path;
+        mCurrentPathItems.clear();
+        mCurrentPathItems.insert(mCurrentPathItems.end(), event.items.begin(), event.items.end());
+    }
 }
 
 void UiSystem::receive(ECS::World* world, const FileLoadedEvent& event)
@@ -1148,23 +1178,33 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
     // Build the item path and send it to the filesystem to be loaded or add it to the playlist
     auto itemPath =  std::filesystem::path(mCurrentPath) / item.name;
 
-    if (addToPlaylist)
+    if (!item.isFolder)
     {
-        if (std::find(mPlaylist.paths.begin(), mPlaylist.paths.end(), itemPath) == mPlaylist.paths.end())
+        if(addToPlaylist)
         {
-            mPlaylist.paths.push_back(itemPath);
+            if (std::find(mPlaylist.paths.begin(), mPlaylist.paths.end(), itemPath) == mPlaylist.paths.end())
+            {
+                mPlaylist.paths.push_back(itemPath);
+            }
+        }
+        else
+        {
+            mLoadFileParams.forceStart = true;
+            mLoadFileParams.playlistIndex = -1;
+            mLoadFileParams.isGoingBack = false;
+            world->emit<FileSystemLoadTaskEvent>
+            ({
+                .type = FileSystemLoadTaskEvent::LOAD_FILE,
+                .path = itemPath
+            });
         }
     }
     else
     {
-        mLoadFileParams.forceStart = true;
-        mLoadFileParams.playlistIndex = -1;
-        mLoadFileParams.isGoingBack = false;
+        mLoadDirectoryParams.addToPlaylist = addToPlaylist;
         world->emit<FileSystemLoadTaskEvent>
         ({
-            .type = item.isFolder
-                ? FileSystemLoadTaskEvent::LOAD_DIRECTORY
-                : FileSystemLoadTaskEvent::LOAD_FILE,
+            .type = FileSystemLoadTaskEvent::LOAD_DIRECTORY,
             .path = itemPath
         });
     }
@@ -1227,9 +1267,9 @@ void UiSystem::processNextPlaylistItem(ECS::World* world)
     {
         pushNotification(Notification::INFO, "Playlist finished.");
 
-        // We we explicitely requested the next song and none are found, sending STOP to the AudioSystem will do nothing
-        // because it is already stopped.
-        // We set the status message and reset current plugin now
+        // We requested the next song and none are found, sending STOP to the AudioSystem will do nothing
+        // if the action was initiated by the AUdioSystem itself, because it is already stopped.
+        // We reset the UiSystem now
         mStatusMessage = mLanguageFile.getc("status.ready");
         mCurrentPluginUsed.reset();
         resetPlaylist(false);
@@ -1251,9 +1291,9 @@ void UiSystem::processPrevPlaylistItem(ECS::World* world)
     {
         pushNotification(Notification::INFO, "Playlist finished.");
 
-        // We we explicitely requested the previous song and none are found, sending STOP to the AudioSystem will do nothing
-        // because it is already stopped.
-        // We set the status message and reset current plugin now
+        // We requested the next song and none are found, sending STOP to the AudioSystem will do nothing
+        // if the action was initiated by the AUdioSystem itself, because it is already stopped.
+        // We reset the UiSystem now
         mStatusMessage = mLanguageFile.getc("status.ready");
         mCurrentPluginUsed.reset();
         resetPlaylist(false);

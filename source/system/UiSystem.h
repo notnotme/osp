@@ -92,6 +92,11 @@ private:
         int playlistIndex;
     };
 
+    struct LoadDirectoryParams
+    {
+        bool addToPlaylist;
+    };
+
     enum AudioSystemStatus
     {
         PLAYING,
@@ -106,6 +111,7 @@ private:
     AudioSystemStatus mAudioSystemStatus;
     Playlist mPlaylist;
     LoadFileParams mLoadFileParams;
+    LoadDirectoryParams mLoadDirectoryParams;
 
     bool mShowWorkSpace;
     bool mShowDemoWindow;
