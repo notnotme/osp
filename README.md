@@ -36,8 +36,9 @@ I essentially target the switch and the other build help me for debug purpose.
 This source code is bundled with a version of [ImGui](https://github.com/ocornut/imgui) (1.79 tables branch) and [ECS](https://github.com/redxdev/ECS) and some fonts ([Atari ST 8x16](https://www.dafont.com/fr/atari-st-8x16-system-font.font), [Material Design Icons](https://materialdesignicons.com/), and [Roboto](https://fonts.google.com/specimen/Roboto))
 
 ### Todos:
-- Playlist
-    - Add an entry to the explorer popup menu to add a folder in the playlist
+- Add some tooltips and missing translation
+- Open .m3u files ?
+- modland ftp support ?
 
 ### Some ideas:
 - Implement the ability to browse modland ftp
