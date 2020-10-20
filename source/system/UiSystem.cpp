@@ -621,7 +621,7 @@ void UiSystem::tick(ECS::World* world, float deltaTime)
                             auto selectableFlags = ImGuiSelectableFlags_SpanAllColumns | ImGuiSelectableFlags_AllowItemOverlap;
                             if (ImGui::Selectable(filename.c_str(), mPlaylist.index == row, selectableFlags))
                             {
-                                processPlaylistItemSelection(world, row, true, false);
+                                processPlaylistItemSelection(world, row, false, false);
                             }
 
                             // Column [RIGHT] - Button(s)
@@ -1170,11 +1170,11 @@ void UiSystem::processFileItemSelection(ECS::World* world, DirectoryLoadedEvent:
     }
 }
 
- void UiSystem::processPlaylistItemSelection(ECS::World* world, int selectedIndex, bool userRequest, bool goingBackward)
+ void UiSystem::processPlaylistItemSelection(ECS::World* world, int selectedIndex, bool stayPaused, bool goingBackward)
  {
     // When the user request the file to be played we force it to start.
     // Otherwise we just load it (when paused and browsing the playlist).
-    mLoadFileParams.forceStart = userRequest;
+    mLoadFileParams.forceStart = !stayPaused;
     mLoadFileParams.playlistIndex = selectedIndex;
     mLoadFileParams.isGoingBack = goingBackward;
     world->emit<FileSystemLoadTaskEvent>
